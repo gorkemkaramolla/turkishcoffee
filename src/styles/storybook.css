@@ -1,3 +1,11 @@
 /* Storybook-only stylesheet. Not shipped in dist — see package.json "files". */
 @import "tailwindcss";
 @import "./theme.css";
+
+/* The story iframe's own document, so no light gap shows under the content. */
+html,
+body {
+  min-height: 100%;
+  background-color: var(--background);
+  color: var(--foreground);
+}

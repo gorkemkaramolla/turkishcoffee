@@ -1,17 +1,21 @@
+import { useEffect } from 'react'
 import type { Decorator, Preview } from '@storybook/react-vite'
 import '../src/styles/storybook.css'
 
 /**
- * Every story renders inside a theme wrapper so components are checked in both
- * light and dark as they are built. Flip it from the toolbar.
+ * The `dark` class goes on <html>, not on a wrapper div — otherwise html/body
+ * keep their light background and show through below the story content.
  */
 const withTheme: Decorator = (Story, context) => {
   const isDark = context.globals.theme === 'dark'
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDark)
+  }, [isDark])
+
   return (
-    <div className={isDark ? 'dark' : undefined}>
-      <div className="bg-background text-foreground flex min-h-32 items-center justify-center p-10">
-        <Story />
-      </div>
+    <div className="bg-background text-foreground flex min-h-dvh items-center justify-center p-10">
+      <Story />
     </div>
   )
 }
@@ -38,6 +42,8 @@ const preview: Preview = {
   parameters: {
     layout: 'fullscreen',
     controls: { expanded: true },
+    // Storybook's own backgrounds addon would paint over the token background.
+    backgrounds: { disable: true },
   },
 }
 
