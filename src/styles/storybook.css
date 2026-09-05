@@ -1,0 +1,3 @@
+/* Storybook-only stylesheet. Not shipped in dist — see package.json "files". */
+@import "tailwindcss";
+@import "./theme.css";

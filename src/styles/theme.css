@@ -1,0 +1,172 @@
+/*
+ * Design tokens for @gorkemkaramolla/ui.
+ *
+ * Consumers import this after Tailwind:
+ *
+ *   @import "tailwindcss";
+ *   @import "@gorkemkaramolla/ui/theme.css";
+ *   @source "../node_modules/@gorkemkaramolla/ui/dist";
+ *
+ * To rebrand a project, redeclare any token in your own :root after the import.
+ * Every component follows automatically.
+ *
+ * Two layers on purpose: @theme values are static, so light/dark live in plain
+ * custom properties and @theme inline points the Tailwind color scale at them.
+ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --radius: 0.625rem;
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+
+  --primary: oklch(0.55 0.19 265);
+  --primary-foreground: oklch(0.985 0 0);
+
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+
+  --success: oklch(0.596 0.145 156.2);
+  --success-foreground: oklch(0.985 0 0);
+
+  --warning: oklch(0.769 0.153 79.7);
+  --warning-foreground: oklch(0.205 0 0);
+
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.55 0.19 265);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+
+  --primary: oklch(0.65 0.17 265);
+  --primary-foreground: oklch(0.145 0 0);
+
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.145 0 0);
+
+  --success: oklch(0.696 0.145 156.2);
+  --success-foreground: oklch(0.145 0 0);
+
+  --warning: oklch(0.828 0.153 79.7);
+  --warning-foreground: oklch(0.145 0 0);
+
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 18%);
+  --ring: oklch(0.65 0.17 265);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/*
+ * Animations for overlay components (Dialog, Popover, DropdownMenu, Tooltip,
+ * Sheet). Defined here rather than pulling in tw-animate-css, so the package
+ * stays dependency-free on the CSS side. Keyframes live inside @theme so
+ * Tailwind only emits the ones actually used.
+ */
+@theme {
+  --animate-ui-fade-in: ui-fade-in 150ms ease-out;
+  --animate-ui-fade-out: ui-fade-out 150ms ease-in;
+  --animate-ui-pop-in: ui-pop-in 150ms ease-out;
+  --animate-ui-pop-out: ui-pop-out 150ms ease-in;
+  --animate-ui-slide-in-top: ui-slide-in-top 250ms ease-out;
+  --animate-ui-slide-out-top: ui-slide-out-top 250ms ease-in;
+  --animate-ui-slide-in-bottom: ui-slide-in-bottom 250ms ease-out;
+  --animate-ui-slide-out-bottom: ui-slide-out-bottom 250ms ease-in;
+  --animate-ui-slide-in-left: ui-slide-in-left 250ms ease-out;
+  --animate-ui-slide-out-left: ui-slide-out-left 250ms ease-in;
+  --animate-ui-slide-in-right: ui-slide-in-right 250ms ease-out;
+  --animate-ui-slide-out-right: ui-slide-out-right 250ms ease-in;
+
+  @keyframes ui-fade-in { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes ui-fade-out { from { opacity: 1 } to { opacity: 0 } }
+  @keyframes ui-pop-in {
+    from { opacity: 0; transform: scale(0.95) }
+    to { opacity: 1; transform: scale(1) }
+  }
+  @keyframes ui-pop-out {
+    from { opacity: 1; transform: scale(1) }
+    to { opacity: 0; transform: scale(0.95) }
+  }
+  @keyframes ui-slide-in-top { from { transform: translateY(-100%) } to { transform: translateY(0) } }
+  @keyframes ui-slide-out-top { from { transform: translateY(0) } to { transform: translateY(-100%) } }
+  @keyframes ui-slide-in-bottom { from { transform: translateY(100%) } to { transform: translateY(0) } }
+  @keyframes ui-slide-out-bottom { from { transform: translateY(0) } to { transform: translateY(100%) } }
+  @keyframes ui-slide-in-left { from { transform: translateX(-100%) } to { transform: translateX(0) } }
+  @keyframes ui-slide-out-left { from { transform: translateX(0) } to { transform: translateX(-100%) } }
+  @keyframes ui-slide-in-right { from { transform: translateX(100%) } to { transform: translateX(0) } }
+  @keyframes ui-slide-out-right { from { transform: translateX(0) } to { transform: translateX(100%) } }
+}
