@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import type { Decorator, Preview } from '@storybook/react-vite'
 import '../src/styles/storybook.css'
 
@@ -6,19 +6,23 @@ import '../src/styles/storybook.css'
  * The `dark` class goes on <html>, not on a wrapper div — otherwise html/body
  * keep their light background and show through below the story content.
  */
-const withTheme: Decorator = (Story, context) => {
-  const isDark = context.globals.theme === 'dark'
-
+function ThemeCanvas({ isDark, children }: { isDark: boolean; children: ReactNode }) {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark)
   }, [isDark])
 
   return (
     <div className="bg-background text-foreground flex min-h-dvh items-center justify-center p-10">
-      <Story />
+      {children}
     </div>
   )
 }
+
+const withTheme: Decorator = (Story, context) => (
+  <ThemeCanvas isDark={context.globals.theme === 'dark'}>
+    <Story />
+  </ThemeCanvas>
+)
 
 const preview: Preview = {
   decorators: [withTheme],
