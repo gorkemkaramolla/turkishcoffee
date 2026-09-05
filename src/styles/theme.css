@@ -148,6 +148,10 @@
   --animate-ui-slide-out-bottom: ui-slide-out-bottom 250ms ease-in;
   --animate-ui-slide-in-left: ui-slide-in-left 250ms ease-out;
   --animate-ui-slide-out-left: ui-slide-out-left 250ms ease-in;
+  --animate-ui-accordion-down: ui-accordion-down 200ms ease-out;
+  --animate-ui-accordion-up: ui-accordion-up 200ms ease-in;
+  --animate-ui-collapsible-down: ui-collapsible-down 200ms ease-out;
+  --animate-ui-collapsible-up: ui-collapsible-up 200ms ease-in;
   --animate-ui-slide-in-right: ui-slide-in-right 250ms ease-out;
   --animate-ui-slide-out-right: ui-slide-out-right 250ms ease-in;
 
@@ -167,6 +171,10 @@
   @keyframes ui-slide-out-bottom { from { transform: translateY(0) } to { transform: translateY(100%) } }
   @keyframes ui-slide-in-left { from { transform: translateX(-100%) } to { transform: translateX(0) } }
   @keyframes ui-slide-out-left { from { transform: translateX(0) } to { transform: translateX(-100%) } }
+  @keyframes ui-accordion-down { from { height: 0 } to { height: var(--radix-accordion-content-height) } }
+  @keyframes ui-accordion-up { from { height: var(--radix-accordion-content-height) } to { height: 0 } }
+  @keyframes ui-collapsible-down { from { height: 0 } to { height: var(--radix-collapsible-content-height) } }
+  @keyframes ui-collapsible-up { from { height: var(--radix-collapsible-content-height) } to { height: 0 } }
   @keyframes ui-slide-in-right { from { transform: translateX(100%) } to { transform: translateX(0) } }
   @keyframes ui-slide-out-right { from { transform: translateX(0) } to { transform: translateX(100%) } }
 }

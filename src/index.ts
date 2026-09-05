@@ -5,6 +5,22 @@ export { useMediaQuery, useDisclosure, type Disclosure } from './hooks'
 // (react-hook-form / @tanstack/react-table). Import them from
 // 'turkishcoffee/form' and 'turkishcoffee/data-table'.
 
+export { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from './components/accordion'
+export { Alert, AlertTitle, AlertDescription, alertVariants, type AlertProps } from './components/alert'
+export {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogPortal,
+  AlertDialogOverlay,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from './components/alert-dialog'
+export { AspectRatio, type AspectRatioProps } from './components/aspect-ratio'
 export { Avatar, AvatarImage, AvatarFallback } from './components/avatar'
 export { Badge, badgeVariants, type BadgeProps } from './components/badge'
 export { Button, buttonVariants, type ButtonProps } from './components/button'
@@ -16,7 +32,18 @@ export {
   CardContent,
   CardFooter,
 } from './components/card'
+export {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+  BreadcrumbEllipsis,
+  type BreadcrumbLinkProps,
+} from './components/breadcrumb'
 export { Checkbox, type CheckboxProps } from './components/checkbox'
+export { Collapsible, CollapsibleTrigger, CollapsibleContent } from './components/collapsible'
 export {
   Dialog,
   DialogTrigger,
@@ -45,9 +72,21 @@ export {
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 } from './components/dropdown-menu'
+export { HoverCard, HoverCardTrigger, HoverCardContent } from './components/hover-card'
 export { Input, type InputProps } from './components/input'
+export {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupTextarea,
+  InputGroupButton,
+  inputGroupAddonVariants,
+  type InputGroupAddonProps,
+} from './components/input-group'
 export { Label, type LabelProps } from './components/label'
+export { NativeSelect, type NativeSelectProps } from './components/native-select'
 export { Popover, PopoverTrigger, PopoverAnchor, PopoverContent } from './components/popover'
+export { Progress, type ProgressProps } from './components/progress'
 export { RadioGroup, RadioGroupItem } from './components/radio-group'
 export {
   Select,
@@ -83,6 +122,7 @@ export {
   type SheetContentProps,
 } from './components/sheet'
 export { Skeleton } from './components/skeleton'
+export { Spinner, type SpinnerProps } from './components/spinner'
 export { Switch, type SwitchProps } from './components/switch'
 export {
   Table,

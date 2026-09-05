@@ -64,11 +64,14 @@ Overlay animations ship as `--animate-ui-*` tokens in `theme.css` (no
 :root { --animate-ui-pop-in: ui-pop-in 80ms ease-out; }
 ```
 
+Accordion and Collapsible animate their measured height, so they use their own
+`--animate-ui-accordion-*` / `--animate-ui-collapsible-*` pairs.
+
 ## Components
 
 | Server-renderable | Client (`"use client"`) |
 |---|---|
-| Badge, Button, Card, EmptyState, Input, Pagination, Separator, Skeleton, Table, Textarea | Avatar, Checkbox, Dialog, DropdownMenu, Label, Popover, RadioGroup, Select, Sheet, Switch, Tabs, Toast, Tooltip |
+| Alert, AspectRatio, Badge, Breadcrumb, Button, Card, EmptyState, Input, InputGroup, NativeSelect, Pagination, Separator, Skeleton, Spinner, Table, Textarea | Accordion, AlertDialog, Avatar, Checkbox, Collapsible, Dialog, DropdownMenu, HoverCard, Label, Popover, Progress, RadioGroup, Select, Sheet, Switch, Tabs, Toast, Tooltip |
 
 Hooks: `useMediaQuery`, `useDisclosure`.
 
