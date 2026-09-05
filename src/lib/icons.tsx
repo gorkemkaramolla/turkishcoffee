@@ -62,3 +62,29 @@ export function ChevronRightIcon(props: IconProps) {
     </Icon>
   )
 }
+
+export function ChevronLeftIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="m15 18-6-6 6-6" />
+    </Icon>
+  )
+}
+
+export function ChevronsUpDownIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="m7 15 5 5 5-5M7 9l5-5 5 5" />
+    </Icon>
+  )
+}
+
+export function EllipsisIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="19" cy="12" r="1" />
+      <circle cx="5" cy="12" r="1" />
+    </Icon>
+  )
+}

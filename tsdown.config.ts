@@ -15,6 +15,16 @@ export default defineConfig({
   dts: true,
   clean: true,
   deps: {
-    neverBundle: ['react', 'react-dom', /^react\//],
+    // Peers must never be bundled — including the optional ones, or their .d.ts
+    // files get vendored into dist and the package balloons.
+    neverBundle: [
+      'react',
+      'react-dom',
+      /^react\//,
+      'react-hook-form',
+      /^@tanstack\//,
+      'radix-ui',
+      /^@radix-ui\//,
+    ],
   },
 })

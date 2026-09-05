@@ -68,7 +68,41 @@ Overlay animations ship as `--animate-ui-*` tokens in `theme.css` (no
 
 | Server-renderable | Client (`"use client"`) |
 |---|---|
-| Badge, Button, Card, Input, Separator, Skeleton, Textarea | Avatar, Checkbox, Dialog, DropdownMenu, Label, Popover, RadioGroup, Select, Sheet, Switch, Tabs, Tooltip |
+| Badge, Button, Card, EmptyState, Input, Pagination, Separator, Skeleton, Table, Textarea | Avatar, Checkbox, Dialog, DropdownMenu, Label, Popover, RadioGroup, Select, Sheet, Switch, Tabs, Toast, Tooltip |
+
+Hooks: `useMediaQuery`, `useDisclosure`.
+
+### Optional-peer components
+
+Two components need a library you may not want in every project, so they sit
+behind their own entry points and are **not** in the root barrel — importing
+`Button` never pulls them in:
+
+```tsx
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage }
+  from '@gorkemkaramolla/ui/form'        // needs react-hook-form
+import { DataTable, type DataTableColumn }
+  from '@gorkemkaramolla/ui/data-table'  // needs @tanstack/react-table
+```
+
+Both are declared `optional` in `peerDependenciesMeta`, so npm will not warn
+about them in projects that never import those paths.
+
+`Table` (plain styled `<table>` primitives, no data library) stays in the root
+barrel — reach for `DataTable` only when you want sorting and pagination.
+
+### Toasts
+
+```tsx
+import { Toaster, toast } from '@gorkemkaramolla/ui'
+
+// mount <Toaster /> once near your app root, then anywhere in a client component:
+toast.success({ title: 'Saved' })
+toast.error({ title: 'Failed', description: 'Could not reach the server.' })
+```
+
+Built on Radix Toast, which is already inside the `radix-ui` dependency — no
+`sonner` or other notification library is added.
 
 The client ones wrap Radix primitives that hold state; the rest render on the
 server with no boundary.
@@ -83,6 +117,19 @@ them does not drag a client boundary into a server component.
 
 The build uses `tsdown` in unbundle mode (one output file per source file) to keep
 those directives per-component. Do not switch to `tsup` — esbuild strips them.
+
+## Releasing
+
+Changesets drives versioning; a GitHub Action publishes on merge to `main`.
+
+```bash
+npm run changeset      # describe the change, pick patch/minor/major
+git push               # merging opens a "Version Packages" PR
+                       # merging THAT publishes to npm with provenance
+```
+
+Requires an `NPM_TOKEN` secret on the GitHub repo (automation token, publish
+scope). The first `0.1.0` release can be published by hand with `npm publish`.
 
 ## Development
 

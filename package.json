@@ -1,7 +1,7 @@
 {
   "name": "@gorkemkaramolla/ui",
   "version": "0.1.0",
-  "description": "Personal React UI component library — Tailwind v4, Radix primitives, RSC-aware.",
+  "description": "Personal React UI component library \u2014 Tailwind v4, Radix primitives, RSC-aware.",
   "license": "MIT",
   "type": "module",
   "sideEffects": [
@@ -15,6 +15,14 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./form": {
+      "types": "./dist/components/form/index.d.ts",
+      "default": "./dist/components/form/index.js"
+    },
+    "./data-table": {
+      "types": "./dist/components/data-table/index.d.ts",
+      "default": "./dist/components/data-table/index.js"
+    },
     "./theme.css": "./dist/styles/theme.css",
     "./package.json": "./package.json"
   },
@@ -27,11 +35,16 @@
     "storybook": "storybook dev -p 6006 --no-open",
     "build-storybook": "storybook build",
     "check-exports": "publint && attw --pack . --exclude-entrypoints theme.css",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "npm run build && changeset publish"
   },
   "peerDependencies": {
+    "@tanstack/react-table": "^9.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-hook-form": "^7.0.0",
     "tailwindcss": "^4.0.0"
   },
   "dependencies": {
@@ -42,8 +55,10 @@
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
+    "@changesets/cli": "^3.0.2",
     "@storybook/react-vite": "^10.6.0",
     "@tailwindcss/vite": "^4.3.3",
+    "@tanstack/react-table": "^9.2.4",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.3.0",
     "@types/react": "^19.2.0",
@@ -55,6 +70,7 @@
     "publint": "^0.3.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-hook-form": "^7.87.0",
     "storybook": "^10.6.0",
     "tailwindcss": "^4.3.3",
     "tsdown": "^0.23.0",
@@ -62,5 +78,21 @@
     "typescript-eslint": "^8.69.0",
     "vite": "^8.2.2",
     "vitest": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@tanstack/react-table": {
+      "optional": true
+    },
+    "react-hook-form": {
+      "optional": true
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gorkemkaramolla/ui.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   }
 }
