@@ -39,7 +39,10 @@ jobs:
             exit 1
           fi
           echo "NPM_TOKEN is set (${#NPM_TOKEN} characters)."
-          npm whoami
+          # A granular token scoped to a single package cannot always read the
+          # user profile, so a whoami failure here does not mean it cannot
+          # publish. Report it, but let the publish step be the judge.
+          npm whoami || echo "::warning::npm whoami failed; the token may still be able to publish." 
 
       # Opens a "Version Packages" PR when changesets are pending; publishes to
       # npm when that PR is merged.
