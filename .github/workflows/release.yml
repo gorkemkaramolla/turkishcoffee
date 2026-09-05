@@ -39,19 +39,13 @@ jobs:
             exit 1
           fi
           echo "NPM_TOKEN is set (${#NPM_TOKEN} characters)."
-          # Reported as annotations, not plain output: the step log is only
-          # readable with admin rights, while annotations are not. Never fatal,
-          # since a token scoped to one package can fail whoami and still
-          # publish -- the publish step is the judge.
-          echo "::warning::whoami: $(npm whoami 2>&1 | tail -1)"
-          echo "::warning::access: $(npm access list packages 2>&1 | tr '\n' ' ' | cut -c1-400)"
 
       # Opens a "Version Packages" PR when changesets are pending; publishes to
       # npm when that PR is merged.
       - uses: changesets/action@v1
         with:
           version: npm run version-packages
-          publish: bash .github/scripts/publish.sh
+          publish: npm run release
           commit: "chore: version packages"
           title: "chore: version packages"
         env:
