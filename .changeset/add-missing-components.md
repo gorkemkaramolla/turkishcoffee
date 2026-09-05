@@ -1,5 +1,5 @@
 ---
-"turkishcoffee": minor
+"turkishcoffee": patch
 ---
 
 Add the components the library was missing next to a full shadcn set:
