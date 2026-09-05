@@ -27,6 +27,20 @@ jobs:
       - run: npm run lint
       - run: npm test
 
+      # A missing or mistyped secret otherwise surfaces much later as an
+      # ENEEDAUTH from inside the publish step.
+      - name: Check npm credentials
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NPM_TOKEN" ]; then
+            echo "::error::NPM_TOKEN secret is empty or not set on this repository."
+            exit 1
+          fi
+          echo "NPM_TOKEN is set (${#NPM_TOKEN} characters)."
+          npm whoami
+
       # Opens a "Version Packages" PR when changesets are pending; publishes to
       # npm when that PR is merged.
       - uses: changesets/action@v1
@@ -37,5 +51,8 @@ jobs:
           title: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # changesets/action writes its own .npmrc and reads NPM_TOKEN;
+          # NODE_AUTH_TOKEN is what the npmrc from setup-node expands.
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
