@@ -3,7 +3,7 @@ export { useMediaQuery, useDisclosure, type Disclosure } from './hooks'
 
 // Form and DataTable are NOT exported here: they need optional peers
 // (react-hook-form / @tanstack/react-table). Import them from
-// '@gorkemkaramolla/ui/form' and '@gorkemkaramolla/ui/data-table'.
+// 'turkishcoffee/form' and 'turkishcoffee/data-table'.
 
 export { Avatar, AvatarImage, AvatarFallback } from './components/avatar'
 export { Badge, badgeVariants, type BadgeProps } from './components/badge'

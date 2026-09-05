@@ -16,7 +16,7 @@ import { Label } from '../label/label'
 
 /**
  * `react-hook-form` is an OPTIONAL peer, so this lives behind its own entry
- * point (`@gorkemkaramolla/ui/form`) and never loads for projects that only
+ * point (`turkishcoffee/form`) and never loads for projects that only
  * import the root barrel.
  */
 export const Form = FormProvider

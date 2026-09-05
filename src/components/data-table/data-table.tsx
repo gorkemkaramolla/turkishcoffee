@@ -27,7 +27,7 @@ import { ChevronsUpDownIcon } from '../../lib/icons'
 
 /**
  * Sorting + client pagination. `@tanstack/react-table` is an OPTIONAL peer, so
- * this lives behind its own entry point (`@gorkemkaramolla/ui/data-table`) and
+ * this lives behind its own entry point (`turkishcoffee/data-table`) and
  * never loads for projects that only import the root barrel.
  */
 export const dataTableFeatures = tableFeatures({

@@ -3,7 +3,7 @@ import { cn } from '../../lib/cn'
 
 /**
  * Plain styled table primitives — no data library, server-renderable.
- * For sorting/pagination over a column model, use `@gorkemkaramolla/ui/data-table`.
+ * For sorting/pagination over a column model, use `turkishcoffee/data-table`.
  */
 export function Table({ className, ...props }: React.ComponentProps<'table'>) {
   return (

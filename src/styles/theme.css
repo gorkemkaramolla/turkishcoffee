@@ -1,11 +1,11 @@
 /*
- * Design tokens for @gorkemkaramolla/ui.
+ * Design tokens for turkishcoffee.
  *
  * Consumers import this after Tailwind:
  *
  *   @import "tailwindcss";
- *   @import "@gorkemkaramolla/ui/theme.css";
- *   @source "../node_modules/@gorkemkaramolla/ui/dist";
+ *   @import "turkishcoffee/theme.css";
+ *   @source "../node_modules/turkishcoffee/dist";
  *
  * To rebrand a project, redeclare any token in your own :root after the import.
  * Every component follows automatically.

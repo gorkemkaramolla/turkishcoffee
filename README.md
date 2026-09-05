@@ -1,11 +1,11 @@
-# @gorkemkaramolla/ui
+# turkishcoffee
 
 Personal React component library. Tailwind v4, Radix primitives, RSC-aware, ESM-only.
 
 ## Install
 
 ```bash
-npm i @gorkemkaramolla/ui
+npm i turkishcoffee
 ```
 
 Peers: `react@^19`, `react-dom@^19`, `tailwindcss@^4`.
@@ -16,8 +16,8 @@ Add three lines to your app's global stylesheet (`app/globals.css`):
 
 ```css
 @import "tailwindcss";
-@import "@gorkemkaramolla/ui/theme.css";
-@source "../node_modules/@gorkemkaramolla/ui/dist";
+@import "turkishcoffee/theme.css";
+@source "../node_modules/turkishcoffee/dist";
 ```
 
 The `@source` line is **required**. This package ships Tailwind class strings, not
@@ -31,7 +31,7 @@ components render unstyled because Tailwind ignores `node_modules` by default.
 ## Use
 
 ```tsx
-import { Button, Card, CardHeader, CardTitle } from '@gorkemkaramolla/ui'
+import { Button, Card, CardHeader, CardTitle } from 'turkishcoffee'
 
 <Button variant="destructive" size="lg">Delete</Button>
 ```
@@ -80,9 +80,9 @@ behind their own entry points and are **not** in the root barrel — importing
 
 ```tsx
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage }
-  from '@gorkemkaramolla/ui/form'        // needs react-hook-form
+  from 'turkishcoffee/form'        // needs react-hook-form
 import { DataTable, type DataTableColumn }
-  from '@gorkemkaramolla/ui/data-table'  // needs @tanstack/react-table
+  from 'turkishcoffee/data-table'  // needs @tanstack/react-table
 ```
 
 Both are declared `optional` in `peerDependenciesMeta`, so npm will not warn
@@ -94,7 +94,7 @@ barrel — reach for `DataTable` only when you want sorting and pagination.
 ### Toasts
 
 ```tsx
-import { Toaster, toast } from '@gorkemkaramolla/ui'
+import { Toaster, toast } from 'turkishcoffee'
 
 // mount <Toaster /> once near your app root, then anywhere in a client component:
 toast.success({ title: 'Saved' })
