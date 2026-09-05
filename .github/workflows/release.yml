@@ -51,7 +51,7 @@ jobs:
       - uses: changesets/action@v1
         with:
           version: npm run version-packages
-          publish: npm run release
+          publish: bash .github/scripts/publish.sh
           commit: "chore: version packages"
           title: "chore: version packages"
         env:
