@@ -8,7 +8,11 @@
     "**/*.css"
   ],
   "files": [
-    "dist"
+    "dist",
+    "src",
+    "!src/**/*.stories.tsx",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx"
   ],
   "exports": {
     ".": {
