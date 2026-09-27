@@ -16,16 +16,17 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
+          cache: pnpm
           registry-url: https://registry.npmjs.org
 
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm run lint
-      - run: npm test
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run typecheck
+      - run: pnpm run lint
+      - run: pnpm test
 
       # A missing or mistyped secret otherwise surfaces much later as an
       # ENEEDAUTH from inside the publish step.
@@ -44,8 +45,8 @@ jobs:
       # npm when that PR is merged.
       - uses: changesets/action@v1
         with:
-          version: npm run version-packages
-          publish: npm run release
+          version: pnpm run version-packages
+          publish: pnpm run release
           commit: "chore: version packages"
           title: "chore: version packages"
         env:

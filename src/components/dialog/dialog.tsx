@@ -1,19 +1,55 @@
 'use client'
 
-import type * as React from 'react'
+import * as React from 'react'
 import { Dialog as DialogPrimitive } from 'radix-ui'
+import { Drawer as DrawerPrimitive } from 'vaul'
 import { cn } from '../../lib/cn'
 import { XIcon } from '../../lib/icons'
+import { useIsDesktop } from '../../lib/responsive'
+import {
+  DrawerContent,
+  DrawerDescription,
+  DrawerOverlay,
+  DrawerTitle,
+} from '../drawer/drawer'
 
-export const Dialog = DialogPrimitive.Root
-export const DialogTrigger = DialogPrimitive.Trigger
-export const DialogClose = DialogPrimitive.Close
-export const DialogPortal = DialogPrimitive.Portal
+/**
+ * A centered modal on `sm` screens and up, a vaul bottom drawer below. Every part
+ * reads the mode from here, so the same markup works in both.
+ */
+const DialogModeContext = React.createContext<'dialog' | 'drawer'>('dialog')
+
+const useIsDrawer = () => React.useContext(DialogModeContext) === 'drawer'
+
+export function Dialog(props: React.ComponentProps<typeof DialogPrimitive.Root>) {
+  const isDesktop = useIsDesktop()
+
+  return (
+    <DialogModeContext.Provider value={isDesktop ? 'dialog' : 'drawer'}>
+      {isDesktop ? <DialogPrimitive.Root {...props} /> : <DrawerPrimitive.Root {...props} />}
+    </DialogModeContext.Provider>
+  )
+}
+
+export function DialogTrigger(props: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
+  return useIsDrawer() ? <DrawerPrimitive.Trigger {...props} /> : <DialogPrimitive.Trigger {...props} />
+}
+
+export function DialogClose(props: React.ComponentProps<typeof DialogPrimitive.Close>) {
+  return useIsDrawer() ? <DrawerPrimitive.Close {...props} /> : <DialogPrimitive.Close {...props} />
+}
+
+export function DialogPortal(props: React.ComponentProps<typeof DialogPrimitive.Portal>) {
+  return useIsDrawer() ? <DrawerPrimitive.Portal {...props} /> : <DialogPrimitive.Portal {...props} />
+}
 
 export function DialogOverlay({
   className,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
+  const isDrawer = useIsDrawer()
+  if (isDrawer) return <DrawerOverlay className={className} {...props} />
+
   return (
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
@@ -33,8 +69,18 @@ export function DialogContent({
   showCloseButton = true,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & { showCloseButton?: boolean }) {
+  const isDrawer = useIsDrawer()
+  // Swiping down and tapping the overlay close the drawer, so it skips the X button.
+  if (isDrawer) {
+    return (
+      <DrawerContent data-slot="dialog-content" className={className} {...props}>
+        {children}
+      </DrawerContent>
+    )
+  }
+
   return (
-    <DialogPortal>
+    <DialogPrimitive.Portal>
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
@@ -57,7 +103,7 @@ export function DialogContent({
           </DialogPrimitive.Close>
         ) : null}
       </DialogPrimitive.Content>
-    </DialogPortal>
+    </DialogPrimitive.Portal>
   )
 }
 
@@ -85,6 +131,9 @@ export function DialogTitle({
   className,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Title>) {
+  const isDrawer = useIsDrawer()
+  if (isDrawer) return <DrawerTitle data-slot="dialog-title" className={className} {...props} />
+
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
@@ -98,6 +147,11 @@ export function DialogDescription({
   className,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Description>) {
+  const isDrawer = useIsDrawer()
+  if (isDrawer) {
+    return <DrawerDescription data-slot="dialog-description" className={className} {...props} />
+  }
+
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
