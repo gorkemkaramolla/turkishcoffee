@@ -7,22 +7,31 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Default: Story = {
-  render: () => (
+  args: { richColors: true },
+  render: (args) => (
     <div className="flex flex-wrap gap-3">
-      <Button onClick={() => toast({ title: 'Scheduled', description: 'Friday at 10:00.' })}>
+      <Button onClick={() => toast('Scheduled', { description: 'Friday at 10:00.' })}>
         Default
       </Button>
-      <Button variant="success" onClick={() => toast.success({ title: 'Saved' })}>
+      <Button variant="success" onClick={() => toast.success('Saved')}>
         Success
       </Button>
       <Button
         variant="destructive"
-        onClick={() => toast.error({ title: 'Failed', description: 'Could not reach the server.' })}
+        onClick={() => toast.error('Failed', { description: 'Could not reach the server.' })}
       >
         Error
       </Button>
+      <Button
+        variant="outline"
+        onClick={() =>
+          toast('Message archived', { action: { label: 'Undo', onClick: () => {} } })
+        }
+      >
+        With action
+      </Button>
       {/* Mount <Toaster /> once near your app root. */}
-      <Toaster />
+      <Toaster {...args} />
     </div>
   ),
 }

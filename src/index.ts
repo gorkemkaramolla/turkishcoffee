@@ -137,18 +137,10 @@ export {
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './components/tabs'
 export { Textarea, type TextareaProps } from './components/textarea'
 export {
-  Toast,
   Toaster,
-  ToastTitle,
-  ToastDescription,
-  ToastAction,
-  ToastClose,
   toast,
-  dismissToast,
-  useToasts,
-  type ToastProps,
-  type ToastOptions,
-  type ToastRecord,
-  type ToastVariant,
+  useSonner,
+  type ExternalToast,
+  type ToasterProps,
 } from './components/toast'
 export { Tooltip, TooltipTrigger, TooltipContent } from './components/tooltip'
