@@ -17,6 +17,7 @@ const meta = { title: 'Components/Dialog', component: Dialog } satisfies Meta<ty
 export default meta
 type Story = StoryObj<typeof meta>
 
+/** Centered modal on `sm` and up; switch Storybook to a mobile viewport to see the vaul drawer. */
 export const Default: Story = {
   render: () => (
     <Dialog>
