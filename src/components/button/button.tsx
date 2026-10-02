@@ -45,8 +45,18 @@ export type ButtonProps = React.ComponentProps<'button'> &
   }
 
 /**
+ * A button. Variants: `default` | `secondary` | `destructive` | `success` |
+ * `outline` | `ghost` | `link`. Sizes: `sm` | `md` (default) | `lg` | `icon` —
+ * there is no `size="default"`. Use `asChild` to style a link as a button.
  * No "use client" needed: Radix's Slot is server-safe and this component holds
  * no state. Handlers come from the consumer's own client component.
+ *
+ * @example
+ * <Button variant="destructive" size="sm">Delete</Button>
+ *
+ * <Button asChild variant="outline">
+ *   <Link href="/settings">Settings</Link>
+ * </Button>
  */
 export function Button({
   className,

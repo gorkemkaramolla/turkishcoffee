@@ -6,8 +6,32 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '../../lib/cn'
 import { XIcon } from '../../lib/icons'
 
+/**
+ * Modal panel that slides in from an edge — navigation drawers, filters,
+ * detail views. For a centered modal use Dialog. SheetTitle is required for
+ * accessibility.
+ *
+ * @example
+ * <Sheet>
+ *   <SheetTrigger asChild>
+ *     <Button variant="outline">Filters</Button>
+ *   </SheetTrigger>
+ *   <SheetContent side="left">
+ *     <SheetHeader>
+ *       <SheetTitle>Filters</SheetTitle>
+ *       <SheetDescription>Narrow down the results.</SheetDescription>
+ *     </SheetHeader>
+ *     …
+ *     <SheetFooter>
+ *       <SheetClose asChild><Button>Apply</Button></SheetClose>
+ *     </SheetFooter>
+ *   </SheetContent>
+ * </Sheet>
+ */
 export const Sheet = SheetPrimitive.Root
+/** Opens the Sheet. Use `asChild` to make your own Button the trigger. */
 export const SheetTrigger = SheetPrimitive.Trigger
+/** Closes the Sheet. Use `asChild` to make your own Button close it. */
 export const SheetClose = SheetPrimitive.Close
 
 const sheetVariants = cva(
@@ -30,6 +54,10 @@ const sheetVariants = cva(
 export type SheetContentProps = React.ComponentProps<typeof SheetPrimitive.Content> &
   VariantProps<typeof sheetVariants>
 
+/**
+ * The panel. `side`: `top` | `right` (default) | `bottom` | `left`. Renders its
+ * own portal, overlay and close (×) button.
+ */
 export function SheetContent({ className, children, side, ...props }: SheetContentProps) {
   return (
     <SheetPrimitive.Portal>
@@ -52,18 +80,21 @@ export function SheetContent({ className, children, side, ...props }: SheetConte
   )
 }
 
+/** Stacks SheetTitle and SheetDescription. */
 export function SheetHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div data-slot="sheet-header" className={cn('flex flex-col gap-1.5 p-6', className)} {...props} />
   )
 }
 
+/** Action area pinned to the bottom of the panel. */
 export function SheetFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div data-slot="sheet-footer" className={cn('mt-auto flex flex-col gap-2 p-6', className)} {...props} />
   )
 }
 
+/** Required: names the sheet for screen readers. */
 export function SheetTitle({
   className,
   ...props
@@ -77,6 +108,7 @@ export function SheetTitle({
   )
 }
 
+/** Muted text under SheetTitle. */
 export function SheetDescription({
   className,
   ...props

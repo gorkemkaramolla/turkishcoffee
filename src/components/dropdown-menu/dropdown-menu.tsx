@@ -5,10 +5,30 @@ import { DropdownMenu as MenuPrimitive } from 'radix-ui'
 import { cn } from '../../lib/cn'
 import { CheckIcon, ChevronRightIcon } from '../../lib/icons'
 
+/**
+ * Menu of actions opened from a trigger. For choosing a form value use Select.
+ *
+ * @example
+ * <DropdownMenu>
+ *   <DropdownMenuTrigger asChild>
+ *     <Button variant="outline">Options</Button>
+ *   </DropdownMenuTrigger>
+ *   <DropdownMenuContent align="end">
+ *     <DropdownMenuLabel>Project</DropdownMenuLabel>
+ *     <DropdownMenuItem onSelect={rename}>Rename</DropdownMenuItem>
+ *     <DropdownMenuSeparator />
+ *     <DropdownMenuItem variant="destructive" onSelect={remove}>Delete</DropdownMenuItem>
+ *   </DropdownMenuContent>
+ * </DropdownMenu>
+ */
 export const DropdownMenu = MenuPrimitive.Root
+/** Opens the menu. Use `asChild` to make your own Button the trigger. */
 export const DropdownMenuTrigger = MenuPrimitive.Trigger
+/** Groups related items. */
 export const DropdownMenuGroup = MenuPrimitive.Group
+/** Wraps a DropdownMenuSubTrigger and DropdownMenuSubContent for a nested menu. */
 export const DropdownMenuSub = MenuPrimitive.Sub
+/** Holds DropdownMenuRadioItems; controlled with `value` + `onValueChange`. */
 export const DropdownMenuRadioGroup = MenuPrimitive.RadioGroup
 
 const surface = [
@@ -23,6 +43,7 @@ const item = [
   "[&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0",
 ]
 
+/** The menu panel; renders its own portal. */
 export function DropdownMenuContent({
   className,
   sideOffset = 4,
@@ -44,11 +65,16 @@ export function DropdownMenuContent({
   )
 }
 
+/**
+ * One action. Use `onSelect` (not `onClick`) to run it.
+ * `variant="destructive"` colours it for dangerous actions.
+ */
 export function DropdownMenuItem({
   className,
   variant = 'default',
   ...props
 }: React.ComponentProps<typeof MenuPrimitive.Item> & {
+  /** `destructive` colours the item for dangerous actions like Delete. */
   variant?: 'default' | 'destructive'
 }) {
   return (
@@ -65,6 +91,7 @@ export function DropdownMenuItem({
   )
 }
 
+/** A toggleable item; controlled with `checked` + `onCheckedChange`. */
 export function DropdownMenuCheckboxItem({
   className,
   children,
@@ -86,6 +113,7 @@ export function DropdownMenuCheckboxItem({
   )
 }
 
+/** One option inside a DropdownMenuRadioGroup. */
 export function DropdownMenuRadioItem({
   className,
   children,
@@ -107,6 +135,7 @@ export function DropdownMenuRadioItem({
   )
 }
 
+/** Non-interactive heading inside the menu. */
 export function DropdownMenuLabel({
   className,
   ...props
@@ -120,6 +149,7 @@ export function DropdownMenuLabel({
   )
 }
 
+/** Horizontal rule between groups of items. */
 export function DropdownMenuSeparator({
   className,
   ...props
@@ -133,6 +163,7 @@ export function DropdownMenuSeparator({
   )
 }
 
+/** Right-aligned keyboard hint inside an item, e.g. `⌘K`. Display only. */
 export function DropdownMenuShortcut({ className, ...props }: React.ComponentProps<'span'>) {
   return (
     <span
@@ -143,6 +174,7 @@ export function DropdownMenuShortcut({ className, ...props }: React.ComponentPro
   )
 }
 
+/** Item that opens a nested DropdownMenuSubContent. */
 export function DropdownMenuSubTrigger({
   className,
   children,
@@ -160,6 +192,7 @@ export function DropdownMenuSubTrigger({
   )
 }
 
+/** The nested menu panel. */
 export function DropdownMenuSubContent({
   className,
   ...props

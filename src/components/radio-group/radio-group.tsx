@@ -4,6 +4,22 @@ import type * as React from 'react'
 import { RadioGroup as RadioGroupPrimitive } from 'radix-ui'
 import { cn } from '../../lib/cn'
 
+/**
+ * One choice out of a few visible options. Controlled with `value` +
+ * `onValueChange`. For many options use Select or NativeSelect.
+ *
+ * @example
+ * <RadioGroup defaultValue="monthly">
+ *   <div className="flex items-center gap-2">
+ *     <RadioGroupItem value="monthly" id="monthly" />
+ *     <Label htmlFor="monthly">Monthly</Label>
+ *   </div>
+ *   <div className="flex items-center gap-2">
+ *     <RadioGroupItem value="yearly" id="yearly" />
+ *     <Label htmlFor="yearly">Yearly</Label>
+ *   </div>
+ * </RadioGroup>
+ */
 export function RadioGroup({
   className,
   ...props
@@ -17,6 +33,7 @@ export function RadioGroup({
   )
 }
 
+/** One option; needs a unique `value`. Pair with a Label via `id`/`htmlFor`. */
 export function RadioGroupItem({
   className,
   ...props

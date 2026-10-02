@@ -23,6 +23,14 @@ export const badgeVariants = cva(
 
 export type BadgeProps = React.ComponentProps<'span'> & VariantProps<typeof badgeVariants>
 
+/**
+ * Small inline label for a status or count. Variants: `default` | `secondary` |
+ * `destructive` | `success` | `warning` | `outline`. Not interactive — wrap it in a
+ * Button or link if it needs to be clickable.
+ *
+ * @example
+ * <Badge variant="success">Paid</Badge>
+ */
 export function Badge({ className, variant, ...props }: BadgeProps) {
   return (
     <span

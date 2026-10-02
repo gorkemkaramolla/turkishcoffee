@@ -12,6 +12,16 @@ export { toast, useSonner, type ExternalToast, type ToasterProps } from 'sonner'
  *
  * Colors come from the theme tokens, so it follows `.dark` without a `theme` prop.
  * Pass `richColors` to render `toast.success` / `toast.error` in solid token colors.
+ *
+ * @example
+ * // app/layout.tsx
+ * <body>
+ *   {children}
+ *   <Toaster />
+ * </body>
+ *
+ * // anywhere in a client component
+ * toast.success('Saved', { description: 'Your changes are live.' })
  */
 export function Toaster({ className, style, toastOptions, ...props }: ToasterProps) {
   return (

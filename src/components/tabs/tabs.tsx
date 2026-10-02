@@ -4,6 +4,20 @@ import type * as React from 'react'
 import { Tabs as TabsPrimitive } from 'radix-ui'
 import { cn } from '../../lib/cn'
 
+/**
+ * Switches between views in the same place. Uncontrolled with `defaultValue`,
+ * controlled with `value` + `onValueChange`.
+ *
+ * @example
+ * <Tabs defaultValue="account">
+ *   <TabsList>
+ *     <TabsTrigger value="account">Account</TabsTrigger>
+ *     <TabsTrigger value="password">Password</TabsTrigger>
+ *   </TabsList>
+ *   <TabsContent value="account">…</TabsContent>
+ *   <TabsContent value="password">…</TabsContent>
+ * </Tabs>
+ */
 export function Tabs({
   className,
   ...props
@@ -17,6 +31,7 @@ export function Tabs({
   )
 }
 
+/** The row of TabsTriggers. */
 export function TabsList({
   className,
   ...props
@@ -33,6 +48,7 @@ export function TabsList({
   )
 }
 
+/** Selects the TabsContent with the same `value`. */
 export function TabsTrigger({
   className,
   ...props
@@ -53,6 +69,7 @@ export function TabsTrigger({
   )
 }
 
+/** Panel shown while its `value` is selected. */
 export function TabsContent({
   className,
   ...props

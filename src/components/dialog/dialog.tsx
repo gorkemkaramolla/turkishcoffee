@@ -13,14 +13,35 @@ import {
   DrawerTitle,
 } from '../drawer/drawer'
 
-/**
- * A centered modal on `sm` screens and up, a vaul bottom drawer below. Every part
- * reads the mode from here, so the same markup works in both.
- */
 const DialogModeContext = React.createContext<'dialog' | 'drawer'>('dialog')
 
 const useIsDrawer = () => React.useContext(DialogModeContext) === 'drawer'
 
+/**
+ * Modal for a focused task (a form, details): centered on `sm` screens and up,
+ * a vaul bottom drawer below. Every part reads the mode from here, so the same
+ * markup works in both. Closes on outside click and Escape (and a swipe down on
+ * mobile). For confirming a destructive action use AlertDialog; for a panel
+ * sliding from an edge use Sheet. DialogTitle is required for accessibility.
+ *
+ * @example
+ * <Dialog>
+ *   <DialogTrigger asChild>
+ *     <Button>Edit profile</Button>
+ *   </DialogTrigger>
+ *   <DialogContent>
+ *     <DialogHeader>
+ *       <DialogTitle>Edit profile</DialogTitle>
+ *       <DialogDescription>Changes are saved when you click Save.</DialogDescription>
+ *     </DialogHeader>
+ *     …
+ *     <DialogFooter>
+ *       <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+ *       <Button type="submit">Save</Button>
+ *     </DialogFooter>
+ *   </DialogContent>
+ * </Dialog>
+ */
 export function Dialog(props: React.ComponentProps<typeof DialogPrimitive.Root>) {
   const isDesktop = useIsDesktop()
 
@@ -31,18 +52,22 @@ export function Dialog(props: React.ComponentProps<typeof DialogPrimitive.Root>)
   )
 }
 
+/** Opens the Dialog. Use `asChild` to make your own Button the trigger. */
 export function DialogTrigger(props: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
   return useIsDrawer() ? <DrawerPrimitive.Trigger {...props} /> : <DialogPrimitive.Trigger {...props} />
 }
 
+/** Closes the Dialog. Use `asChild` to make your own Button close it. */
 export function DialogClose(props: React.ComponentProps<typeof DialogPrimitive.Close>) {
   return useIsDrawer() ? <DrawerPrimitive.Close {...props} /> : <DialogPrimitive.Close {...props} />
 }
 
+/** Portal used by DialogContent. Rarely needed directly. */
 export function DialogPortal(props: React.ComponentProps<typeof DialogPrimitive.Portal>) {
   return useIsDrawer() ? <DrawerPrimitive.Portal {...props} /> : <DialogPrimitive.Portal {...props} />
 }
 
+/** Backdrop behind the Dialog. Already rendered by DialogContent. */
 export function DialogOverlay({
   className,
   ...props
@@ -63,12 +88,19 @@ export function DialogOverlay({
   )
 }
 
+/**
+ * The dialog panel. Renders its own portal, overlay and a close (×) button
+ * (a bottom drawer without the × on mobile); pass `showCloseButton={false}` to drop the ×. Widen with `className="sm:max-w-2xl"`.
+ */
 export function DialogContent({
   className,
   children,
   showCloseButton = true,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Content> & { showCloseButton?: boolean }) {
+}: React.ComponentProps<typeof DialogPrimitive.Content> & {
+  /** Render the × button in the top-right corner (desktop only). Defaults to true. */
+  showCloseButton?: boolean
+}) {
   const isDrawer = useIsDrawer()
   // Swiping down and tapping the overlay close the drawer, so it skips the X button.
   if (isDrawer) {
@@ -107,6 +139,7 @@ export function DialogContent({
   )
 }
 
+/** Stacks DialogTitle and DialogDescription. */
 export function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -117,6 +150,7 @@ export function DialogHeader({ className, ...props }: React.ComponentProps<'div'
   )
 }
 
+/** Action row; stacks on mobile, right-aligns from `sm`. */
 export function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -127,6 +161,7 @@ export function DialogFooter({ className, ...props }: React.ComponentProps<'div'
   )
 }
 
+/** Required: names the dialog for screen readers. */
 export function DialogTitle({
   className,
   ...props
@@ -143,6 +178,7 @@ export function DialogTitle({
   )
 }
 
+/** Muted text under DialogTitle. */
 export function DialogDescription({
   className,
   ...props

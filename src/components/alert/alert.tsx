@@ -25,6 +25,18 @@ export const alertVariants = cva(
 
 export type AlertProps = React.ComponentProps<'div'> & VariantProps<typeof alertVariants>
 
+/**
+ * Inline, non-dismissable message inside the page flow (`role="alert"`).
+ * Variants: `default` | `destructive` | `success` | `warning`. Put an icon as the
+ * first child and it gets its own column. For a transient message use `toast()`;
+ * for a blocking question use AlertDialog.
+ *
+ * @example
+ * <Alert variant="warning">
+ *   <AlertTitle>Trial ends soon</AlertTitle>
+ *   <AlertDescription>Add a payment method to keep your projects.</AlertDescription>
+ * </Alert>
+ */
 export function Alert({ className, variant, ...props }: AlertProps) {
   return (
     <div
@@ -36,6 +48,7 @@ export function Alert({ className, variant, ...props }: AlertProps) {
   )
 }
 
+/** Heading line of an Alert. */
 export function AlertTitle({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -47,8 +60,8 @@ export function AlertTitle({ className, ...props }: React.ComponentProps<'div'>)
 }
 
 /**
- * Inherits the variant colour at 90% rather than always going muted, so a
- * destructive alert stays readable as one block of colour.
+ * Body text of an Alert. Inherits the variant colour at 80% rather than
+ * always going muted, so a destructive alert stays readable as one block of colour.
  */
 export function AlertDescription({ className, ...props }: React.ComponentProps<'div'>) {
   return (

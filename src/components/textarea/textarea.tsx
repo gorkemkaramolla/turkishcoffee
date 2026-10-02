@@ -3,6 +3,13 @@ import { cn } from '../../lib/cn'
 
 export type TextareaProps = React.ComponentProps<'textarea'>
 
+/**
+ * Multi-line text field; grows with its content (`field-sizing-content`) from a
+ * minimum of `min-h-16`. Server-renderable.
+ *
+ * @example
+ * <Textarea placeholder="Leave a comment" rows={4} />
+ */
 export function Textarea({ className, ...props }: TextareaProps) {
   return (
     <textarea

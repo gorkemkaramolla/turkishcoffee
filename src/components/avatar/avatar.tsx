@@ -4,6 +4,16 @@ import type * as React from 'react'
 import { Avatar as AvatarPrimitive } from 'radix-ui'
 import { cn } from '../../lib/cn'
 
+/**
+ * Round user image with a fallback while it loads or when it fails.
+ * Defaults to `size-8`; resize with `className`.
+ *
+ * @example
+ * <Avatar>
+ *   <AvatarImage src={user.avatarUrl} alt={user.name} />
+ *   <AvatarFallback>GK</AvatarFallback>
+ * </Avatar>
+ */
 export function Avatar({
   className,
   ...props
@@ -17,6 +27,7 @@ export function Avatar({
   )
 }
 
+/** The image; hidden until it has loaded. */
 export function AvatarImage({
   className,
   ...props
@@ -30,6 +41,7 @@ export function AvatarImage({
   )
 }
 
+/** Shown while AvatarImage loads or when it fails — usually initials. */
 export function AvatarFallback({
   className,
   ...props

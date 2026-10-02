@@ -5,10 +5,37 @@ import { AlertDialog as AlertDialogPrimitive } from 'radix-ui'
 import { cn } from '../../lib/cn'
 import { buttonVariants } from '../button'
 
+/**
+ * Modal that interrupts the user to confirm a consequential action. Unlike
+ * Dialog it does not close on outside click; the user must pick Action or Cancel.
+ * AlertDialogTitle is required for accessibility.
+ *
+ * @example
+ * <AlertDialog>
+ *   <AlertDialogTrigger asChild>
+ *     <Button variant="destructive">Delete project</Button>
+ *   </AlertDialogTrigger>
+ *   <AlertDialogContent>
+ *     <AlertDialogHeader>
+ *       <AlertDialogTitle>Delete this project?</AlertDialogTitle>
+ *       <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
+ *     </AlertDialogHeader>
+ *     <AlertDialogFooter>
+ *       <AlertDialogCancel>Cancel</AlertDialogCancel>
+ *       <AlertDialogAction className={buttonVariants({ variant: 'destructive' })} onClick={remove}>
+ *         Delete
+ *       </AlertDialogAction>
+ *     </AlertDialogFooter>
+ *   </AlertDialogContent>
+ * </AlertDialog>
+ */
 export const AlertDialog = AlertDialogPrimitive.Root
+/** Opens the AlertDialog. Use `asChild` to make your own Button the trigger. */
 export const AlertDialogTrigger = AlertDialogPrimitive.Trigger
+/** Portal used by AlertDialogContent. Rarely needed directly. */
 export const AlertDialogPortal = AlertDialogPrimitive.Portal
 
+/** Backdrop behind the AlertDialog. Already rendered by AlertDialogContent. */
 export function AlertDialogOverlay({
   className,
   ...props
@@ -26,6 +53,7 @@ export function AlertDialogOverlay({
   )
 }
 
+/** The dialog panel. Renders its own portal and overlay. */
 export function AlertDialogContent({
   className,
   ...props
@@ -47,6 +75,7 @@ export function AlertDialogContent({
   )
 }
 
+/** Stacks AlertDialogTitle and AlertDialogDescription. */
 export function AlertDialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -57,6 +86,7 @@ export function AlertDialogHeader({ className, ...props }: React.ComponentProps<
   )
 }
 
+/** Holds AlertDialogCancel and AlertDialogAction; stacks on mobile, right-aligns from `sm`. */
 export function AlertDialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -67,6 +97,7 @@ export function AlertDialogFooter({ className, ...props }: React.ComponentProps<
   )
 }
 
+/** Required: names the dialog for screen readers. */
 export function AlertDialogTitle({
   className,
   ...props
@@ -80,6 +111,7 @@ export function AlertDialogTitle({
   )
 }
 
+/** Explains the consequence of the action. */
 export function AlertDialogDescription({
   className,
   ...props
@@ -94,8 +126,10 @@ export function AlertDialogDescription({
 }
 
 /**
+ * The confirming button; closes the dialog. Styled as a default Button.
  * Action and Cancel are pre-styled with buttonVariants: an alert dialog is a
- * decision, so the two choices should never drift apart visually.
+ * decision, so the two choices should never drift apart visually. For a
+ * destructive action pass `className={buttonVariants({ variant: 'destructive' })}`.
  */
 export function AlertDialogAction({
   className,
@@ -110,6 +144,7 @@ export function AlertDialogAction({
   )
 }
 
+/** The dismissing button; closes the dialog. Styled as an outline Button. */
 export function AlertDialogCancel({
   className,
   ...props

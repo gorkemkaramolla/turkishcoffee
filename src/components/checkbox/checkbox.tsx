@@ -7,6 +7,17 @@ import { CheckIcon } from '../../lib/icons'
 
 export type CheckboxProps = React.ComponentProps<typeof CheckboxPrimitive.Root>
 
+/**
+ * A checkbox. Controlled with `checked` + `onCheckedChange` (not `onChange`);
+ * `checked` may also be `'indeterminate'`. Pair with a Label via `id`/`htmlFor`.
+ * For an on/off setting that applies immediately, prefer Switch.
+ *
+ * @example
+ * <div className="flex items-center gap-2">
+ *   <Checkbox id="terms" checked={accepted} onCheckedChange={(v) => setAccepted(v === true)} />
+ *   <Label htmlFor="terms">Accept terms</Label>
+ * </div>
+ */
 export function Checkbox({ className, ...props }: CheckboxProps) {
   return (
     <CheckboxPrimitive.Root

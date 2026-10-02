@@ -6,6 +6,10 @@ import { cn } from '../../lib/cn'
 
 export type LabelProps = React.ComponentProps<typeof LabelPrimitive.Root>
 
+/**
+ * Accessible label for a form control; link it with `htmlFor`. Inside a
+ * `turkishcoffee/form` field use FormLabel instead, which wires `htmlFor` for you.
+ */
 export function Label({ className, ...props }: LabelProps) {
   return (
     <LabelPrimitive.Root

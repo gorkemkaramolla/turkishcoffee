@@ -5,16 +5,41 @@ import { Select as SelectPrimitive } from 'radix-ui'
 import { cn } from '../../lib/cn'
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from '../../lib/icons'
 
+/**
+ * Custom-styled dropdown for picking one value. Controlled with `value` +
+ * `onValueChange`. Needs a client boundary; inside server components or long
+ * mobile forms prefer NativeSelect.
+ *
+ * @example
+ * <Select value={plan} onValueChange={setPlan}>
+ *   <SelectTrigger className="w-48">
+ *     <SelectValue placeholder="Choose a plan" />
+ *   </SelectTrigger>
+ *   <SelectContent>
+ *     <SelectItem value="free">Free</SelectItem>
+ *     <SelectItem value="pro">Pro</SelectItem>
+ *   </SelectContent>
+ * </Select>
+ */
 export const Select = SelectPrimitive.Root
+/** Groups SelectItems under a SelectLabel. */
 export const SelectGroup = SelectPrimitive.Group
+/** Shows the selected item's text inside SelectTrigger, or `placeholder`. */
 export const SelectValue = SelectPrimitive.Value
 
+/**
+ * The button that opens the Select. `size`: `sm` | `md` (default). Sized to
+ * its content (`w-fit`); pass `className="w-full"` to fill the row.
+ */
 export function SelectTrigger({
   className,
   size = 'md',
   children,
   ...props
-}: React.ComponentProps<typeof SelectPrimitive.Trigger> & { size?: 'sm' | 'md' }) {
+}: React.ComponentProps<typeof SelectPrimitive.Trigger> & {
+  /** Height: `sm` (h-8) or `md` (h-9, default) — matches Input and NativeSelect. */
+  size?: 'sm' | 'md'
+}) {
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
@@ -39,6 +64,7 @@ export function SelectTrigger({
   )
 }
 
+/** The options panel; renders its own portal and scroll buttons. */
 export function SelectContent({
   className,
   children,
@@ -74,6 +100,7 @@ export function SelectContent({
   )
 }
 
+/** One option; `value` must be a non-empty string. */
 export function SelectItem({
   className,
   children,
@@ -100,6 +127,7 @@ export function SelectItem({
   )
 }
 
+/** Heading for a SelectGroup. */
 export function SelectLabel({
   className,
   ...props
@@ -113,6 +141,7 @@ export function SelectLabel({
   )
 }
 
+/** Horizontal rule between groups. */
 export function SelectSeparator({
   className,
   ...props

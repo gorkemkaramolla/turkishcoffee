@@ -3,13 +3,21 @@ import { cn } from '../../lib/cn'
 import { ChevronDownIcon } from '../../lib/icons'
 
 export type NativeSelectProps = Omit<React.ComponentProps<'select'>, 'size'> & {
+  /** Height: `sm` (h-8) or `md` (h-9, default). Replaces the HTML `size` attribute. */
   size?: 'sm' | 'md'
 }
 
 /**
  * The platform <select>, styled to match Input. Unlike the Radix-based Select
  * it needs no client boundary and keeps the OS picker on mobile — prefer it
- * inside long forms and inside server components.
+ * inside long forms and inside server components. `size`: `sm` | `md` (default).
+ * `className` goes on the wrapper div (use it for width); other props reach the `<select>`.
+ *
+ * @example
+ * <NativeSelect name="country" defaultValue="tr">
+ *   <option value="tr">Türkiye</option>
+ *   <option value="de">Germany</option>
+ * </NativeSelect>
  */
 export function NativeSelect({ className, size = 'md', ...props }: NativeSelectProps) {
   return (

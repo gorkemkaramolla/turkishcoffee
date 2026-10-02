@@ -5,8 +5,21 @@ import { Accordion as AccordionPrimitive } from 'radix-ui'
 import { cn } from '../../lib/cn'
 import { ChevronDownIcon } from '../../lib/icons'
 
+/**
+ * Vertically stacked sections that expand one (`type="single"`) or several
+ * (`type="multiple"`) at a time. For a single show/hide region use Collapsible.
+ *
+ * @example
+ * <Accordion type="single" collapsible>
+ *   <AccordionItem value="shipping">
+ *     <AccordionTrigger>Shipping</AccordionTrigger>
+ *     <AccordionContent>Ships in 2–3 days.</AccordionContent>
+ *   </AccordionItem>
+ * </Accordion>
+ */
 export const Accordion = AccordionPrimitive.Root
 
+/** One section of an Accordion. `value` must be unique within the Accordion. */
 export function AccordionItem({
   className,
   ...props
@@ -20,6 +33,7 @@ export function AccordionItem({
   )
 }
 
+/** The clickable heading of an AccordionItem; renders its own chevron. */
 export function AccordionTrigger({
   className,
   children,
@@ -45,6 +59,10 @@ export function AccordionTrigger({
   )
 }
 
+/**
+ * The collapsible body of an AccordionItem. `className` lands on an inner
+ * padding wrapper, not on the animated element, so the height animation stays intact.
+ */
 export function AccordionContent({
   className,
   children,

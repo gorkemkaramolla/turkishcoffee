@@ -4,7 +4,11 @@ import { cn } from '../../lib/cn'
 
 export type SeparatorProps = React.ComponentProps<typeof SeparatorPrimitive.Root>
 
-/** Server-renderable: Radix Separator ships no "use client". */
+/**
+ * Thin horizontal or vertical (`orientation="vertical"`) rule.
+ * Server-renderable: Radix Separator ships no "use client". Decorative by
+ * default; pass `decorative={false}` when it carries meaning.
+ */
 export function Separator({
   className,
   orientation = 'horizontal',

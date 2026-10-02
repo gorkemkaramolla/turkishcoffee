@@ -15,9 +15,31 @@ import { cn } from '../../lib/cn'
 import { Label } from '../label/label'
 
 /**
- * `react-hook-form` is an OPTIONAL peer, so this lives behind its own entry
- * point (`turkishcoffee/form`) and never loads for projects that only
- * import the root barrel.
+ * react-hook-form's FormProvider. Imported from `turkishcoffee/form`, not the
+ * root: `react-hook-form` is an OPTIONAL peer, so this lives behind its own entry
+ * point and never loads for projects that only import the root barrel.
+ *
+ * @example
+ * const form = useForm<Values>({ defaultValues: { email: '' } })
+ *
+ * <Form {...form}>
+ *   <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+ *     <FormField
+ *       control={form.control}
+ *       name="email"
+ *       rules={{ required: 'Email is required' }}
+ *       render={({ field }) => (
+ *         <FormItem>
+ *           <FormLabel>Email</FormLabel>
+ *           <FormControl><Input type="email" {...field} /></FormControl>
+ *           <FormDescription>We never share it.</FormDescription>
+ *           <FormMessage />
+ *         </FormItem>
+ *       )}
+ *     />
+ *     <Button type="submit">Save</Button>
+ *   </form>
+ * </Form>
  */
 export const Form = FormProvider
 
@@ -27,6 +49,7 @@ const FieldContext = createContext<FieldContextValue | null>(null)
 type ItemContextValue = { id: string }
 const ItemContext = createContext<ItemContextValue | null>(null)
 
+/** Connects one field to the form: a react-hook-form Controller plus the context the Form* parts read. */
 export function FormField<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
@@ -38,6 +61,7 @@ export function FormField<
   )
 }
 
+/** Ids and error state for the current field. Must be called inside FormField and FormItem. */
 export function useFormField() {
   const field = useContext(FieldContext)
   const item = useContext(ItemContext)
@@ -64,6 +88,7 @@ export function useFormField() {
   }
 }
 
+/** Wraps one field's label, control, description and message; generates their shared id. */
 export function FormItem({ className, ...props }: React.ComponentProps<'div'>) {
   const id = useId()
   return (
@@ -77,6 +102,7 @@ export function FormItem({ className, ...props }: React.ComponentProps<'div'>) {
   )
 }
 
+/** Label wired to the field's control; turns destructive on error. */
 export function FormLabel({ className, ...props }: React.ComponentProps<typeof Label>) {
   const { error, formItemId } = useFormField()
   return (
@@ -111,6 +137,7 @@ export function FormControl({
   )
 }
 
+/** Helper text under the control. */
 export function FormDescription({ className, ...props }: React.ComponentProps<'p'>) {
   const { formDescriptionId } = useFormField()
   return (

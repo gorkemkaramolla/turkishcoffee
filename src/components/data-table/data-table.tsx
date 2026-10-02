@@ -26,9 +26,10 @@ import {
 import { ChevronsUpDownIcon } from '../../lib/icons'
 
 /**
- * Sorting + client pagination. `@tanstack/react-table` is an OPTIONAL peer, so
- * this lives behind its own entry point (`turkishcoffee/data-table`) and
- * never loads for projects that only import the root barrel.
+ * The TanStack Table v9 feature set DataTable runs with (sorting + client
+ * pagination). `@tanstack/react-table` is an OPTIONAL peer, so this lives behind its
+ * own entry point (`turkishcoffee/data-table`) and never loads for projects that
+ * only import the root barrel.
  */
 export const dataTableFeatures = tableFeatures({
   rowSortingFeature,
@@ -37,18 +38,42 @@ export const dataTableFeatures = tableFeatures({
   paginatedRowModel: createPaginatedRowModel(),
 })
 
-/** Column definitions for DataTable — carries the feature set for you. */
+/**
+ * Column definitions for DataTable — carries the feature set for you. This is
+ * TanStack Table v9: type columns as `DataTableColumn<Row>[]`, not v8's
+ * `ColumnDef<Row>` or `createColumnHelper`.
+ */
 export type DataTableColumn<TData extends RowData> = ColumnDef<typeof dataTableFeatures, TData>
 
 export type DataTableProps<TData extends RowData> = {
+  /** TanStack Table v9 column definitions: `DataTableColumn<Row>[]`. */
   columns: Array<DataTableColumn<TData>>
   data: TData[]
   /** Rows per page. Omit to render every row with no pagination controls. */
   pageSize?: number
+  /** Shown in place of rows when `data` is empty. Defaults to "No results." */
   emptyMessage?: React.ReactNode
+  /** Applied to the outer wrapper (table + pagination row). */
   className?: string
 }
 
+/**
+ * Table with click-to-sort headers and optional client-side pagination, over
+ * TanStack Table v9. Import from `turkishcoffee/data-table`. For a static table use
+ * the root `Table` primitives instead.
+ *
+ * @example
+ * const columns: DataTableColumn<Payment>[] = [
+ *   { accessorKey: 'email', header: 'Email' },
+ *   {
+ *     accessorKey: 'amount',
+ *     header: 'Amount',
+ *     cell: (info) => `$${info.getValue<number>().toFixed(2)}`,
+ *   },
+ * ]
+ *
+ * <DataTable columns={columns} data={payments} pageSize={10} emptyMessage="No payments." />
+ */
 export function DataTable<TData extends RowData>({
   columns,
   data,

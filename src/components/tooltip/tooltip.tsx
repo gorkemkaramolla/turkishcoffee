@@ -4,9 +4,22 @@ import type * as React from 'react'
 import { Tooltip as TooltipPrimitive } from 'radix-ui'
 import { cn } from '../../lib/cn'
 
+/** The element the Tooltip describes. Use `asChild` with a Button. */
 export const TooltipTrigger = TooltipPrimitive.Trigger
 
-/** Self-providing: no need to wrap your app in a TooltipProvider. */
+/**
+ * Short text hint shown on hover and keyboard focus. Self-providing: no need
+ * to wrap your app in a TooltipProvider (there is none to import). Not shown on
+ * touch devices — never put essential information in it.
+ *
+ * @example
+ * <Tooltip>
+ *   <TooltipTrigger asChild>
+ *     <Button size="icon" variant="ghost" aria-label="Copy"><CopyIcon /></Button>
+ *   </TooltipTrigger>
+ *   <TooltipContent>Copy to clipboard</TooltipContent>
+ * </Tooltip>
+ */
 export function Tooltip({
   delayDuration = 200,
   ...props
@@ -18,6 +31,7 @@ export function Tooltip({
   )
 }
 
+/** The hint bubble; renders its own portal and arrow. */
 export function TooltipContent({
   className,
   sideOffset = 4,

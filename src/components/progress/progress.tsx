@@ -6,6 +6,13 @@ import { cn } from '../../lib/cn'
 
 export type ProgressProps = React.ComponentProps<typeof ProgressPrimitive.Root>
 
+/**
+ * Horizontal bar for a known completion percentage (`value`, 0–100). For
+ * unknown durations use Spinner or Skeleton.
+ *
+ * @example
+ * <Progress value={uploadPercent} aria-label="Upload progress" />
+ */
 export function Progress({ className, value, ...props }: ProgressProps) {
   return (
     <ProgressPrimitive.Root
