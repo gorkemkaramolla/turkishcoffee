@@ -10,9 +10,6 @@ export type SwitchProps = React.ComponentProps<typeof SwitchPrimitive.Root>
  * On/off toggle for a setting that takes effect immediately. Controlled with
  * `checked` + `onCheckedChange` (not `onChange`). For a choice submitted later
  * with a form, prefer Checkbox.
- * Needs "use client": Radix Switch holds internal state and event handlers.
- * tsdown's unbundle mode keeps this directive on this file alone, so importing
- * Card or Badge does not drag a client boundary into a server component.
  *
  * @example
  * <div className="flex items-center gap-2">
@@ -21,6 +18,9 @@ export type SwitchProps = React.ComponentProps<typeof SwitchPrimitive.Root>
  * </div>
  */
 export function Switch({ className, ...props }: SwitchProps) {
+  // Needs "use client": Radix Switch holds internal state and event handlers.
+  // tsdown's unbundle mode keeps this directive on this file alone, so importing
+  // Card or Badge does not drag a client boundary into a server component.
   return (
     <SwitchPrimitive.Root
       data-slot="switch"

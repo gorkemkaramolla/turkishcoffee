@@ -36,6 +36,7 @@ export function InputGroup({ className, ...props }: React.ComponentProps<'div'>)
   )
 }
 
+/** InputGroupAddon classes as a function. */
 export const inputGroupAddonVariants = cva(
   'flex shrink-0 items-center gap-2 text-sm text-muted-foreground select-none [&>svg:not([class*=size-])]:size-4',
   {

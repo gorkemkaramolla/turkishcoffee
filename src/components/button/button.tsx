@@ -3,6 +3,7 @@ import { Slot } from 'radix-ui'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '../../lib/cn'
 
+/** Button classes as a function — style a non-Button element (e.g. a Radix trigger) like a Button. */
 export const buttonVariants = cva(
   [
     "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap outline-none transition-all",
@@ -48,8 +49,7 @@ export type ButtonProps = React.ComponentProps<'button'> &
  * A button. Variants: `default` | `secondary` | `destructive` | `success` |
  * `outline` | `ghost` | `link`. Sizes: `sm` | `md` (default) | `lg` | `icon` —
  * there is no `size="default"`. Use `asChild` to style a link as a button.
- * No "use client" needed: Radix's Slot is server-safe and this component holds
- * no state. Handlers come from the consumer's own client component.
+ * Server-renderable; handlers come from your own client component.
  *
  * @example
  * <Button variant="destructive" size="sm">Delete</Button>
@@ -65,6 +65,8 @@ export function Button({
   asChild = false,
   ...props
 }: ButtonProps) {
+  // No "use client" needed: Radix's Slot is server-safe and this component
+  // holds no state.
   const Comp = asChild ? Slot.Root : 'button'
 
   return (

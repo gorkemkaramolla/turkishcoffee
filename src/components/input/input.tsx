@@ -5,8 +5,7 @@ export type InputProps = React.ComponentProps<'input'>
 
 /**
  * Single-line text field; a styled `<input>` that forwards every prop.
- * No "use client": a plain input that forwards props is server-renderable;
- * handlers like onChange come from the consumer's own client component.
+ * Server-renderable; handlers like onChange come from your own client component.
  * For an icon, prefix or inline button inside the field use InputGroup.
  *
  * @example

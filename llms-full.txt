@@ -1,0 +1,1413 @@
+# turkishcoffee — guide for AI agents
+
+React 19 component library: Tailwind v4, Radix primitives, `cva` variants, `cn()`
+class merging, ESM-only. It is **shaped like shadcn/ui but it is not shadcn**: it
+is an installed package (not copied source), and a few APIs differ. Read the
+"Differences from shadcn/ui" section before writing code; most mistakes come
+from assuming shadcn's API.
+
+Per-component docs: `docs/<component>.md` next to this file
+(`node_modules/turkishcoffee/docs/` in an installed project). Every export also
+carries JSDoc with an example — hover or go to definition.
+
+## Setup
+
+The package ships Tailwind class strings, not compiled CSS. The app's global
+stylesheet (e.g. `app/globals.css`) must contain all three lines:
+
+```css
+@import "tailwindcss";
+@import "turkishcoffee/theme.css";
+@source "../node_modules/turkishcoffee/dist";
+```
+
+- **`@source` is required.** Without it every component renders unstyled, with
+  no error or warning. If components look unstyled, check this line first.
+- The `@source` path is relative to the CSS file. In pnpm or monorepos
+  `node_modules` may be symlinked; point it at the real path if styles are missing.
+- Peers: `react@^19`, `react-dom@^19`, `tailwindcss@^4`. Do not install
+  `tailwindcss-animate`, `tw-animate-css`, `lucide-react` or `sonner` for this
+  library — it needs none of them.
+- Dark mode is class-based: `<html class="dark">`.
+
+## Imports
+
+| What | Import from |
+|---|---|
+| All components, `cn`, `useDisclosure`, `useMediaQuery`, `toast` | `turkishcoffee` |
+| `Form`, `FormField`, `FormItem`, `FormLabel`, `FormControl`, `FormDescription`, `FormMessage`, `useFormField` | `turkishcoffee/form` (needs `react-hook-form`) |
+| `DataTable`, `DataTableColumn`, `dataTableFeatures` | `turkishcoffee/data-table` (needs `@tanstack/react-table` v9) |
+| Theme tokens and animations | `turkishcoffee/theme.css` (CSS only) |
+
+There are no per-component paths like `turkishcoffee/button` and no
+`@/components/ui/*` files — never generate those imports.
+
+## Differences from shadcn/ui
+
+| shadcn habit | turkishcoffee |
+|---|---|
+| `<Button size="default">` | `size="md"` (sizes: `sm` · `md` · `lg` · `icon`). Button also has `variant="success"`. |
+| `toast("Saved")` / `toast.success("Saved")` (sonner) | `toast({ title: 'Saved' })`, `toast.success({ title })`, `toast.error({ title, description })`. Always an object. No `toast.info` / `toast.warning`. |
+| `<Toaster />` from `sonner`, or a `useToast()` hook | `import { Toaster, toast } from 'turkishcoffee'`; mount `<Toaster />` once at the app root. No `useToast`. |
+| `<TooltipProvider>` around the app | Not needed and not exported: each `Tooltip` provides itself. |
+| `import { Form } from '@/components/ui/form'` | `import { Form, … } from 'turkishcoffee/form'` — not from the root. |
+| DataTable built by hand with `ColumnDef` / `createColumnHelper` (TanStack v8) | `import { DataTable, type DataTableColumn } from 'turkishcoffee/data-table'`; columns are `DataTableColumn<Row>[]` (TanStack v9). Sorting and `pageSize` pagination are built in. |
+| `lucide-react` icons inside components | Components draw their own icons. Pass any icon element where a `ReactNode` is accepted (`EmptyState icon`, inside `Button`). |
+| `tailwindcss-animate` classes (`animate-in`, `fade-in-0`) | Animations are `animate-ui-*` tokens from `theme.css`, e.g. `animate-ui-fade-in`. Retime by redeclaring `--animate-ui-*`. |
+| `<Alert variant="warning">` missing | `Alert` and `Badge` have `success` and `warning` variants; `Button` and `Toast` have `success`. |
+| `<AlertDialogAction>` is plain | `AlertDialogAction` is styled as a default Button and `AlertDialogCancel` as outline. For a destructive confirm: `className={buttonVariants({ variant: 'destructive' })}`. |
+
+## Rules
+
+- **Compose sub-parts**, don't look for props: `<Card><CardHeader><CardTitle>`,
+  not `<Card title="…">`. Every component's parts are listed in its doc.
+- **`className` always wins.** Components merge with `cn()` (tailwind-merge), so
+  `className="px-8"` overrides the built-in padding. Use `cn()` from
+  `turkishcoffee` in your own components too.
+- **Links:** use `asChild` on `Button`, `BreadcrumbLink`, and the `*Trigger` /
+  `*Close` parts: `<Button asChild><Link href="/x">Go</Link></Button>`.
+  `PaginationLink` takes `href` directly and does not support `asChild`.
+- **Colours come from tokens**, never hex or the default palette:
+  `bg-primary`, `text-muted-foreground`, `border-border`, `bg-destructive`,
+  `text-success`, `bg-warning`. Full list: `background`, `foreground`, `card`,
+  `popover`, `primary`, `secondary`, `muted`, `accent`, `destructive`, `success`,
+  `warning` (each with `-foreground`), plus `border`, `input`, `ring`.
+- **Server vs client:** components marked "Client component" in their doc ship
+  `"use client"`. They can be imported from a server component as-is; your event
+  handlers still need to live in a client component.
+- **Dialog, AlertDialog and Sheet need their Title** (`DialogTitle`, …) for
+  accessibility; Radix warns at runtime without it. Radix event props apply:
+  `onOpenChange`, `onCheckedChange`, `onValueChange`, `onSelect` on menu items.
+- **Choosing between look-alikes:**
+  - Dialog (centered task) · AlertDialog (confirm a consequential action) · Sheet (panel from an edge)
+  - Popover (click, interactive) · Tooltip (hover, short text) · HoverCard (hover, rich preview)
+  - Select (custom, client) · NativeSelect (platform picker, server-renderable, better on mobile)
+  - Table (static markup) · DataTable (sorting + pagination)
+  - Checkbox (submitted with a form) · Switch (applies immediately)
+  - Alert (inline, persistent) · `toast()` (transient)
+  - Accordion (several sections) · Collapsible (one region)
+  - Spinner (unknown duration) · Progress (known percentage) · Skeleton (content placeholder)
+- **Hooks:** `useDisclosure()` returns `{ open, setOpen, onOpen, onClose, onToggle }`
+  for controlled dialogs and sheets; `useMediaQuery('(min-width: 768px)')` is
+  SSR-safe (false on the server).
+
+## Components
+
+<!-- components:start -->
+- [Accordion](docs/accordion.md) · client — Vertically stacked sections that expand one (`type="single"`) or several (`type="multiple"`) at a time.
+- [Alert](docs/alert.md) · server — Inline, non-dismissable message inside the page flow (`role="alert"`).
+- [AlertDialog](docs/alert-dialog.md) · client — Modal that interrupts the user to confirm a consequential action.
+- [AspectRatio](docs/aspect-ratio.md) · server — Constrains its child (usually an image or video) to `ratio` (width / height).
+- [Avatar](docs/avatar.md) · client — Round user image with a fallback while it loads or when it fails.
+- [Badge](docs/badge.md) · server — Small inline label for a status or count.
+- [Breadcrumb](docs/breadcrumb.md) · server — Trail of links to the current page.
+- [Button](docs/button.md) · server — A button.
+- [Card](docs/card.md) · server — Bordered surface that groups related content.
+- [Checkbox](docs/checkbox.md) · client — A checkbox.
+- [Collapsible](docs/collapsible.md) · client — A single region the user can show and hide.
+- [DataTable](docs/data-table.md) · client · `turkishcoffee/data-table` — Table with click-to-sort headers and optional client-side pagination, over TanStack Table v9.
+- [Dialog](docs/dialog.md) · client — Centered modal for a focused task (a form, details).
+- [DropdownMenu](docs/dropdown-menu.md) · client — Menu of actions opened from a trigger.
+- [EmptyState](docs/empty-state.md) · server — Placeholder for a list or page that has no content yet: icon, title, description and a call to action.
+- [Form](docs/form.md) · client · `turkishcoffee/form` — react-hook-form's FormProvider.
+- [HoverCard](docs/hover-card.md) · client — Rich preview shown when a pointer hovers a link (e.g.
+- [Input](docs/input.md) · server — Single-line text field; a styled `<input>` that forwards every prop.
+- [InputGroup](docs/input-group.md) · server — A field that combines a control with icons, text or buttons.
+- [Label](docs/label.md) · client — Accessible label for a form control; link it with `htmlFor`.
+- [NativeSelect](docs/native-select.md) · server — The platform <select>, styled to match Input.
+- [Pagination](docs/pagination.md) · server — Page navigation built from plain anchors, so it works with any router: pass `href` to each link.
+- [Popover](docs/popover.md) · client — Floating panel opened by clicking a trigger; for small forms, pickers and extra details.
+- [Progress](docs/progress.md) · client — Horizontal bar for a known completion percentage (`value`, 0–100).
+- [RadioGroup](docs/radio-group.md) · client — One choice out of a few visible options.
+- [Select](docs/select.md) · client — Custom-styled dropdown for picking one value.
+- [Separator](docs/separator.md) · server — Thin horizontal or vertical (`orientation="vertical"`) rule.
+- [Sheet](docs/sheet.md) · client — Modal panel that slides in from an edge — navigation drawers, filters, detail views.
+- [Skeleton](docs/skeleton.md) · server — Pulsing placeholder in the shape of content that is still loading.
+- [Spinner](docs/spinner.md) · server — Indeterminate loading indicator; `size-4`, inherits text colour.
+- [Switch](docs/switch.md) · client — On/off toggle for a setting that takes effect immediately.
+- [Table](docs/table.md) · server — Plain styled table primitives — no data library, server-renderable; wraps the table in a horizontally scrolling container.
+- [Tabs](docs/tabs.md) · client — Switches between views in the same place.
+- [Textarea](docs/textarea.md) · server — Multi-line text field; grows with its content (`field-sizing-content`) from a minimum of `min-h-16`.
+- [Toast](docs/toast.md) · client — Shows a toast; returns its id for `dismissToast()`.
+- [Tooltip](docs/tooltip.md) · client — Short text hint shown on hover and keyboard focus.
+<!-- components:end -->
+
+---
+
+# Accordion
+
+**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+
+```tsx
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from 'turkishcoffee'
+```
+
+Vertically stacked sections that expand one (`type="single"`) or several
+(`type="multiple"`) at a time. For a single show/hide region use Collapsible.
+
+## Example
+
+```tsx
+<Accordion type="single" collapsible>
+  <AccordionItem value="shipping">
+    <AccordionTrigger>Shipping</AccordionTrigger>
+    <AccordionContent>Ships in 2–3 days.</AccordionContent>
+  </AccordionItem>
+</Accordion>
+```
+
+## Parts
+
+- `AccordionItem` — One section of an Accordion. `value` must be unique within the Accordion.
+- `AccordionTrigger` — The clickable heading of an AccordionItem; renders its own chevron.
+- `AccordionContent` — The collapsible body of an AccordionItem. `className` lands on an inner padding wrapper, not on the animated element, so the height animation stays intact.
+
+---
+
+# Alert
+
+**Server-renderable**: no `"use client"`; it adds no client boundary.
+
+```tsx
+import { alertVariants, Alert, AlertTitle, AlertDescription, type AlertProps } from 'turkishcoffee'
+```
+
+Inline, non-dismissable message inside the page flow (`role="alert"`).
+Variants: `default` | `destructive` | `success` | `warning`. Put an icon as the
+first child and it gets its own column. For a transient message use `toast()`;
+for a blocking question use AlertDialog.
+
+## Example
+
+```tsx
+<Alert variant="warning">
+  <AlertTitle>Trial ends soon</AlertTitle>
+  <AlertDescription>Add a payment method to keep your projects.</AlertDescription>
+</Alert>
+```
+
+## Variants
+
+| Prop | Options | Default |
+|---|---|---|
+| `variant` | `default` · `destructive` · `success` · `warning` | `default` |
+
+## Parts
+
+- `alertVariants` — Alert classes as a function, for building alert-like elements.
+- `type AlertProps`
+- `AlertTitle` — Heading line of an Alert.
+- `AlertDescription` — Body text of an Alert. Inherits the variant colour at 80% rather than always going muted, so a destructive alert stays readable as one block of colour.
+
+---
+
+# AlertDialog
+
+**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+
+```tsx
+import { AlertDialog, AlertDialogTrigger, AlertDialogPortal, AlertDialogOverlay, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from 'turkishcoffee'
+```
+
+Modal that interrupts the user to confirm a consequential action. Unlike
+Dialog it does not close on outside click; the user must pick Action or Cancel.
+AlertDialogTitle is required for accessibility.
+
+## Example
+
+```tsx
+<AlertDialog>
+  <AlertDialogTrigger asChild>
+    <Button variant="destructive">Delete project</Button>
+  </AlertDialogTrigger>
+  <AlertDialogContent>
+    <AlertDialogHeader>
+      <AlertDialogTitle>Delete this project?</AlertDialogTitle>
+      <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
+    </AlertDialogHeader>
+    <AlertDialogFooter>
+      <AlertDialogCancel>Cancel</AlertDialogCancel>
+      <AlertDialogAction className={buttonVariants({ variant: 'destructive' })} onClick={remove}>
+        Delete
+      </AlertDialogAction>
+    </AlertDialogFooter>
+  </AlertDialogContent>
+</AlertDialog>
+```
+
+## Parts
+
+- `AlertDialogTrigger` — Opens the AlertDialog. Use `asChild` to make your own Button the trigger.
+- `AlertDialogPortal` — Portal used by AlertDialogContent. Rarely needed directly.
+- `AlertDialogOverlay` — Backdrop behind the AlertDialog. Already rendered by AlertDialogContent.
+- `AlertDialogContent` — The dialog panel. Renders its own portal and overlay.
+- `AlertDialogHeader` — Stacks AlertDialogTitle and AlertDialogDescription.
+- `AlertDialogFooter` — Holds AlertDialogCancel and AlertDialogAction; stacks on mobile, right-aligns from `sm`.
+- `AlertDialogTitle` — Required: names the dialog for screen readers.
+- `AlertDialogDescription` — Explains the consequence of the action.
+- `AlertDialogAction` — The confirming button; closes the dialog. Styled as a default Button. Action and Cancel are pre-styled with buttonVariants: an alert dialog is a decision, so the two choices should never drift apart visually. For a destructive action pass `className={buttonVariants({ variant: 'destructive' })}`.
+- `AlertDialogCancel` — The dismissing button; closes the dialog. Styled as an outline Button.
+
+---
+
+# AspectRatio
+
+**Server-renderable**: no `"use client"`; it adds no client boundary.
+
+```tsx
+import { AspectRatio, type AspectRatioProps } from 'turkishcoffee'
+```
+
+Constrains its child (usually an image or video) to `ratio` (width / height).
+Server-safe: the primitive only computes padding, it holds no state.
+
+## Example
+
+```tsx
+<AspectRatio ratio={16 / 9}>
+  <img src={src} alt="" className="size-full rounded-md object-cover" />
+</AspectRatio>
+```
+
+## Parts
+
+- `type AspectRatioProps`
+
+---
+
+# Avatar
+
+**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+
+```tsx
+import { Avatar, AvatarImage, AvatarFallback } from 'turkishcoffee'
+```
+
+Round user image with a fallback while it loads or when it fails.
+Defaults to `size-8`; resize with `className`.
+
+## Example
+
+```tsx
+<Avatar>
+  <AvatarImage src={user.avatarUrl} alt={user.name} />
+  <AvatarFallback>GK</AvatarFallback>
+</Avatar>
+```
+
+## Parts
+
+- `AvatarImage` — The image; hidden until it has loaded.
+- `AvatarFallback` — Shown while AvatarImage loads or when it fails — usually initials.
+
+---
+
+# Badge
+
+**Server-renderable**: no `"use client"`; it adds no client boundary.
+
+```tsx
+import { badgeVariants, Badge, type BadgeProps } from 'turkishcoffee'
+```
+
+Small inline label for a status or count. Variants: `default` | `secondary` |
+`destructive` | `success` | `warning` | `outline`. Not interactive — wrap it in a
+Button or link if it needs to be clickable.
+
+## Example
+
+```tsx
+<Badge variant="success">Paid</Badge>
+```
+
+## Variants
+
+| Prop | Options | Default |
+|---|---|---|
+| `variant` | `default` · `secondary` · `destructive` · `success` · `warning` · `outline` | `default` |
+
+## Parts
+
+- `badgeVariants` — Badge classes as a function — style a link or other element like a Badge.
+- `type BadgeProps`
+
+---
+
+# Breadcrumb
+
+**Server-renderable**: no `"use client"`; it adds no client boundary.
+
+```tsx
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator, BreadcrumbEllipsis, type BreadcrumbLinkProps } from 'turkishcoffee'
+```
+
+Trail of links to the current page. The last item is a BreadcrumbPage,
+not a link.
+
+## Example
+
+```tsx
+<Breadcrumb>
+  <BreadcrumbList>
+    <BreadcrumbItem>
+      <BreadcrumbLink asChild><Link href="/">Home</Link></BreadcrumbLink>
+    </BreadcrumbItem>
+    <BreadcrumbSeparator />
+    <BreadcrumbItem>
+      <BreadcrumbPage>Settings</BreadcrumbPage>
+    </BreadcrumbItem>
+  </BreadcrumbList>
+</Breadcrumb>
+```
+
+## Props
+
+Only props this library adds or changes; everything else forwards to the underlying element or Radix primitive.
+
+- `asChild?: boolean` — Render as the child element instead of an <a> — e.g. wrap a <Link>.
+
+## Parts
+
+- `BreadcrumbList` — The ordered list holding BreadcrumbItems and BreadcrumbSeparators.
+- `BreadcrumbItem` — One step of the trail.
+- `type BreadcrumbLinkProps`
+- `BreadcrumbLink` — A link to an ancestor page. Use `asChild` to wrap your router's `<Link>`.
+- `BreadcrumbPage` — The current page. Not a link: it carries aria-current and is removed from the tab order, which is what screen readers expect at the end of a trail.
+- `BreadcrumbSeparator` — Goes between BreadcrumbItems; a chevron unless you pass children.
+- `BreadcrumbEllipsis` — Stands in for collapsed middle steps of a long trail.
+
+---
+
+# Button
+
+**Server-renderable**: no `"use client"`; it adds no client boundary.
+
+```tsx
+import { buttonVariants, Button, type ButtonProps } from 'turkishcoffee'
+```
+
+A button. Variants: `default` | `secondary` | `destructive` | `success` |
+`outline` | `ghost` | `link`. Sizes: `sm` | `md` (default) | `lg` | `icon` —
+there is no `size="default"`. Use `asChild` to style a link as a button.
+Server-renderable; handlers come from your own client component.
+
+## Example
+
+```tsx
+<Button variant="destructive" size="sm">Delete</Button>
+
+<Button asChild variant="outline">
+  <Link href="/settings">Settings</Link>
+</Button>
+```
+
+## Variants
+
+| Prop | Options | Default |
+|---|---|---|
+| `variant` | `default` · `secondary` · `destructive` · `success` · `outline` · `ghost` · `link` | `default` |
+| `size` | `sm` · `md` · `lg` · `icon` | `md` |
+
+## Props
+
+Only props this library adds or changes; everything else forwards to the underlying element or Radix primitive.
+
+- `asChild?: boolean` — Render as the child element instead of a <button> — e.g. wrap a <Link>.
+
+## Parts
+
+- `buttonVariants` — Button classes as a function — style a non-Button element (e.g. a Radix trigger) like a Button.
+- `type ButtonProps`
+
+---
+
+# Card
+
+**Server-renderable**: no `"use client"`; it adds no client boundary.
+
+```tsx
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from 'turkishcoffee'
+```
+
+Bordered surface that groups related content. Server-renderable by design:
+no state, no handlers, no "use client". Compose with the sub-parts rather than
+passing title/footer props.
+
+## Example
+
+```tsx
+<Card>
+  <CardHeader>
+    <CardTitle>Team</CardTitle>
+    <CardDescription>Invite people to your workspace.</CardDescription>
+  </CardHeader>
+  <CardContent>…</CardContent>
+  <CardFooter className="justify-end">
+    <Button>Invite</Button>
+  </CardFooter>
+</Card>
+```
+
+## Parts
+
+- `CardHeader` — Top section holding CardTitle and CardDescription.
+- `CardTitle` — Card heading; renders an `<h3>`.
+- `CardDescription` — Muted text under CardTitle.
+- `CardContent` — Main body of the Card.
+- `CardFooter` — Bottom row, usually actions. A flex row: align with `justify-*`.
+
+---
+
+# Checkbox
+
+**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+
+```tsx
+import { Checkbox, type CheckboxProps } from 'turkishcoffee'
+```
+
+A checkbox. Controlled with `checked` + `onCheckedChange` (not `onChange`);
+`checked` may also be `'indeterminate'`. Pair with a Label via `id`/`htmlFor`.
+For an on/off setting that applies immediately, prefer Switch.
+
+## Example
+
+```tsx
+<div className="flex items-center gap-2">
+  <Checkbox id="terms" checked={accepted} onCheckedChange={(v) => setAccepted(v === true)} />
+  <Label htmlFor="terms">Accept terms</Label>
+</div>
+```
+
+## Parts
+
+- `type CheckboxProps`
+
+---
+
+# Collapsible
+
+**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+
+```tsx
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from 'turkishcoffee'
+```
+
+A single region the user can show and hide. For several related sections
+use Accordion.
+
+## Example
+
+```tsx
+<Collapsible>
+  <CollapsibleTrigger asChild>
+    <Button variant="ghost" size="sm">Show details</Button>
+  </CollapsibleTrigger>
+  <CollapsibleContent>…</CollapsibleContent>
+</Collapsible>
+```
+
+## Parts
+
+- `CollapsibleTrigger` — Toggles the Collapsible. Unstyled — use `asChild` with a Button.
+- `CollapsibleContent` — The region that shows and hides, with a height animation.
+
+---
+
+# DataTable
+
+**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+
+Needs the optional peer `@tanstack/react-table`. It is **not** exported from the root `turkishcoffee` entry.
+
+```tsx
+import { dataTableFeatures, DataTable, type DataTableColumn, type DataTableProps } from 'turkishcoffee/data-table'
+```
+
+Table with click-to-sort headers and optional client-side pagination, over
+TanStack Table v9. Import from `turkishcoffee/data-table`. For a static table use
+the root `Table` primitives instead.
+
+## Example
+
+```tsx
+const columns: DataTableColumn<Payment>[] = [
+  { accessorKey: 'email', header: 'Email' },
+  {
+    accessorKey: 'amount',
+    header: 'Amount',
+    cell: (info) => `$${info.getValue<number>().toFixed(2)}`,
+  },
+]
+
+<DataTable columns={columns} data={payments} pageSize={10} emptyMessage="No payments." />
+```
+
+## Props
+
+Only props this library adds or changes; everything else forwards to the underlying element or Radix primitive.
+
+- `columns: Array<DataTableColumn<TData>>` — TanStack Table v9 column definitions: `DataTableColumn<Row>[]`.
+- `pageSize?: number` — Rows per page. Omit to render every row with no pagination controls.
+- `emptyMessage?: React.ReactNode` — Shown in place of rows when `data` is empty. Defaults to "No results."
+- `className?: string` — Applied to the outer wrapper (table + pagination row).
+
+## Parts
+
+- `dataTableFeatures` — The TanStack Table v9 feature set DataTable runs with (sorting + client pagination). `@tanstack/react-table` is an OPTIONAL peer, so this lives behind its own entry point (`turkishcoffee/data-table`) and never loads for projects that only import the root barrel.
+- `type DataTableColumn` — Column definitions for DataTable — carries the feature set for you. This is TanStack Table v9: type columns as `DataTableColumn<Row>[]`, not v8's `ColumnDef<Row>` or `createColumnHelper`.
+- `type DataTableProps`
+
+---
+
+# Dialog
+
+**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+
+```tsx
+import { Dialog, DialogTrigger, DialogClose, DialogPortal, DialogOverlay, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from 'turkishcoffee'
+```
+
+Centered modal for a focused task (a form, details). Closes on outside click
+and Escape. For confirming a destructive action use AlertDialog; for a panel
+sliding from an edge use Sheet. DialogTitle is required for accessibility.
+
+## Example
+
+```tsx
+<Dialog>
+  <DialogTrigger asChild>
+    <Button>Edit profile</Button>
+  </DialogTrigger>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Edit profile</DialogTitle>
+      <DialogDescription>Changes are saved when you click Save.</DialogDescription>
+    </DialogHeader>
+    …
+    <DialogFooter>
+      <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+      <Button type="submit">Save</Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+```
+
+## Props
+
+Only props this library adds or changes; everything else forwards to the underlying element or Radix primitive.
+
+- `showCloseButton?: boolean` — Render the × button in the top-right corner. Defaults to true.
+
+## Parts
+
+- `DialogTrigger` — Opens the Dialog. Use `asChild` to make your own Button the trigger.
+- `DialogClose` — Closes the Dialog. Use `asChild` to make your own Button close it.
+- `DialogPortal` — Portal used by DialogContent. Rarely needed directly.
+- `DialogOverlay` — Backdrop behind the Dialog. Already rendered by DialogContent.
+- `DialogContent` — The dialog panel. Renders its own portal, overlay and a close (×) button; pass `showCloseButton={false}` to drop the ×. Widen with `className="sm:max-w-2xl"`.
+- `DialogHeader` — Stacks DialogTitle and DialogDescription.
+- `DialogFooter` — Action row; stacks on mobile, right-aligns from `sm`.
+- `DialogTitle` — Required: names the dialog for screen readers.
+- `DialogDescription` — Muted text under DialogTitle.
+
+---
+
+# DropdownMenu
+
+**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+
+```tsx
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuGroup, DropdownMenuSub, DropdownMenuRadioGroup, DropdownMenuContent, DropdownMenuItem, DropdownMenuCheckboxItem, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuSubTrigger, DropdownMenuSubContent } from 'turkishcoffee'
+```
+
+Menu of actions opened from a trigger. For choosing a form value use Select.
+
+## Example
+
+```tsx
+<DropdownMenu>
+  <DropdownMenuTrigger asChild>
+    <Button variant="outline">Options</Button>
+  </DropdownMenuTrigger>
+  <DropdownMenuContent align="end">
+    <DropdownMenuLabel>Project</DropdownMenuLabel>
+    <DropdownMenuItem onSelect={rename}>Rename</DropdownMenuItem>
+    <DropdownMenuSeparator />
+    <DropdownMenuItem variant="destructive" onSelect={remove}>Delete</DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
+```
+
+## Props
+
+Only props this library adds or changes; everything else forwards to the underlying element or Radix primitive.
+
+- `variant?: 'default' | 'destructive'` — `destructive` colours the item for dangerous actions like Delete.
+
+## Parts
+
+- `DropdownMenuTrigger` — Opens the menu. Use `asChild` to make your own Button the trigger.
+- `DropdownMenuGroup` — Groups related items.
+- `DropdownMenuSub` — Wraps a DropdownMenuSubTrigger and DropdownMenuSubContent for a nested menu.
+- `DropdownMenuRadioGroup` — Holds DropdownMenuRadioItems; controlled with `value` + `onValueChange`.
+- `DropdownMenuContent` — The menu panel; renders its own portal.
+- `DropdownMenuItem` — One action. Use `onSelect` (not `onClick`) to run it. `variant="destructive"` colours it for dangerous actions.
+- `DropdownMenuCheckboxItem` — A toggleable item; controlled with `checked` + `onCheckedChange`.
+- `DropdownMenuRadioItem` — One option inside a DropdownMenuRadioGroup.
+- `DropdownMenuLabel` — Non-interactive heading inside the menu.
+- `DropdownMenuSeparator` — Horizontal rule between groups of items.
+- `DropdownMenuShortcut` — Right-aligned keyboard hint inside an item, e.g. `⌘K`. Display only.
+- `DropdownMenuSubTrigger` — Item that opens a nested DropdownMenuSubContent.
+- `DropdownMenuSubContent` — The nested menu panel.
+
+---
+
+# EmptyState
+
+**Server-renderable**: no `"use client"`; it adds no client boundary.
+
+```tsx
+import { EmptyState, type EmptyStateProps } from 'turkishcoffee'
+```
+
+Placeholder for a list or page that has no content yet: icon, title,
+description and a call to action.
+
+## Example
+
+```tsx
+<EmptyState
+  icon={<InboxIcon />}
+  title="No invoices yet"
+  description="Invoices you create will show up here."
+  action={<Button>New invoice</Button>}
+/>
+```
+
+## Props
+
+Only props this library adds or changes; everything else forwards to the underlying element or Radix primitive.
+
+- `icon?: React.ReactNode` — Pass any icon element — the package pins no icon library.
+- `title: React.ReactNode` — Required: one short line saying what is missing.
+- `description?: React.ReactNode` — Muted text under the title: why it is empty or what to do next.
+- `action?: React.ReactNode` — Buttons or links rendered under the description.
+
+## Parts
+
+- `type EmptyStateProps`
+
+---
+
+# Form
+
+**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+
+Needs the optional peer `react-hook-form`. It is **not** exported from the root `turkishcoffee` entry.
+
+```tsx
+import { Form, FormField, useFormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from 'turkishcoffee/form'
+```
+
+react-hook-form's FormProvider. Imported from `turkishcoffee/form`, not the
+root: `react-hook-form` is an OPTIONAL peer, so this lives behind its own entry
+point and never loads for projects that only import the root barrel.
+
+## Example
+
+```tsx
+const form = useForm<Values>({ defaultValues: { email: '' } })
+
+<Form {...form}>
+  <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+    <FormField
+      control={form.control}
+      name="email"
+      rules={{ required: 'Email is required' }}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>Email</FormLabel>
+          <FormControl><Input type="email" {...field} /></FormControl>
+          <FormDescription>We never share it.</FormDescription>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+    <Button type="submit">Save</Button>
+  </form>
+</Form>
+```
+
+## Parts
+
+- `FormField` — Connects one field to the form: a react-hook-form Controller plus the context the Form* parts read.
+- `useFormField` — Ids and error state for the current field. Must be called inside FormField and FormItem.
+- `FormItem` — Wraps one field's label, control, description and message; generates their shared id.
+- `FormLabel` — Label wired to the field's control; turns destructive on error.
+- `FormControl` — Wraps your input and wires up id + aria-describedby + aria-invalid. Use with any control that forwards props: <FormControl><Input /></FormControl>
+- `FormDescription` — Helper text under the control.
+- `FormMessage` — Renders the field's validation error, or `children` when there is none.
+
+---
+
+# HoverCard
+
+**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+
+```tsx
+import { HoverCard, HoverCardTrigger, HoverCardContent } from 'turkishcoffee'
+```
+
+Rich preview shown when a pointer hovers a link (e.g. a user profile).
+Not reachable on touch devices — never put essential content or actions in it.
+For a short text hint use Tooltip; for click-to-open content use Popover.
+
+## Example
+
+```tsx
+<HoverCard>
+  <HoverCardTrigger asChild><a href="/u/ada">@ada</a></HoverCardTrigger>
+  <HoverCardContent>…</HoverCardContent>
+</HoverCard>
+```
+
+## Parts
+
+- `HoverCardTrigger` — The element that opens the HoverCard on hover. Use `asChild` with a link.
+- `HoverCardContent` — The card panel; renders its own portal.
+
+---
+
+# Input
+
+**Server-renderable**: no `"use client"`; it adds no client boundary.
+
+```tsx
+import { Input, type InputProps } from 'turkishcoffee'
+```
+
+Single-line text field; a styled `<input>` that forwards every prop.
+Server-renderable; handlers like onChange come from your own client component.
+For an icon, prefix or inline button inside the field use InputGroup.
+
+## Example
+
+```tsx
+<Label htmlFor="email">Email</Label>
+<Input id="email" type="email" placeholder="you@example.com" />
+```
+
+## Parts
+
+- `type InputProps`
+
+---
+
+# InputGroup
+
+**Server-renderable**: no `"use client"`; it adds no client boundary.
+
+```tsx
+import { InputGroup, inputGroupAddonVariants, InputGroupAddon, InputGroupInput, InputGroupTextarea, InputGroupButton, type InputGroupAddonProps } from 'turkishcoffee'
+```
+
+A field that combines a control with icons, text or buttons. The group owns
+the border and the focus ring; the control inside is stripped of both. That way
+an icon, a prefix and a button read as one field instead of a row of separately
+outlined boxes. Use InputGroupInput / InputGroupTextarea inside, not Input.
+
+## Example
+
+```tsx
+<InputGroup>
+  <InputGroupAddon><SearchIcon /></InputGroupAddon>
+  <InputGroupInput placeholder="Search…" />
+  <InputGroupAddon align="end">
+    <InputGroupButton>Go</InputGroupButton>
+  </InputGroupAddon>
+</InputGroup>
+```
+
+## Variants
+
+| Prop | Options | Default |
+|---|---|---|
+| `align` | `start` · `end` | `start` |
+
+## Parts
+
+- `inputGroupAddonVariants` — InputGroupAddon classes as a function.
+- `type InputGroupAddonProps`
+- `InputGroupAddon` — Icon, text or button beside the control. `align`: `start` (default) | `end`.
+- `InputGroupInput` — The `<input>` inside an InputGroup (unbordered).
+- `InputGroupTextarea` — The `<textarea>` inside an InputGroup (unbordered).
+- `InputGroupButton` — A Button sized for the inside of an InputGroup: defaults to `variant="ghost"` and `size="sm"`, without a shadow, so it sits inside the field rather than next to it.
+
+---
+
+# Label
+
+**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+
+```tsx
+import { Label, type LabelProps } from 'turkishcoffee'
+```
+
+Accessible label for a form control; link it with `htmlFor`. Inside a
+`turkishcoffee/form` field use FormLabel instead, which wires `htmlFor` for you.
+
+## Parts
+
+- `type LabelProps`
+
+---
+
+# NativeSelect
+
+**Server-renderable**: no `"use client"`; it adds no client boundary.
+
+```tsx
+import { NativeSelect, type NativeSelectProps } from 'turkishcoffee'
+```
+
+The platform <select>, styled to match Input. Unlike the Radix-based Select
+it needs no client boundary and keeps the OS picker on mobile — prefer it
+inside long forms and inside server components. `size`: `sm` | `md` (default).
+`className` goes on the wrapper div (use it for width); other props reach the `<select>`.
+
+## Example
+
+```tsx
+<NativeSelect name="country" defaultValue="tr">
+  <option value="tr">Türkiye</option>
+  <option value="de">Germany</option>
+</NativeSelect>
+```
+
+## Props
+
+Only props this library adds or changes; everything else forwards to the underlying element or Radix primitive.
+
+- `size?: 'sm' | 'md'` — Height: `sm` (h-8) or `md` (h-9, default). Replaces the HTML `size` attribute.
+
+## Parts
+
+- `type NativeSelectProps`
+
+---
+
+# Pagination
+
+**Server-renderable**: no `"use client"`; it adds no client boundary.
+
+```tsx
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext, PaginationEllipsis, type PaginationLinkProps } from 'turkishcoffee'
+```
+
+Page navigation built from plain anchors, so it works with any router:
+pass `href` to each link. Server-renderable.
+
+## Example
+
+```tsx
+<Pagination>
+  <PaginationContent>
+    <PaginationItem><PaginationPrevious href="?page=1" /></PaginationItem>
+    <PaginationItem><PaginationLink href="?page=1">1</PaginationLink></PaginationItem>
+    <PaginationItem><PaginationLink href="?page=2" isActive>2</PaginationLink></PaginationItem>
+    <PaginationItem><PaginationEllipsis /></PaginationItem>
+    <PaginationItem><PaginationNext href="?page=3" /></PaginationItem>
+  </PaginationContent>
+</Pagination>
+```
+
+## Props
+
+Only props this library adds or changes; everything else forwards to the underlying element or Radix primitive.
+
+- `isActive?: boolean` — Marks the current page: outline style and `aria-current="page"`.
+- `size?: 'sm' | 'md' | 'lg' | 'icon'` — A Button size; defaults to `icon` (square).
+
+## Parts
+
+- `PaginationContent` — The `<ul>` holding PaginationItems.
+- `PaginationItem` — One `<li>` slot; wraps a link, Previous/Next or an ellipsis.
+- `type PaginationLinkProps`
+- `PaginationLink` — A page number link. `isActive` marks the current page (outline style + aria-current). `size` follows Button sizes and defaults to `icon`.
+- `PaginationPrevious` — Link to the previous page; the label hides below `sm`.
+- `PaginationNext` — Link to the next page; the label hides below `sm`.
+- `PaginationEllipsis` — Stands in for skipped page numbers.
+
+---
+
+# Popover
+
+**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+
+```tsx
+import { Popover, PopoverTrigger, PopoverAnchor, PopoverContent } from 'turkishcoffee'
+```
+
+Floating panel opened by clicking a trigger; for small forms, pickers and
+extra details. Non-modal. For a hover hint use Tooltip; for a list of actions
+use DropdownMenu.
+
+## Example
+
+```tsx
+<Popover>
+  <PopoverTrigger asChild>
+    <Button variant="outline">Filters</Button>
+  </PopoverTrigger>
+  <PopoverContent align="start">…</PopoverContent>
+</Popover>
+```
+
+## Parts
+
+- `PopoverTrigger` — Opens the Popover. Use `asChild` to make your own Button the trigger.
+- `PopoverAnchor` — Positions the Popover against an element other than the trigger.
+- `PopoverContent` — The panel; renders its own portal. `w-72` by default.
+
+---
+
+# Progress
+
+**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+
+```tsx
+import { Progress, type ProgressProps } from 'turkishcoffee'
+```
+
+Horizontal bar for a known completion percentage (`value`, 0–100). For
+unknown durations use Spinner or Skeleton.
+
+## Example
+
+```tsx
+<Progress value={uploadPercent} aria-label="Upload progress" />
+```
+
+## Parts
+
+- `type ProgressProps`
+
+---
+
+# RadioGroup
+
+**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+
+```tsx
+import { RadioGroup, RadioGroupItem } from 'turkishcoffee'
+```
+
+One choice out of a few visible options. Controlled with `value` +
+`onValueChange`. For many options use Select or NativeSelect.
+
+## Example
+
+```tsx
+<RadioGroup defaultValue="monthly">
+  <div className="flex items-center gap-2">
+    <RadioGroupItem value="monthly" id="monthly" />
+    <Label htmlFor="monthly">Monthly</Label>
+  </div>
+  <div className="flex items-center gap-2">
+    <RadioGroupItem value="yearly" id="yearly" />
+    <Label htmlFor="yearly">Yearly</Label>
+  </div>
+</RadioGroup>
+```
+
+## Parts
+
+- `RadioGroupItem` — One option; needs a unique `value`. Pair with a Label via `id`/`htmlFor`.
+
+---
+
+# Select
+
+**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+
+```tsx
+import { Select, SelectGroup, SelectValue, SelectTrigger, SelectContent, SelectItem, SelectLabel, SelectSeparator } from 'turkishcoffee'
+```
+
+Custom-styled dropdown for picking one value. Controlled with `value` +
+`onValueChange`. Needs a client boundary; inside server components or long
+mobile forms prefer NativeSelect.
+
+## Example
+
+```tsx
+<Select value={plan} onValueChange={setPlan}>
+  <SelectTrigger className="w-48">
+    <SelectValue placeholder="Choose a plan" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="free">Free</SelectItem>
+    <SelectItem value="pro">Pro</SelectItem>
+  </SelectContent>
+</Select>
+```
+
+## Props
+
+Only props this library adds or changes; everything else forwards to the underlying element or Radix primitive.
+
+- `size?: 'sm' | 'md'` — Height: `sm` (h-8) or `md` (h-9, default) — matches Input and NativeSelect.
+
+## Parts
+
+- `SelectGroup` — Groups SelectItems under a SelectLabel.
+- `SelectValue` — Shows the selected item's text inside SelectTrigger, or `placeholder`.
+- `SelectTrigger` — The button that opens the Select. `size`: `sm` | `md` (default). Sized to its content (`w-fit`); pass `className="w-full"` to fill the row.
+- `SelectContent` — The options panel; renders its own portal and scroll buttons.
+- `SelectItem` — One option; `value` must be a non-empty string.
+- `SelectLabel` — Heading for a SelectGroup.
+- `SelectSeparator` — Horizontal rule between groups.
+
+---
+
+# Separator
+
+**Server-renderable**: no `"use client"`; it adds no client boundary.
+
+```tsx
+import { Separator, type SeparatorProps } from 'turkishcoffee'
+```
+
+Thin horizontal or vertical (`orientation="vertical"`) rule.
+Server-renderable: Radix Separator ships no "use client". Decorative by
+default; pass `decorative={false}` when it carries meaning.
+
+## Parts
+
+- `type SeparatorProps`
+
+---
+
+# Sheet
+
+**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+
+```tsx
+import { Sheet, SheetTrigger, SheetClose, SheetContent, SheetHeader, SheetFooter, SheetTitle, SheetDescription, type SheetContentProps } from 'turkishcoffee'
+```
+
+Modal panel that slides in from an edge — navigation drawers, filters,
+detail views. For a centered modal use Dialog. SheetTitle is required for
+accessibility.
+
+## Example
+
+```tsx
+<Sheet>
+  <SheetTrigger asChild>
+    <Button variant="outline">Filters</Button>
+  </SheetTrigger>
+  <SheetContent side="left">
+    <SheetHeader>
+      <SheetTitle>Filters</SheetTitle>
+      <SheetDescription>Narrow down the results.</SheetDescription>
+    </SheetHeader>
+    …
+    <SheetFooter>
+      <SheetClose asChild><Button>Apply</Button></SheetClose>
+    </SheetFooter>
+  </SheetContent>
+</Sheet>
+```
+
+## Variants
+
+| Prop | Options | Default |
+|---|---|---|
+| `side` | `top` · `bottom` · `left` · `right` | `right` |
+
+## Parts
+
+- `SheetTrigger` — Opens the Sheet. Use `asChild` to make your own Button the trigger.
+- `SheetClose` — Closes the Sheet. Use `asChild` to make your own Button close it.
+- `type SheetContentProps`
+- `SheetContent` — The panel. `side`: `top` | `right` (default) | `bottom` | `left`. Renders its own portal, overlay and close (×) button.
+- `SheetHeader` — Stacks SheetTitle and SheetDescription.
+- `SheetFooter` — Action area pinned to the bottom of the panel.
+- `SheetTitle` — Required: names the sheet for screen readers.
+- `SheetDescription` — Muted text under SheetTitle.
+
+---
+
+# Skeleton
+
+**Server-renderable**: no `"use client"`; it adds no client boundary.
+
+```tsx
+import { Skeleton } from 'turkishcoffee'
+```
+
+Pulsing placeholder in the shape of content that is still loading. Give it
+the size of the real content with `className`.
+
+## Example
+
+```tsx
+<div className="flex items-center gap-3">
+  <Skeleton className="size-10 rounded-full" />
+  <Skeleton className="h-4 w-40" />
+</div>
+```
+
+---
+
+# Spinner
+
+**Server-renderable**: no `"use client"`; it adds no client boundary.
+
+```tsx
+import { Spinner, type SpinnerProps } from 'turkishcoffee'
+```
+
+Indeterminate loading indicator; `size-4`, inherits text colour. Drawn
+inline rather than pulled from an icon set, so the package still pins no icon
+library on consumers.
+
+## Example
+
+```tsx
+<Button disabled>
+  <Spinner label={null} /> Saving…
+</Button>
+```
+
+## Props
+
+Only props this library adds or changes; everything else forwards to the underlying element or Radix primitive.
+
+- `label?: string | null` — Announced to screen readers; pass null to keep the spinner silent.
+
+## Parts
+
+- `type SpinnerProps`
+
+---
+
+# Switch
+
+**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+
+```tsx
+import { Switch, type SwitchProps } from 'turkishcoffee'
+```
+
+On/off toggle for a setting that takes effect immediately. Controlled with
+`checked` + `onCheckedChange` (not `onChange`). For a choice submitted later
+with a form, prefer Checkbox.
+
+## Example
+
+```tsx
+<div className="flex items-center gap-2">
+  <Switch id="notifications" checked={on} onCheckedChange={setOn} />
+  <Label htmlFor="notifications">Email notifications</Label>
+</div>
+```
+
+## Parts
+
+- `type SwitchProps`
+
+---
+
+# Table
+
+**Server-renderable**: no `"use client"`; it adds no client boundary.
+
+```tsx
+import { Table, TableHeader, TableBody, TableFooter, TableRow, TableHead, TableCell, TableCaption } from 'turkishcoffee'
+```
+
+Plain styled table primitives — no data library, server-renderable; wraps the
+table in a horizontally scrolling container. For sorting/pagination over a
+column model, use `turkishcoffee/data-table`.
+
+## Example
+
+```tsx
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Invoice</TableHead>
+      <TableHead className="text-right">Amount</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    {invoices.map((inv) => (
+      <TableRow key={inv.id}>
+        <TableCell>{inv.id}</TableCell>
+        <TableCell className="text-right">{inv.amount}</TableCell>
+      </TableRow>
+    ))}
+  </TableBody>
+</Table>
+```
+
+## Parts
+
+- `TableHeader` — The `<thead>`.
+- `TableBody` — The `<tbody>`.
+- `TableFooter` — The `<tfoot>`, e.g. for totals.
+- `TableRow` — A `<tr>`; highlights on hover and when `data-state="selected"`.
+- `TableHead` — A header cell (`<th>`).
+- `TableCell` — A body cell (`<td>`). Does not wrap by default (`whitespace-nowrap`).
+- `TableCaption` — The `<caption>`, rendered below the table.
+
+---
+
+# Tabs
+
+**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+
+```tsx
+import { Tabs, TabsList, TabsTrigger, TabsContent } from 'turkishcoffee'
+```
+
+Switches between views in the same place. Uncontrolled with `defaultValue`,
+controlled with `value` + `onValueChange`.
+
+## Example
+
+```tsx
+<Tabs defaultValue="account">
+  <TabsList>
+    <TabsTrigger value="account">Account</TabsTrigger>
+    <TabsTrigger value="password">Password</TabsTrigger>
+  </TabsList>
+  <TabsContent value="account">…</TabsContent>
+  <TabsContent value="password">…</TabsContent>
+</Tabs>
+```
+
+## Parts
+
+- `TabsList` — The row of TabsTriggers.
+- `TabsTrigger` — Selects the TabsContent with the same `value`.
+- `TabsContent` — Panel shown while its `value` is selected.
+
+---
+
+# Textarea
+
+**Server-renderable**: no `"use client"`; it adds no client boundary.
+
+```tsx
+import { Textarea, type TextareaProps } from 'turkishcoffee'
+```
+
+Multi-line text field; grows with its content (`field-sizing-content`) from a
+minimum of `min-h-16`. Server-renderable.
+
+## Example
+
+```tsx
+<Textarea placeholder="Leave a comment" rows={4} />
+```
+
+## Parts
+
+- `type TextareaProps`
+
+---
+
+# Toast
+
+**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+
+```tsx
+import { Toast, ToastTitle, ToastDescription, ToastAction, ToastClose, Toaster, toast, dismissToast, useToasts, type ToastProps, type ToastVariant, type ToastOptions, type ToastRecord } from 'turkishcoffee'
+```
+
+Shows a toast; returns its id for `dismissToast()`. Takes an options object,
+never a bare string. Variants: `toast.success()` and `toast.error()` (which uses
+the `destructive` variant). There is no `toast.info` / `toast.warning`.
+Requires `<Toaster />` mounted once.
+
+## Example
+
+```tsx
+toast({ title: 'Scheduled', description: 'Friday at 10:00.' })
+toast.success({ title: 'Saved' })
+toast.error({ title: 'Failed', description: 'Could not reach the server.' })
+```
+
+## Variants
+
+| Prop | Options | Default |
+|---|---|---|
+| `variant` | `default` · `destructive` · `success` | `default` |
+
+## Props
+
+Only props this library adds or changes; everything else forwards to the underlying element or Radix primitive.
+
+- `title?: React.ReactNode` — Bold first line.
+- `description?: React.ReactNode` — Secondary text under the title.
+- `variant?: ToastVariant` — Prefer `toast.success()` / `toast.error()` over setting this directly.
+- `duration?: number` — Milliseconds before auto-dismiss.
+- `action?: React.ReactNode` — A `<ToastAction altText="…">` button rendered beside the text.
+
+## Parts
+
+- `type ToastProps`
+- `Toast` — A single toast. You normally never render this yourself: call `toast()` and let `<Toaster />` render it.
+- `ToastTitle` — Title line of a Toast.
+- `ToastDescription` — Body text of a Toast.
+- `ToastAction` — An action button inside a Toast. Requires `altText` for screen readers.
+- `ToastClose` — The × button of a Toast; appears on hover.
+- `Toaster` — Renders the toast queue. Mount once, near the root of the app (it is a client component). Then call `toast()` from anywhere. Renders through a portal, so placement in the tree does not matter.
+
+  ```tsx
+  // app/layout.tsx
+  <body>
+    {children}
+    <Toaster />
+  </body>
+  ```
+
+- `type ToastVariant`
+- `type ToastOptions` — What `toast()` accepts. Always an object — `toast('Saved')` with a string does not work.
+- `type ToastRecord`
+- `dismissToast` — Removes a toast by the id `toast()` returned.
+- `useToasts` — The live toast queue. Used by `<Toaster />`; rarely needed directly.
+
+---
+
+# Tooltip
+
+**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+
+```tsx
+import { TooltipTrigger, Tooltip, TooltipContent } from 'turkishcoffee'
+```
+
+Short text hint shown on hover and keyboard focus. Self-providing: no need
+to wrap your app in a TooltipProvider (there is none to import). Not shown on
+touch devices — never put essential information in it.
+
+## Example
+
+```tsx
+<Tooltip>
+  <TooltipTrigger asChild>
+    <Button size="icon" variant="ghost" aria-label="Copy"><CopyIcon /></Button>
+  </TooltipTrigger>
+  <TooltipContent>Copy to clipboard</TooltipContent>
+</Tooltip>
+```
+
+## Parts
+
+- `TooltipTrigger` — The element the Tooltip describes. Use `asChild` with a Button.
+- `TooltipContent` — The hint bubble; renders its own portal and arrow.

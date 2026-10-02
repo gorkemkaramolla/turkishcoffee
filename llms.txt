@@ -1,0 +1,51 @@
+# turkishcoffee
+
+> Personal React UI component library — Tailwind v4, Radix primitives, RSC-aware. shadcn-shaped (Radix + cva + `cn()`), but with its own
+> API in places — read AGENTS.md before writing code with it.
+
+Installed copies ship these files: `node_modules/turkishcoffee/AGENTS.md` and
+`node_modules/turkishcoffee/docs/<component>.md`.
+
+## Docs
+
+- [AGENTS.md](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/AGENTS.md): setup, import map, differences from shadcn, rules
+- [llms-full.txt](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/llms-full.txt): AGENTS.md and every component doc in one file
+
+## Components
+
+- [Accordion](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/accordion.md): Vertically stacked sections that expand one (`type="single"`) or several (`type="multiple"`) at a time.
+- [Alert](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/alert.md): Inline, non-dismissable message inside the page flow (`role="alert"`).
+- [AlertDialog](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/alert-dialog.md): Modal that interrupts the user to confirm a consequential action.
+- [AspectRatio](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/aspect-ratio.md): Constrains its child (usually an image or video) to `ratio` (width / height).
+- [Avatar](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/avatar.md): Round user image with a fallback while it loads or when it fails.
+- [Badge](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/badge.md): Small inline label for a status or count.
+- [Breadcrumb](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/breadcrumb.md): Trail of links to the current page.
+- [Button](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/button.md): A button.
+- [Card](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/card.md): Bordered surface that groups related content.
+- [Checkbox](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/checkbox.md): A checkbox.
+- [Collapsible](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/collapsible.md): A single region the user can show and hide.
+- [DataTable](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/data-table.md): Table with click-to-sort headers and optional client-side pagination, over TanStack Table v9. (`turkishcoffee/data-table`)
+- [Dialog](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/dialog.md): Centered modal for a focused task (a form, details).
+- [DropdownMenu](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/dropdown-menu.md): Menu of actions opened from a trigger.
+- [EmptyState](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/empty-state.md): Placeholder for a list or page that has no content yet: icon, title, description and a call to action.
+- [Form](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/form.md): react-hook-form's FormProvider. (`turkishcoffee/form`)
+- [HoverCard](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/hover-card.md): Rich preview shown when a pointer hovers a link (e.g.
+- [Input](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/input.md): Single-line text field; a styled `<input>` that forwards every prop.
+- [InputGroup](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/input-group.md): A field that combines a control with icons, text or buttons.
+- [Label](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/label.md): Accessible label for a form control; link it with `htmlFor`.
+- [NativeSelect](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/native-select.md): The platform <select>, styled to match Input.
+- [Pagination](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/pagination.md): Page navigation built from plain anchors, so it works with any router: pass `href` to each link.
+- [Popover](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/popover.md): Floating panel opened by clicking a trigger; for small forms, pickers and extra details.
+- [Progress](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/progress.md): Horizontal bar for a known completion percentage (`value`, 0–100).
+- [RadioGroup](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/radio-group.md): One choice out of a few visible options.
+- [Select](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/select.md): Custom-styled dropdown for picking one value.
+- [Separator](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/separator.md): Thin horizontal or vertical (`orientation="vertical"`) rule.
+- [Sheet](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/sheet.md): Modal panel that slides in from an edge — navigation drawers, filters, detail views.
+- [Skeleton](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/skeleton.md): Pulsing placeholder in the shape of content that is still loading.
+- [Spinner](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/spinner.md): Indeterminate loading indicator; `size-4`, inherits text colour.
+- [Switch](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/switch.md): On/off toggle for a setting that takes effect immediately.
+- [Table](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/table.md): Plain styled table primitives — no data library, server-renderable; wraps the table in a horizontally scrolling container.
+- [Tabs](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/tabs.md): Switches between views in the same place.
+- [Textarea](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/textarea.md): Multi-line text field; grows with its content (`field-sizing-content`) from a minimum of `min-h-16`.
+- [Toast](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/toast.md): Shows a toast; returns its id for `dismissToast()`.
+- [Tooltip](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/tooltip.md): Short text hint shown on hover and keyboard focus.

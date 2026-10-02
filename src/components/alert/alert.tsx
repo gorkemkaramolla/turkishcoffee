@@ -2,6 +2,7 @@ import type * as React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '../../lib/cn'
 
+/** Alert classes as a function, for building alert-like elements. */
 export const alertVariants = cva(
   [
     'relative grid w-full gap-y-1 rounded-lg border px-4 py-3 text-sm',
