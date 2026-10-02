@@ -1,7 +1,7 @@
 // Generates docs/<component>.md, llms.txt and llms-full.txt from the JSDoc in
 // src/components. JSDoc is the single source of truth: editors and agents read
 // it on hover, these files carry the same text to agents that read the package
-// or the repo instead. Run `npm run docs` after changing a component; CI fails
+// or the repo instead. Run `pnpm run docs` after changing a component; CI fails
 // if the committed output is stale.
 
 import { readdirSync, readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs'

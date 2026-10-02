@@ -44,6 +44,24 @@ import { Button, Card, CardHeader, CardTitle } from 'turkishcoffee'
 </Button>
 ```
 
+## Using with AI agents
+
+No model has seen this library in training, so an agent fills the gaps with
+what it remembers from shadcn/ui — and guesses wrong where the APIs differ
+(`size="md"`, `toast({ title })`, `turkishcoffee/form`, the `@source` line).
+The package ships its own docs for that:
+
+- `AGENTS.md` — setup, import map, a "differences from shadcn/ui" table, rules
+- `docs/<component>.md` — parts, variants, props and an example per component
+- `llms.txt` / `llms-full.txt` — the same, in the [llms.txt](https://llmstxt.org) format
+- JSDoc with an `@example` on every export, so hover and go-to-definition explain it
+
+Add one line to your project's `CLAUDE.md`, `AGENTS.md` or Cursor rules:
+
+```md
+UI: use turkishcoffee — read node_modules/turkishcoffee/AGENTS.md before writing components.
+```
+
 ## Theming
 
 Redeclare any token *after* the import; every component follows:
@@ -142,6 +160,7 @@ npm run typecheck
 npm test
 npm run build
 npm run check-exports  # publint + are-the-types-wrong
+npm run docs           # regenerate docs/ and llms*.txt from JSDoc
 ```
 
 ## Adding a component
@@ -149,5 +168,13 @@ npm run check-exports  # publint + are-the-types-wrong
 1. `src/components/<name>/<name>.tsx` — `cva` for variants, `cn()` last so a
    consumer's `className` wins, spread rest props.
 2. `"use client"` only if it has state, effects, or client-only Radix primitives.
-3. `<name>.stories.tsx` alongside it.
-4. Export from `src/components/<name>/index.ts` and `src/index.ts`.
+3. JSDoc on every export. The one named after the folder says what it is, when
+   to use an alternative instead, and has an `@example`; sub-parts get one line;
+   custom props get an inline `/** */`. Write it for the consumer — maintainer
+   notes go in `//` comments.
+4. `<name>.stories.tsx` alongside it.
+5. Export from `src/components/<name>/index.ts` and `src/index.ts`.
+6. `npm run docs` — regenerates `docs/`, `llms*.txt` and the index in
+   `AGENTS.md` from the JSDoc. CI fails if you forget. If the component changes
+   something an agent would get wrong coming from shadcn, add it to the
+   differences table in `AGENTS.md` by hand.
