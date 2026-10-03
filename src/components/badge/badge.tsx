@@ -13,6 +13,7 @@ export const badgeVariants = cva(
         destructive: 'border-transparent bg-destructive text-destructive-foreground',
         success: 'border-transparent bg-success text-success-foreground',
         warning: 'border-transparent bg-warning text-warning-foreground',
+        inverse: 'border-transparent bg-inverse text-inverse-foreground',
         outline: 'border-border text-foreground',
       },
     },
@@ -26,8 +27,9 @@ export type BadgeProps = React.ComponentProps<'span'> & VariantProps<typeof badg
 
 /**
  * Small inline label for a status or count. Variants: `default` | `secondary` |
- * `destructive` | `success` | `warning` | `outline`. Not interactive — wrap it in a
- * Button or link if it needs to be clickable.
+ * `destructive` | `success` | `warning` | `inverse` | `outline`. `inverse` is the
+ * neutral grey of toasts and tooltips, for tags like "Beta" or "New". Not
+ * interactive — wrap it in a Button or link if it needs to be clickable.
  *
  * @example
  * <Badge variant="success">Paid</Badge>
