@@ -20,7 +20,7 @@ const subpathEntries = {
 }
 
 // The export a component's doc leads with, when it is not the one named after the folder.
-const mainExport = { toast: 'toast' }
+const mainExport = { toast: 'Toaster' }
 
 const pascal = (s) => s.replace(/(^|-)(\w)/g, (_, __, c) => c.toUpperCase())
 
@@ -93,6 +93,18 @@ function parse(file) {
   visit(sf)
 
   for (const stmt of sf.statements) {
+    // export { toast, type ToasterProps } from 'sonner' — one JSDoc covers the list.
+    if (ts.isExportDeclaration(stmt) && stmt.exportClause && ts.isNamedExports(stmt.exportClause)) {
+      for (const el of stmt.exportClause.elements) {
+        exports.push({
+          name: el.name.text,
+          kind: stmt.isTypeOnly || el.isTypeOnly ? 'type' : 'value',
+          // Shown on the first name only, so a long list does not repeat it.
+          doc: el === stmt.exportClause.elements[0] ? jsDocOf(stmt) : null,
+        })
+      }
+      continue
+    }
     if (!isExported(stmt)) continue
     if (ts.isFunctionDeclaration(stmt) && stmt.name) {
       exports.push({ name: stmt.name.text, kind: 'value', doc: jsDocOf(stmt) })

@@ -4,6 +4,7 @@ import type * as React from 'react'
 import { Toaster as Sonner, type ToasterProps } from 'sonner'
 import { cn } from '../../lib/cn'
 
+/** Re-exported from sonner: `toast()` plus `toast.success`, `.error`, `.promise`, `.dismiss`. */
 export { toast, useSonner, type ExternalToast, type ToasterProps } from 'sonner'
 
 /**

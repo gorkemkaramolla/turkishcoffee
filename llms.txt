@@ -21,11 +21,14 @@ Installed copies ship these files: `node_modules/turkishcoffee/AGENTS.md` and
 - [Badge](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/badge.md): Small inline label for a status or count.
 - [Breadcrumb](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/breadcrumb.md): Trail of links to the current page.
 - [Button](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/button.md): A button.
+- [Calendar](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/calendar.md): react-day-picker styled with the theme tokens instead of its stylesheet, so it follows `.dark`.
 - [Card](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/card.md): Bordered surface that groups related content.
 - [Checkbox](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/checkbox.md): A checkbox.
 - [Collapsible](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/collapsible.md): A single region the user can show and hide.
 - [DataTable](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/data-table.md): Table with click-to-sort headers and optional client-side pagination, over TanStack Table v9. (`turkishcoffee/data-table`)
-- [Dialog](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/dialog.md): Centered modal for a focused task (a form, details).
+- [DatePicker](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/date-picker.md): Controlled single-date picker.
+- [Dialog](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/dialog.md): Modal for a focused task (a form, details): centered on `sm` screens and up, a vaul bottom drawer below.
+- [Drawer](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/drawer.md): Bottom sheet built on vaul: slides up from the bottom edge and closes on a swipe down, outside tap or Escape.
 - [DropdownMenu](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/dropdown-menu.md): Menu of actions opened from a trigger.
 - [EmptyState](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/empty-state.md): Placeholder for a list or page that has no content yet: icon, title, description and a call to action.
 - [Form](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/form.md): react-hook-form's FormProvider. (`turkishcoffee/form`)
@@ -47,5 +50,5 @@ Installed copies ship these files: `node_modules/turkishcoffee/AGENTS.md` and
 - [Table](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/table.md): Plain styled table primitives — no data library, server-renderable; wraps the table in a horizontally scrolling container.
 - [Tabs](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/tabs.md): Switches between views in the same place.
 - [Textarea](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/textarea.md): Multi-line text field; grows with its content (`field-sizing-content`) from a minimum of `min-h-16`.
-- [Toast](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/toast.md): Shows a toast; returns its id for `dismissToast()`.
+- [Toast](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/toast.md): Mount once, near the root of the app.
 - [Tooltip](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/tooltip.md): Short text hint shown on hover and keyboard focus.

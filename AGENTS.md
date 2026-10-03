@@ -102,11 +102,14 @@ There are no per-component paths like `turkishcoffee/button` and no
 - [Badge](docs/badge.md) · server — Small inline label for a status or count.
 - [Breadcrumb](docs/breadcrumb.md) · server — Trail of links to the current page.
 - [Button](docs/button.md) · server — A button.
+- [Calendar](docs/calendar.md) · client — react-day-picker styled with the theme tokens instead of its stylesheet, so it follows `.dark`.
 - [Card](docs/card.md) · server — Bordered surface that groups related content.
 - [Checkbox](docs/checkbox.md) · client — A checkbox.
 - [Collapsible](docs/collapsible.md) · client — A single region the user can show and hide.
 - [DataTable](docs/data-table.md) · client · `turkishcoffee/data-table` — Table with click-to-sort headers and optional client-side pagination, over TanStack Table v9.
-- [Dialog](docs/dialog.md) · client — Centered modal for a focused task (a form, details).
+- [DatePicker](docs/date-picker.md) · client — Controlled single-date picker.
+- [Dialog](docs/dialog.md) · client — Modal for a focused task (a form, details): centered on `sm` screens and up, a vaul bottom drawer below.
+- [Drawer](docs/drawer.md) · client — Bottom sheet built on vaul: slides up from the bottom edge and closes on a swipe down, outside tap or Escape.
 - [DropdownMenu](docs/dropdown-menu.md) · client — Menu of actions opened from a trigger.
 - [EmptyState](docs/empty-state.md) · server — Placeholder for a list or page that has no content yet: icon, title, description and a call to action.
 - [Form](docs/form.md) · client · `turkishcoffee/form` — react-hook-form's FormProvider.
@@ -128,6 +131,6 @@ There are no per-component paths like `turkishcoffee/button` and no
 - [Table](docs/table.md) · server — Plain styled table primitives — no data library, server-renderable; wraps the table in a horizontally scrolling container.
 - [Tabs](docs/tabs.md) · client — Switches between views in the same place.
 - [Textarea](docs/textarea.md) · server — Multi-line text field; grows with its content (`field-sizing-content`) from a minimum of `min-h-16`.
-- [Toast](docs/toast.md) · client — Shows a toast; returns its id for `dismissToast()`.
+- [Toast](docs/toast.md) · client — Mount once, near the root of the app.
 - [Tooltip](docs/tooltip.md) · client — Short text hint shown on hover and keyboard focus.
 <!-- components:end -->

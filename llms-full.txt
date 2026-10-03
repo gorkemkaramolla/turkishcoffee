@@ -102,11 +102,14 @@ There are no per-component paths like `turkishcoffee/button` and no
 - [Badge](docs/badge.md) · server — Small inline label for a status or count.
 - [Breadcrumb](docs/breadcrumb.md) · server — Trail of links to the current page.
 - [Button](docs/button.md) · server — A button.
+- [Calendar](docs/calendar.md) · client — react-day-picker styled with the theme tokens instead of its stylesheet, so it follows `.dark`.
 - [Card](docs/card.md) · server — Bordered surface that groups related content.
 - [Checkbox](docs/checkbox.md) · client — A checkbox.
 - [Collapsible](docs/collapsible.md) · client — A single region the user can show and hide.
 - [DataTable](docs/data-table.md) · client · `turkishcoffee/data-table` — Table with click-to-sort headers and optional client-side pagination, over TanStack Table v9.
-- [Dialog](docs/dialog.md) · client — Centered modal for a focused task (a form, details).
+- [DatePicker](docs/date-picker.md) · client — Controlled single-date picker.
+- [Dialog](docs/dialog.md) · client — Modal for a focused task (a form, details): centered on `sm` screens and up, a vaul bottom drawer below.
+- [Drawer](docs/drawer.md) · client — Bottom sheet built on vaul: slides up from the bottom edge and closes on a swipe down, outside tap or Escape.
 - [DropdownMenu](docs/dropdown-menu.md) · client — Menu of actions opened from a trigger.
 - [EmptyState](docs/empty-state.md) · server — Placeholder for a list or page that has no content yet: icon, title, description and a call to action.
 - [Form](docs/form.md) · client · `turkishcoffee/form` — react-hook-form's FormProvider.
@@ -128,7 +131,7 @@ There are no per-component paths like `turkishcoffee/button` and no
 - [Table](docs/table.md) · server — Plain styled table primitives — no data library, server-renderable; wraps the table in a horizontally scrolling container.
 - [Tabs](docs/tabs.md) · client — Switches between views in the same place.
 - [Textarea](docs/textarea.md) · server — Multi-line text field; grows with its content (`field-sizing-content`) from a minimum of `min-h-16`.
-- [Toast](docs/toast.md) · client — Shows a toast; returns its id for `dismissToast()`.
+- [Toast](docs/toast.md) · client — Mount once, near the root of the app.
 - [Tooltip](docs/tooltip.md) · client — Short text hint shown on hover and keyboard focus.
 <!-- components:end -->
 
@@ -421,6 +424,24 @@ Only props this library adds or changes; everything else forwards to the underly
 
 ---
 
+# Calendar
+
+**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+
+```tsx
+import { Calendar, type DateRange, type CalendarProps } from 'turkishcoffee'
+```
+
+react-day-picker styled with the theme tokens instead of its stylesheet, so it
+follows `.dark`. Pass a locale from `react-day-picker/locale` (e.g. `tr`).
+
+## Parts
+
+- `type DateRange`
+- `type CalendarProps`
+
+---
+
 # Card
 
 **Server-renderable**: no `"use client"`; it adds no client boundary.
@@ -560,6 +581,32 @@ Only props this library adds or changes; everything else forwards to the underly
 
 ---
 
+# DatePicker
+
+**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+
+```tsx
+import { DatePicker, DateRangePicker, type DatePickerProps, type DateRangePickerProps } from 'turkishcoffee'
+```
+
+Controlled single-date picker. Works as a `FormControl` child.
+
+## Props
+
+Only props this library adds or changes; everything else forwards to the underlying element or Radix primitive.
+
+- `title: string` — Accessible name for the drawer; the popover is labelled by its trigger.
+- `formatStr?: string` — date-fns format string for the trigger label.
+- `locale?: Locale` — A date-fns locale (e.g. `tr` from `date-fns/locale`); also localizes the calendar.
+
+## Parts
+
+- `type DatePickerProps`
+- `type DateRangePickerProps`
+- `DateRangePicker` — Controlled date-range picker. Stays open until both ends are picked.
+
+---
+
 # Dialog
 
 **Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
@@ -568,8 +615,10 @@ Only props this library adds or changes; everything else forwards to the underly
 import { Dialog, DialogTrigger, DialogClose, DialogPortal, DialogOverlay, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from 'turkishcoffee'
 ```
 
-Centered modal for a focused task (a form, details). Closes on outside click
-and Escape. For confirming a destructive action use AlertDialog; for a panel
+Modal for a focused task (a form, details): centered on `sm` screens and up,
+a vaul bottom drawer below. Every part reads the mode from here, so the same
+markup works in both. Closes on outside click and Escape (and a swipe down on
+mobile). For confirming a destructive action use AlertDialog; for a panel
 sliding from an edge use Sheet. DialogTitle is required for accessibility.
 
 ## Example
@@ -597,7 +646,7 @@ sliding from an edge use Sheet. DialogTitle is required for accessibility.
 
 Only props this library adds or changes; everything else forwards to the underlying element or Radix primitive.
 
-- `showCloseButton?: boolean` — Render the × button in the top-right corner. Defaults to true.
+- `showCloseButton?: boolean` — Render the × button in the top-right corner (desktop only). Defaults to true.
 
 ## Parts
 
@@ -605,11 +654,58 @@ Only props this library adds or changes; everything else forwards to the underly
 - `DialogClose` — Closes the Dialog. Use `asChild` to make your own Button close it.
 - `DialogPortal` — Portal used by DialogContent. Rarely needed directly.
 - `DialogOverlay` — Backdrop behind the Dialog. Already rendered by DialogContent.
-- `DialogContent` — The dialog panel. Renders its own portal, overlay and a close (×) button; pass `showCloseButton={false}` to drop the ×. Widen with `className="sm:max-w-2xl"`.
+- `DialogContent` — The dialog panel. Renders its own portal, overlay and a close (×) button (a bottom drawer without the × on mobile); pass `showCloseButton={false}` to drop the ×. Widen with `className="sm:max-w-2xl"`.
 - `DialogHeader` — Stacks DialogTitle and DialogDescription.
 - `DialogFooter` — Action row; stacks on mobile, right-aligns from `sm`.
 - `DialogTitle` — Required: names the dialog for screen readers.
 - `DialogDescription` — Muted text under DialogTitle.
+
+---
+
+# Drawer
+
+**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+
+```tsx
+import { Drawer, DrawerTrigger, DrawerClose, DrawerPortal, DrawerOverlay, DrawerContent, DrawerHeader, DrawerFooter, DrawerTitle, DrawerDescription } from 'turkishcoffee'
+```
+
+Bottom sheet built on vaul: slides up from the bottom edge and closes on a
+swipe down, outside tap or Escape. Dialog already becomes one on mobile, so
+reach for Drawer directly only when you want a drawer on every screen size.
+DrawerTitle is required for accessibility.
+
+## Example
+
+```tsx
+<Drawer>
+  <DrawerTrigger asChild>
+    <Button>Filters</Button>
+  </DrawerTrigger>
+  <DrawerContent>
+    <DrawerHeader>
+      <DrawerTitle>Filters</DrawerTitle>
+      <DrawerDescription>Narrow the list.</DrawerDescription>
+    </DrawerHeader>
+    …
+    <DrawerFooter>
+      <DrawerClose asChild><Button variant="outline">Close</Button></DrawerClose>
+    </DrawerFooter>
+  </DrawerContent>
+</Drawer>
+```
+
+## Parts
+
+- `DrawerTrigger` — Opens the Drawer. Use `asChild` to make your own Button the trigger.
+- `DrawerClose` — Closes the Drawer. Use `asChild` to make your own Button close it.
+- `DrawerPortal` — Portal used by DrawerContent. Rarely needed directly.
+- `DrawerOverlay` — Backdrop behind the Drawer. Already rendered by DrawerContent.
+- `DrawerContent` — Bottom sheet with a drag handle. vaul drives the enter, exit and swipe motion.
+- `DrawerHeader` — Stacks DrawerTitle and DrawerDescription.
+- `DrawerFooter` — Action row pinned to the bottom of the Drawer.
+- `DrawerTitle` — Required: names the drawer for screen readers.
+- `DrawerDescription` — Muted text under DrawerTitle.
 
 ---
 
@@ -1326,61 +1422,34 @@ minimum of `min-h-16`. Server-renderable.
 **Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
 
 ```tsx
-import { Toast, ToastTitle, ToastDescription, ToastAction, ToastClose, Toaster, toast, dismissToast, useToasts, type ToastProps, type ToastVariant, type ToastOptions, type ToastRecord } from 'turkishcoffee'
+import { toast, useSonner, Toaster, type ExternalToast, type ToasterProps } from 'turkishcoffee'
 ```
 
-Shows a toast; returns its id for `dismissToast()`. Takes an options object,
-never a bare string. Variants: `toast.success()` and `toast.error()` (which uses
-the `destructive` variant). There is no `toast.info` / `toast.warning`.
-Requires `<Toaster />` mounted once.
+Mount once, near the root of the app. Then call `toast()` from anywhere.
+Renders through a portal, so placement in the tree does not matter.
+
+Colors come from the theme tokens, so it follows `.dark` without a `theme` prop.
+Pass `richColors` to render `toast.success` / `toast.error` in solid token colors.
 
 ## Example
 
 ```tsx
-toast({ title: 'Scheduled', description: 'Friday at 10:00.' })
-toast.success({ title: 'Saved' })
-toast.error({ title: 'Failed', description: 'Could not reach the server.' })
+// app/layout.tsx
+<body>
+  {children}
+  <Toaster />
+</body>
+
+// anywhere in a client component
+toast.success('Saved', { description: 'Your changes are live.' })
 ```
-
-## Variants
-
-| Prop | Options | Default |
-|---|---|---|
-| `variant` | `default` · `destructive` · `success` | `default` |
-
-## Props
-
-Only props this library adds or changes; everything else forwards to the underlying element or Radix primitive.
-
-- `title?: React.ReactNode` — Bold first line.
-- `description?: React.ReactNode` — Secondary text under the title.
-- `variant?: ToastVariant` — Prefer `toast.success()` / `toast.error()` over setting this directly.
-- `duration?: number` — Milliseconds before auto-dismiss.
-- `action?: React.ReactNode` — A `<ToastAction altText="…">` button rendered beside the text.
 
 ## Parts
 
-- `type ToastProps`
-- `Toast` — A single toast. You normally never render this yourself: call `toast()` and let `<Toaster />` render it.
-- `ToastTitle` — Title line of a Toast.
-- `ToastDescription` — Body text of a Toast.
-- `ToastAction` — An action button inside a Toast. Requires `altText` for screen readers.
-- `ToastClose` — The × button of a Toast; appears on hover.
-- `Toaster` — Renders the toast queue. Mount once, near the root of the app (it is a client component). Then call `toast()` from anywhere. Renders through a portal, so placement in the tree does not matter.
-
-  ```tsx
-  // app/layout.tsx
-  <body>
-    {children}
-    <Toaster />
-  </body>
-  ```
-
-- `type ToastVariant`
-- `type ToastOptions` — What `toast()` accepts. Always an object — `toast('Saved')` with a string does not work.
-- `type ToastRecord`
-- `dismissToast` — Removes a toast by the id `toast()` returned.
-- `useToasts` — The live toast queue. Used by `<Toaster />`; rarely needed directly.
+- `toast` — Re-exported from sonner: `toast()` plus `toast.success`, `.error`, `.promise`, `.dismiss`.
+- `useSonner`
+- `type ExternalToast`
+- `type ToasterProps`
 
 ---
 
