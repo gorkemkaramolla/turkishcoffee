@@ -149,174 +149,17 @@
 }
 
 /*
- * Animations for overlay components (Dialog, Popover, DropdownMenu, Tooltip,
- * Sheet). Defined here rather than pulling in tw-animate-css, so the package
- * stays dependency-free on the CSS side. Keyframes live inside @theme so
- * Tailwind only emits the ones actually used.
- */
-@theme {
-    --animate-ui-fade-in: ui-fade-in 50ms ease-out;
-    --animate-ui-fade-out: ui-fade-out 50ms ease-in;
-    --animate-ui-pop-in: ui-pop-in 50ms ease-out;
-    --animate-ui-pop-out: ui-pop-out 50ms ease-in;
-    --animate-ui-slide-in-top: ui-slide-in-top 50ms ease-out;
-    --animate-ui-slide-out-top: ui-slide-out-top 50ms ease-in;
-    --animate-ui-slide-in-bottom: ui-slide-in-bottom 50ms ease-out;
-    --animate-ui-slide-out-bottom: ui-slide-out-bottom 50ms ease-in;
-    --animate-ui-slide-in-left: ui-slide-in-left 50ms ease-out;
-    --animate-ui-slide-out-left: ui-slide-out-left 50ms ease-in;
-    --animate-ui-accordion-down: ui-accordion-down 50ms ease-out;
-    --animate-ui-accordion-up: ui-accordion-up 50ms ease-in;
-    --animate-ui-collapsible-down: ui-collapsible-down 50ms ease-out;
-    --animate-ui-collapsible-up: ui-collapsible-up 50ms ease-in;
-    --animate-ui-slide-in-right: ui-slide-in-right 50ms ease-out;
-    --animate-ui-slide-out-right: ui-slide-out-right 50ms ease-in;
-
-    @keyframes ui-fade-in {
-        from {
-            opacity: 0;
-        }
-        to {
-            opacity: 1;
-        }
-    }
-    @keyframes ui-fade-out {
-        from {
-            opacity: 1;
-        }
-        to {
-            opacity: 0;
-        }
-    }
-    @keyframes ui-pop-in {
-        from {
-            opacity: 0;
-            transform: scale(0.95);
-        }
-        to {
-            opacity: 1;
-            transform: scale(1);
-        }
-    }
-    @keyframes ui-pop-out {
-        from {
-            opacity: 1;
-            transform: scale(1);
-        }
-        to {
-            opacity: 0;
-            transform: scale(0.95);
-        }
-    }
-    @keyframes ui-slide-in-top {
-        from {
-            transform: translateY(-100%);
-        }
-        to {
-            transform: translateY(0);
-        }
-    }
-    @keyframes ui-slide-out-top {
-        from {
-            transform: translateY(0);
-        }
-        to {
-            transform: translateY(-100%);
-        }
-    }
-    @keyframes ui-slide-in-bottom {
-        from {
-            transform: translateY(100%);
-        }
-        to {
-            transform: translateY(0);
-        }
-    }
-    @keyframes ui-slide-out-bottom {
-        from {
-            transform: translateY(0);
-        }
-        to {
-            transform: translateY(100%);
-        }
-    }
-    @keyframes ui-slide-in-left {
-        from {
-            transform: translateX(-100%);
-        }
-        to {
-            transform: translateX(0);
-        }
-    }
-    @keyframes ui-slide-out-left {
-        from {
-            transform: translateX(0);
-        }
-        to {
-            transform: translateX(-100%);
-        }
-    }
-    @keyframes ui-accordion-down {
-        from {
-            height: 0;
-        }
-        to {
-            height: var(--radix-accordion-content-height);
-        }
-    }
-    @keyframes ui-accordion-up {
-        from {
-            height: var(--radix-accordion-content-height);
-        }
-        to {
-            height: 0;
-        }
-    }
-    @keyframes ui-collapsible-down {
-        from {
-            height: 0;
-        }
-        to {
-            height: var(--radix-collapsible-content-height);
-        }
-    }
-    @keyframes ui-collapsible-up {
-        from {
-            height: var(--radix-collapsible-content-height);
-        }
-        to {
-            height: 0;
-        }
-    }
-    @keyframes ui-slide-in-right {
-        from {
-            transform: translateX(100%);
-        }
-        to {
-            transform: translateX(0);
-        }
-    }
-    @keyframes ui-slide-out-right {
-        from {
-            transform: translateX(0);
-        }
-        to {
-            transform: translateX(100%);
-        }
-    }
-}
-
-/*
  * Base styles every consumer needs. Without the border rule Tailwind v4 draws
  * every `border` in currentColor; without the body rule the page ignores the
- * background/foreground tokens.
+ * background/foreground tokens. `position: relative` lets modal backdrops
+ * (absolute on iOS 26+ Safari) cover the page after it has scrolled.
  */
 @layer base {
     * {
         @apply border-border outline-ring/50;
     }
     body {
-        @apply bg-background text-foreground;
+        @apply relative bg-background text-foreground;
     }
     button:not(:disabled),
     [role="button"]:not(:disabled) {

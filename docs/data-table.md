@@ -29,7 +29,7 @@ const columns: DataTableColumn<Payment>[] = [
 
 ## Props
 
-Only props this library adds or changes; everything else forwards to the underlying element or Radix primitive.
+Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
 
 - `columns: Array<DataTableColumn<TData>>` — TanStack Table v9 column definitions: `DataTableColumn<Row>[]`.
 - `pageSize?: number` — Rows per page. Omit to render every row with no pagination controls.

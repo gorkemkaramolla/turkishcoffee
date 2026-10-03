@@ -1,6 +1,6 @@
 # turkishcoffee
 
-> Personal React UI component library — Tailwind v4, Radix primitives, RSC-aware. shadcn-shaped (Radix + cva + `cn()`), but with its own
+> Personal React UI component library — Tailwind v4, Base UI primitives, RSC-aware. shadcn-shaped (Base UI + cva + `cn()`), but with its own
 > API in places — read AGENTS.md before writing code with it.
 
 Installed copies ship these files: `node_modules/turkishcoffee/AGENTS.md` and
@@ -13,10 +13,10 @@ Installed copies ship these files: `node_modules/turkishcoffee/AGENTS.md` and
 
 ## Components
 
-- [Accordion](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/accordion.md): Vertically stacked sections that expand one (`type="single"`) or several (`type="multiple"`) at a time.
+- [Accordion](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/accordion.md): Vertically stacked sections.
 - [Alert](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/alert.md): Inline, non-dismissable message inside the page flow (`role="alert"`).
 - [AlertDialog](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/alert-dialog.md): Modal that interrupts the user to confirm a consequential action.
-- [AspectRatio](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/aspect-ratio.md): Constrains its child (usually an image or video) to `ratio` (width / height).
+- [AspectRatio](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/aspect-ratio.md): Constrains its child (usually an image or video) to `ratio` (width / height) with the CSS `aspect-ratio` property.
 - [Avatar](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/avatar.md): Round user image with a fallback while it loads or when it fails.
 - [Badge](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/badge.md): Small inline label for a status or count.
 - [Breadcrumb](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/breadcrumb.md): Trail of links to the current page.
@@ -27,8 +27,8 @@ Installed copies ship these files: `node_modules/turkishcoffee/AGENTS.md` and
 - [Collapsible](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/collapsible.md): A single region the user can show and hide.
 - [DataTable](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/data-table.md): Table with click-to-sort headers and optional client-side pagination, over TanStack Table v9. (`turkishcoffee/data-table`)
 - [DatePicker](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/date-picker.md): Controlled single-date picker.
-- [Dialog](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/dialog.md): Modal for a focused task (a form, details): centered on `sm` screens and up, a vaul bottom drawer below.
-- [Drawer](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/drawer.md): Bottom sheet built on vaul: slides up from the bottom edge and closes on a swipe down, outside tap or Escape.
+- [Dialog](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/dialog.md): Modal for a focused task (a form, details): centered on `sm` screens and up, a Base UI bottom drawer below.
+- [Drawer](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/drawer.md): Bottom sheet built on Base UI's Drawer: slides up from the bottom edge and closes on a swipe down, outside tap or Escape.
 - [DropdownMenu](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/dropdown-menu.md): Menu of actions opened from a trigger.
 - [EmptyState](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/empty-state.md): Placeholder for a list or page that has no content yet: icon, title, description and a call to action.
 - [Form](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/form.md): react-hook-form's FormProvider. (`turkishcoffee/form`)

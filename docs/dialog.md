@@ -7,7 +7,7 @@ import { Dialog, DialogTrigger, DialogClose, DialogPortal, DialogOverlay, Dialog
 ```
 
 Modal for a focused task (a form, details): centered on `sm` screens and up,
-a vaul bottom drawer below. Every part reads the mode from here, so the same
+a Base UI bottom drawer below. Every part reads the mode from here, so the same
 markup works in both. Closes on outside click and Escape (and a swipe down on
 mobile). For confirming a destructive action use AlertDialog; for a panel
 sliding from an edge use Sheet. DialogTitle is required for accessibility.
@@ -16,9 +16,7 @@ sliding from an edge use Sheet. DialogTitle is required for accessibility.
 
 ```tsx
 <Dialog>
-  <DialogTrigger asChild>
-    <Button>Edit profile</Button>
-  </DialogTrigger>
+  <DialogTrigger render={<Button />}>Edit profile</DialogTrigger>
   <DialogContent>
     <DialogHeader>
       <DialogTitle>Edit profile</DialogTitle>
@@ -26,7 +24,7 @@ sliding from an edge use Sheet. DialogTitle is required for accessibility.
     </DialogHeader>
     …
     <DialogFooter>
-      <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+      <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>
       <Button type="submit">Save</Button>
     </DialogFooter>
   </DialogContent>
@@ -35,14 +33,14 @@ sliding from an edge use Sheet. DialogTitle is required for accessibility.
 
 ## Props
 
-Only props this library adds or changes; everything else forwards to the underlying element or Radix primitive.
+Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
 
 - `showCloseButton?: boolean` — Render the × button in the top-right corner (desktop only). Defaults to true.
 
 ## Parts
 
-- `DialogTrigger` — Opens the Dialog. Use `asChild` to make your own Button the trigger.
-- `DialogClose` — Closes the Dialog. Use `asChild` to make your own Button close it.
+- `DialogTrigger` — Opens the Dialog. Pass `render={<Button />}` to make your own Button the trigger.
+- `DialogClose` — Closes the Dialog. Pass `render={<Button />}` to make your own Button close it.
 - `DialogPortal` — Portal used by DialogContent. Rarely needed directly.
 - `DialogOverlay` — Backdrop behind the Dialog. Already rendered by DialogContent.
 - `DialogContent` — The dialog panel. Renders its own portal, overlay and a close (×) button (a bottom drawer without the × on mobile); pass `showCloseButton={false}` to drop the ×. Widen with `className="sm:max-w-2xl"`.

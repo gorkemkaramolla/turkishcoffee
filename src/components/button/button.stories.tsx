@@ -44,11 +44,11 @@ export const Sizes: Story = {
   ),
 }
 
-export const AsChild: Story = {
-  name: 'asChild (renders an anchor)',
+export const RenderAsLink: Story = {
+  name: 'render (renders an anchor)',
   render: () => (
-    <Button asChild variant="outline">
-      <a href="https://example.com">I am an anchor</a>
+    <Button render={<a href="https://example.com" />} variant="outline">
+      I am an anchor
     </Button>
   ),
 }

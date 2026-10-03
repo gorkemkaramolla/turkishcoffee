@@ -1,44 +1,60 @@
 'use client'
 
-import type * as React from 'react'
-import { HoverCard as HoverCardPrimitive } from 'radix-ui'
-import { cn } from '../../lib/cn'
+import { PreviewCard as PreviewCardPrimitive } from '@base-ui/react/preview-card'
+import { cnState } from '../../lib/cn'
+import { fadeMotion } from '../../lib/motion'
 
 /**
  * Rich preview shown when a pointer hovers a link (e.g. a user profile).
- * Not reachable on touch devices — never put essential content or actions in it.
- * For a short text hint use Tooltip; for click-to-open content use Popover.
+ * Built on Base UI's PreviewCard. Not reachable on touch devices — never put
+ * essential content or actions in it. For a short text hint use Tooltip; for
+ * click-to-open content use Popover.
  *
  * @example
  * <HoverCard>
- *   <HoverCardTrigger asChild><a href="/u/ada">@ada</a></HoverCardTrigger>
+ *   <HoverCardTrigger href="/u/ada">@ada</HoverCardTrigger>
  *   <HoverCardContent>…</HoverCardContent>
  * </HoverCard>
  */
-export const HoverCard = HoverCardPrimitive.Root
-/** The element that opens the HoverCard on hover. Use `asChild` with a link. */
-export const HoverCardTrigger = HoverCardPrimitive.Trigger
+export const HoverCard = PreviewCardPrimitive.Root
+/**
+ * The link that opens the HoverCard on hover; renders an `<a>`, so give it
+ * `href`. Pass `render={<Link />}` for your router's link. `delay` and
+ * `closeDelay` (ms) live here.
+ */
+export const HoverCardTrigger = PreviewCardPrimitive.Trigger
+
+export type HoverCardContentProps = PreviewCardPrimitive.Popup.Props &
+  Pick<PreviewCardPrimitive.Positioner.Props, 'side' | 'sideOffset' | 'align' | 'alignOffset'>
 
 /** The card panel; renders its own portal. */
 export function HoverCardContent({
   className,
-  align = 'center',
+  side,
   sideOffset = 4,
+  align = 'center',
+  alignOffset,
   ...props
-}: React.ComponentProps<typeof HoverCardPrimitive.Content>) {
+}: HoverCardContentProps) {
   return (
-    <HoverCardPrimitive.Portal>
-      <HoverCardPrimitive.Content
-        data-slot="hover-card-content"
-        align={align}
+    <PreviewCardPrimitive.Portal>
+      <PreviewCardPrimitive.Positioner
+        className="z-50"
+        side={side}
         sideOffset={sideOffset}
-        className={cn(
-          'z-50 w-64 rounded-md border border-border bg-popover p-4 text-popover-foreground shadow-md outline-none',
-          'data-[state=open]:animate-ui-fade-in data-[state=closed]:animate-ui-fade-out',
-          className,
-        )}
-        {...props}
-      />
-    </HoverCardPrimitive.Portal>
+        align={align}
+        alignOffset={alignOffset}
+      >
+        <PreviewCardPrimitive.Popup
+          data-slot="hover-card-content"
+          className={cnState(
+            'w-64 rounded-md border border-border bg-popover p-4 text-popover-foreground shadow-md outline-none',
+            fadeMotion,
+            className,
+          )}
+          {...props}
+        />
+      </PreviewCardPrimitive.Positioner>
+    </PreviewCardPrimitive.Portal>
   )
 }

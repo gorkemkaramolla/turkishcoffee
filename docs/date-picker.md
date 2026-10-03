@@ -10,7 +10,7 @@ Controlled single-date picker. Works as a `FormControl` child.
 
 ## Props
 
-Only props this library adds or changes; everything else forwards to the underlying element or Radix primitive.
+Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
 
 - `title: string` — Accessible name for the drawer; the popover is labelled by its trigger.
 - `formatStr?: string` — date-fns format string for the trigger label.

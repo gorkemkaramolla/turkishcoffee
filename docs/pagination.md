@@ -25,7 +25,7 @@ pass `href` to each link. Server-renderable.
 
 ## Props
 
-Only props this library adds or changes; everything else forwards to the underlying element or Radix primitive.
+Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
 
 - `isActive?: boolean` — Marks the current page: outline style and `aria-current="page"`.
 - `size?: 'sm' | 'md' | 'lg' | 'icon'` — A Button size; defaults to `icon` (square).

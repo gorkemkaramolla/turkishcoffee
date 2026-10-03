@@ -13,8 +13,8 @@ use Accordion.
 
 ```tsx
 <Collapsible>
-  <CollapsibleTrigger asChild>
-    <Button variant="ghost" size="sm">Show details</Button>
+  <CollapsibleTrigger render={<Button variant="ghost" size="sm" />}>
+    Show details
   </CollapsibleTrigger>
   <CollapsibleContent>…</CollapsibleContent>
 </Collapsible>
@@ -22,5 +22,5 @@ use Accordion.
 
 ## Parts
 
-- `CollapsibleTrigger` — Toggles the Collapsible. Unstyled — use `asChild` with a Button.
+- `CollapsibleTrigger` — Toggles the Collapsible. Unstyled — pass `render={<Button />}` to style it.
 - `CollapsibleContent` — The region that shows and hides, with a height animation.

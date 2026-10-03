@@ -7,8 +7,9 @@ import { Switch, type SwitchProps } from 'turkishcoffee'
 ```
 
 On/off toggle for a setting that takes effect immediately. Controlled with
-`checked` + `onCheckedChange` (not `onChange`). For a choice submitted later
-with a form, prefer Checkbox.
+`checked` + `onCheckedChange` (not `onChange`). Renders a native `<button>`,
+so pair it with a Label via `id`/`htmlFor`. For a choice submitted later with a
+form, prefer Checkbox.
 
 ## Example
 

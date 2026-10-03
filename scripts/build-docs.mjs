@@ -174,7 +174,7 @@ function render(c) {
   }
 
   if (c.props.length) {
-    out.push('## Props', '', 'Only props this library adds or changes; everything else forwards to the underlying element or Radix primitive.', '')
+    out.push('## Props', '', 'Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.', '')
     for (const p of c.props) out.push(`- \`${p.name}: ${p.type}\` — ${p.doc}`)
     out.push('')
   }
@@ -222,7 +222,7 @@ writeFileSync(
   join(root, 'llms.txt'),
   `# turkishcoffee
 
-> ${pkg.description} shadcn-shaped (Radix + cva + \`cn()\`), but with its own
+> ${pkg.description} shadcn-shaped (Base UI + cva + \`cn()\`), but with its own
 > API in places — read AGENTS.md before writing code with it.
 
 Installed copies ship these files: \`node_modules/turkishcoffee/AGENTS.md\` and

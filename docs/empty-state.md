@@ -22,7 +22,7 @@ description and a call to action.
 
 ## Props
 
-Only props this library adds or changes; everything else forwards to the underlying element or Radix primitive.
+Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
 
 - `icon?: React.ReactNode` — Pass any icon element — the package pins no icon library.
 - `title: React.ReactNode` — Required: one short line saying what is missing.

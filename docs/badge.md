@@ -7,8 +7,9 @@ import { badgeVariants, Badge, type BadgeProps } from 'turkishcoffee'
 ```
 
 Small inline label for a status or count. Variants: `default` | `secondary` |
-`destructive` | `success` | `warning` | `outline`. Not interactive — wrap it in a
-Button or link if it needs to be clickable.
+`destructive` | `success` | `warning` | `inverse` | `outline`. `inverse` is the
+neutral grey of toasts and tooltips, for tags like "Beta" or "New". Not
+interactive — wrap it in a Button or link if it needs to be clickable.
 
 ## Example
 
@@ -20,7 +21,7 @@ Button or link if it needs to be clickable.
 
 | Prop | Options | Default |
 |---|---|---|
-| `variant` | `default` · `secondary` · `destructive` · `success` · `warning` · `outline` | `default` |
+| `variant` | `default` · `secondary` · `destructive` · `success` · `warning` · `inverse` · `outline` | `default` |
 
 ## Parts
 

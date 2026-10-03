@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from 'turkishcoffee'
 ```
 
 One choice out of a few visible options. Controlled with `value` +
-`onValueChange`. For many options use Select or NativeSelect.
+`onValueChange(value, eventDetails)`. For many options use Select or NativeSelect.
 
 ## Example
 

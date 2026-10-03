@@ -14,9 +14,7 @@ accessibility.
 
 ```tsx
 <Sheet>
-  <SheetTrigger asChild>
-    <Button variant="outline">Filters</Button>
-  </SheetTrigger>
+  <SheetTrigger render={<Button variant="outline" />}>Filters</SheetTrigger>
   <SheetContent side="left">
     <SheetHeader>
       <SheetTitle>Filters</SheetTitle>
@@ -24,7 +22,7 @@ accessibility.
     </SheetHeader>
     …
     <SheetFooter>
-      <SheetClose asChild><Button>Apply</Button></SheetClose>
+      <SheetClose render={<Button />}>Apply</SheetClose>
     </SheetFooter>
   </SheetContent>
 </Sheet>
@@ -38,8 +36,8 @@ accessibility.
 
 ## Parts
 
-- `SheetTrigger` — Opens the Sheet. Use `asChild` to make your own Button the trigger.
-- `SheetClose` — Closes the Sheet. Use `asChild` to make your own Button close it.
+- `SheetTrigger` — Opens the Sheet. Pass `render={<Button />}` to make your own Button the trigger.
+- `SheetClose` — Closes the Sheet. Pass `render={<Button />}` to make your own Button close it.
 - `type SheetContentProps`
 - `SheetContent` — The panel. `side`: `top` | `right` (default) | `bottom` | `left`. Renders its own portal, overlay and close (×) button.
 - `SheetHeader` — Stacks SheetTitle and SheetDescription.

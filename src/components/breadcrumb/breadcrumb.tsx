@@ -1,5 +1,7 @@
+'use client'
+
 import type * as React from 'react'
-import { Slot } from 'radix-ui'
+import { useRender } from '@base-ui/react/use-render'
 import { cn } from '../../lib/cn'
 import { ChevronRightIcon, EllipsisIcon } from '../../lib/icons'
 
@@ -11,7 +13,7 @@ import { ChevronRightIcon, EllipsisIcon } from '../../lib/icons'
  * <Breadcrumb>
  *   <BreadcrumbList>
  *     <BreadcrumbItem>
- *       <BreadcrumbLink asChild><Link href="/">Home</Link></BreadcrumbLink>
+ *       <BreadcrumbLink render={<Link href="/" />}>Home</BreadcrumbLink>
  *     </BreadcrumbItem>
  *     <BreadcrumbSeparator />
  *     <BreadcrumbItem>
@@ -49,22 +51,20 @@ export function BreadcrumbItem({ className, ...props }: React.ComponentProps<'li
   )
 }
 
-export type BreadcrumbLinkProps = React.ComponentProps<'a'> & {
-  /** Render as the child element instead of an <a> — e.g. wrap a <Link>. */
-  asChild?: boolean
-}
+export type BreadcrumbLinkProps = useRender.ComponentProps<'a'>
 
-/** A link to an ancestor page. Use `asChild` to wrap your router's `<Link>`. */
-export function BreadcrumbLink({ className, asChild = false, ...props }: BreadcrumbLinkProps) {
-  const Comp = asChild ? Slot.Root : 'a'
-
-  return (
-    <Comp
-      data-slot="breadcrumb-link"
-      className={cn('transition-colors hover:text-foreground', className)}
-      {...props}
-    />
-  )
+/** A link to an ancestor page. Pass `render` to use your router's `<Link>`. */
+export function BreadcrumbLink({ className, render, ref, ...props }: BreadcrumbLinkProps) {
+  return useRender({
+    defaultTagName: 'a',
+    render,
+    ref,
+    props: {
+      'data-slot': 'breadcrumb-link',
+      className: cn('transition-colors hover:text-foreground', className),
+      ...props,
+    },
+  })
 }
 
 /**

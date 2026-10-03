@@ -1,12 +1,12 @@
 'use client'
 
-import type * as React from 'react'
-import { RadioGroup as RadioGroupPrimitive } from 'radix-ui'
-import { cn } from '../../lib/cn'
+import { Radio as RadioPrimitive } from '@base-ui/react/radio'
+import { RadioGroup as RadioGroupPrimitive } from '@base-ui/react/radio-group'
+import { cnState } from '../../lib/cn'
 
 /**
  * One choice out of a few visible options. Controlled with `value` +
- * `onValueChange`. For many options use Select or NativeSelect.
+ * `onValueChange(value, eventDetails)`. For many options use Select or NativeSelect.
  *
  * @example
  * <RadioGroup defaultValue="monthly">
@@ -23,11 +23,11 @@ import { cn } from '../../lib/cn'
 export function RadioGroup({
   className,
   ...props
-}: React.ComponentProps<typeof RadioGroupPrimitive.Root>) {
+}: RadioGroupPrimitive.Props) {
   return (
-    <RadioGroupPrimitive.Root
+    <RadioGroupPrimitive
       data-slot="radio-group"
-      className={cn('grid gap-3', className)}
+      className={cnState('grid gap-3', className)}
       {...props}
     />
   )
@@ -37,23 +37,26 @@ export function RadioGroup({
 export function RadioGroupItem({
   className,
   ...props
-}: React.ComponentProps<typeof RadioGroupPrimitive.Item>) {
+}: RadioPrimitive.Root.Props) {
   return (
-    <RadioGroupPrimitive.Item
+    // A native button so a sibling <label htmlFor> can name it.
+    <RadioPrimitive.Root
       data-slot="radio-group-item"
-      className={cn(
+      nativeButton
+      render={<button type="button" />}
+      className={cnState(
         'aspect-square size-4 shrink-0 rounded-full border border-input text-primary shadow-xs transition-[color,box-shadow] outline-none',
-        'data-[state=checked]:border-primary',
+        'data-checked:border-primary',
         'focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50',
-        'disabled:cursor-not-allowed disabled:opacity-50',
+        'data-disabled:cursor-not-allowed data-disabled:opacity-50',
         'aria-invalid:border-destructive aria-invalid:ring-destructive/20',
         className,
       )}
       {...props}
     >
-      <RadioGroupPrimitive.Indicator className="relative flex items-center justify-center">
+      <RadioPrimitive.Indicator className="relative flex items-center justify-center">
         <span className="absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary" />
-      </RadioGroupPrimitive.Indicator>
-    </RadioGroupPrimitive.Item>
+      </RadioPrimitive.Indicator>
+    </RadioPrimitive.Root>
   )
 }

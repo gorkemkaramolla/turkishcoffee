@@ -1,12 +1,15 @@
 import type * as React from 'react'
-import { Separator as SeparatorPrimitive } from 'radix-ui'
 import { cn } from '../../lib/cn'
 
-export type SeparatorProps = React.ComponentProps<typeof SeparatorPrimitive.Root>
+export type SeparatorProps = React.ComponentProps<'div'> & {
+  orientation?: 'horizontal' | 'vertical'
+  /** Purely visual (the default), so screen readers skip it. Pass `false` when it carries meaning. */
+  decorative?: boolean
+}
 
 /**
  * Thin horizontal or vertical (`orientation="vertical"`) rule.
- * Server-renderable: Radix Separator ships no "use client". Decorative by
+ * Server-renderable: a plain element, no primitive needed. Decorative by
  * default; pass `decorative={false}` when it carries meaning.
  */
 export function Separator({
@@ -16,10 +19,11 @@ export function Separator({
   ...props
 }: SeparatorProps) {
   return (
-    <SeparatorPrimitive.Root
+    <div
       data-slot="separator"
-      decorative={decorative}
-      orientation={orientation}
+      data-orientation={orientation}
+      role={decorative ? 'none' : 'separator'}
+      aria-orientation={decorative || orientation === 'horizontal' ? undefined : orientation}
       className={cn(
         'shrink-0 bg-border',
         'data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full',

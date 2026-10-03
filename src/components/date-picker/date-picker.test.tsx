@@ -51,7 +51,7 @@ describe('DatePicker', () => {
     setViewport(MOBILE_WIDTH)
     render(<DatePicker value={new Date(2026, 0, 1)} />)
     fireEvent.click(screen.getByRole('button', { name: 'January 1st, 2026' }))
-    expect(screen.getByRole('dialog').hasAttribute('data-vaul-drawer')).toBe(true)
+    expect(screen.getByRole('dialog').getAttribute('data-swipe-direction')).toBe('down')
     expect(screen.getByRole('grid')).toBeTruthy()
   })
 })

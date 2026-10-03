@@ -14,9 +14,12 @@ const meta = { title: 'Components/Select', component: Select } satisfies Meta<ty
 export default meta
 type Story = StoryObj<typeof meta>
 
+// Passed to Select so SelectValue shows "Next.js", not "next".
+const frameworks = { next: 'Next.js', remix: 'Remix', astro: 'Astro', nuxt: 'Nuxt' }
+
 export const Default: Story = {
   render: () => (
-    <Select>
+    <Select items={frameworks}>
       <SelectTrigger className="w-56">
         <SelectValue placeholder="Pick a framework" />
       </SelectTrigger>

@@ -1,79 +1,86 @@
 'use client'
 
 import type * as React from 'react'
-import { DropdownMenu as MenuPrimitive } from 'radix-ui'
-import { cn } from '../../lib/cn'
+import { Menu as MenuPrimitive } from '@base-ui/react/menu'
+import { cn, cnState } from '../../lib/cn'
 import { CheckIcon, ChevronRightIcon } from '../../lib/icons'
+import { popupMotion } from '../../lib/motion'
 
 /**
- * Menu of actions opened from a trigger. For choosing a form value use Select.
+ * Menu of actions opened from a trigger. Built on Base UI's Menu. For choosing a
+ * form value use Select.
  *
  * @example
  * <DropdownMenu>
- *   <DropdownMenuTrigger asChild>
- *     <Button variant="outline">Options</Button>
- *   </DropdownMenuTrigger>
+ *   <DropdownMenuTrigger render={<Button variant="outline" />}>Options</DropdownMenuTrigger>
  *   <DropdownMenuContent align="end">
  *     <DropdownMenuLabel>Project</DropdownMenuLabel>
- *     <DropdownMenuItem onSelect={rename}>Rename</DropdownMenuItem>
+ *     <DropdownMenuItem onClick={rename}>Rename</DropdownMenuItem>
  *     <DropdownMenuSeparator />
- *     <DropdownMenuItem variant="destructive" onSelect={remove}>Delete</DropdownMenuItem>
+ *     <DropdownMenuItem variant="destructive" onClick={remove}>Delete</DropdownMenuItem>
  *   </DropdownMenuContent>
  * </DropdownMenu>
  */
 export const DropdownMenu = MenuPrimitive.Root
-/** Opens the menu. Use `asChild` to make your own Button the trigger. */
+/** Opens the menu. Pass `render={<Button />}` to make your own Button the trigger. */
 export const DropdownMenuTrigger = MenuPrimitive.Trigger
 /** Groups related items. */
 export const DropdownMenuGroup = MenuPrimitive.Group
 /** Wraps a DropdownMenuSubTrigger and DropdownMenuSubContent for a nested menu. */
-export const DropdownMenuSub = MenuPrimitive.Sub
+export const DropdownMenuSub = MenuPrimitive.SubmenuRoot
 /** Holds DropdownMenuRadioItems; controlled with `value` + `onValueChange`. */
 export const DropdownMenuRadioGroup = MenuPrimitive.RadioGroup
 
-const surface = [
-  'z-50 min-w-32 overflow-y-auto overflow-x-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md',
-  'data-[state=open]:animate-ui-pop-in data-[state=closed]:animate-ui-pop-out',
-]
+const surface =
+  'min-w-32 max-h-(--available-height) overflow-y-auto overflow-x-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md outline-none'
 
 const item = [
-  "relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none select-none",
-  'focus:bg-accent focus:text-accent-foreground',
-  'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+  'relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none select-none',
+  'data-highlighted:bg-accent data-highlighted:text-accent-foreground',
+  'data-disabled:pointer-events-none data-disabled:opacity-50',
   "[&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0",
 ]
+
+export type DropdownMenuContentProps = MenuPrimitive.Popup.Props &
+  Pick<MenuPrimitive.Positioner.Props, 'side' | 'sideOffset' | 'align' | 'alignOffset'>
 
 /** The menu panel; renders its own portal. */
 export function DropdownMenuContent({
   className,
+  side,
   sideOffset = 4,
+  align,
+  alignOffset,
   ...props
-}: React.ComponentProps<typeof MenuPrimitive.Content>) {
+}: DropdownMenuContentProps) {
   return (
     <MenuPrimitive.Portal>
-      <MenuPrimitive.Content
-        data-slot="dropdown-menu-content"
+      <MenuPrimitive.Positioner
+        className="z-50 outline-none"
+        side={side}
         sideOffset={sideOffset}
-        className={cn(
-          surface,
-          'max-h-(--radix-dropdown-menu-content-available-height) origin-(--radix-dropdown-menu-content-transform-origin)',
-          className,
-        )}
-        {...props}
-      />
+        align={align}
+        alignOffset={alignOffset}
+      >
+        <MenuPrimitive.Popup
+          data-slot="dropdown-menu-content"
+          className={cnState(surface, popupMotion, className)}
+          {...props}
+        />
+      </MenuPrimitive.Positioner>
     </MenuPrimitive.Portal>
   )
 }
 
 /**
- * One action. Use `onSelect` (not `onClick`) to run it.
+ * One action. Run it with `onClick`; the menu closes afterwards.
  * `variant="destructive"` colours it for dangerous actions.
  */
 export function DropdownMenuItem({
   className,
   variant = 'default',
   ...props
-}: React.ComponentProps<typeof MenuPrimitive.Item> & {
+}: MenuPrimitive.Item.Props & {
   /** `destructive` colours the item for dangerous actions like Delete. */
   variant?: 'default' | 'destructive'
 }) {
@@ -81,9 +88,9 @@ export function DropdownMenuItem({
     <MenuPrimitive.Item
       data-slot="dropdown-menu-item"
       data-variant={variant}
-      className={cn(
+      className={cnState(
         item,
-        'data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10',
+        'data-[variant=destructive]:text-destructive data-[variant=destructive]:data-highlighted:bg-destructive/10 data-[variant=destructive]:data-highlighted:text-destructive',
         className,
       )}
       {...props}
@@ -96,17 +103,17 @@ export function DropdownMenuCheckboxItem({
   className,
   children,
   ...props
-}: React.ComponentProps<typeof MenuPrimitive.CheckboxItem>) {
+}: MenuPrimitive.CheckboxItem.Props) {
   return (
     <MenuPrimitive.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
-      className={cn(item, 'pr-2 pl-8', className)}
+      className={cnState(item, 'pr-2 pl-8', className)}
       {...props}
     >
       <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
-        <MenuPrimitive.ItemIndicator>
+        <MenuPrimitive.CheckboxItemIndicator>
           <CheckIcon className="size-4" />
-        </MenuPrimitive.ItemIndicator>
+        </MenuPrimitive.CheckboxItemIndicator>
       </span>
       {children}
     </MenuPrimitive.CheckboxItem>
@@ -118,30 +125,30 @@ export function DropdownMenuRadioItem({
   className,
   children,
   ...props
-}: React.ComponentProps<typeof MenuPrimitive.RadioItem>) {
+}: MenuPrimitive.RadioItem.Props) {
   return (
     <MenuPrimitive.RadioItem
       data-slot="dropdown-menu-radio-item"
-      className={cn(item, 'pr-2 pl-8', className)}
+      className={cnState(item, 'pr-2 pl-8', className)}
       {...props}
     >
       <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
-        <MenuPrimitive.ItemIndicator>
-          <span className="size-2 rounded-full bg-current" />
-        </MenuPrimitive.ItemIndicator>
+        <MenuPrimitive.RadioItemIndicator>
+          <span className="block size-2 rounded-full bg-current" />
+        </MenuPrimitive.RadioItemIndicator>
       </span>
       {children}
     </MenuPrimitive.RadioItem>
   )
 }
 
-/** Non-interactive heading inside the menu. */
-export function DropdownMenuLabel({
-  className,
-  ...props
-}: React.ComponentProps<typeof MenuPrimitive.Label>) {
+/**
+ * Non-interactive heading inside the menu. A plain element, so it works
+ * anywhere in the menu, inside a DropdownMenuGroup or not.
+ */
+export function DropdownMenuLabel({ className, ...props }: React.ComponentProps<'div'>) {
   return (
-    <MenuPrimitive.Label
+    <div
       data-slot="dropdown-menu-label"
       className={cn('px-2 py-1.5 text-sm font-medium', className)}
       {...props}
@@ -150,14 +157,11 @@ export function DropdownMenuLabel({
 }
 
 /** Horizontal rule between groups of items. */
-export function DropdownMenuSeparator({
-  className,
-  ...props
-}: React.ComponentProps<typeof MenuPrimitive.Separator>) {
+export function DropdownMenuSeparator({ className, ...props }: MenuPrimitive.Separator.Props) {
   return (
     <MenuPrimitive.Separator
       data-slot="dropdown-menu-separator"
-      className={cn('-mx-1 my-1 h-px bg-border', className)}
+      className={cnState('-mx-1 my-1 h-px bg-border', className)}
       {...props}
     />
   )
@@ -179,28 +183,32 @@ export function DropdownMenuSubTrigger({
   className,
   children,
   ...props
-}: React.ComponentProps<typeof MenuPrimitive.SubTrigger>) {
+}: MenuPrimitive.SubmenuTrigger.Props) {
   return (
-    <MenuPrimitive.SubTrigger
+    <MenuPrimitive.SubmenuTrigger
       data-slot="dropdown-menu-sub-trigger"
-      className={cn(item, 'data-[state=open]:bg-accent', className)}
+      className={cnState(item, 'data-popup-open:bg-accent', className)}
       {...props}
     >
       {children}
       <ChevronRightIcon className="ml-auto size-4" />
-    </MenuPrimitive.SubTrigger>
+    </MenuPrimitive.SubmenuTrigger>
   )
 }
 
-/** The nested menu panel. */
+/** The nested menu panel; opens beside its DropdownMenuSubTrigger. */
 export function DropdownMenuSubContent({
   className,
+  sideOffset = 0,
+  alignOffset = -4,
   ...props
-}: React.ComponentProps<typeof MenuPrimitive.SubContent>) {
+}: DropdownMenuContentProps) {
   return (
-    <MenuPrimitive.SubContent
+    <DropdownMenuContent
       data-slot="dropdown-menu-sub-content"
-      className={cn(surface, 'origin-(--radix-dropdown-menu-content-transform-origin)', className)}
+      sideOffset={sideOffset}
+      alignOffset={alignOffset}
+      className={className}
       {...props}
     />
   )

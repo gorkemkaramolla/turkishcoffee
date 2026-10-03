@@ -6,13 +6,14 @@
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from 'turkishcoffee'
 ```
 
-Vertically stacked sections that expand one (`type="single"`) or several
-(`type="multiple"`) at a time. For a single show/hide region use Collapsible.
+Vertically stacked sections. One opens at a time and can be closed again;
+pass `multiple` to let several stay open. `value` / `defaultValue` are always
+arrays of item values. For a single show/hide region use Collapsible.
 
 ## Example
 
 ```tsx
-<Accordion type="single" collapsible>
+<Accordion defaultValue={['shipping']}>
   <AccordionItem value="shipping">
     <AccordionTrigger>Shipping</AccordionTrigger>
     <AccordionContent>Ships in 2–3 days.</AccordionContent>

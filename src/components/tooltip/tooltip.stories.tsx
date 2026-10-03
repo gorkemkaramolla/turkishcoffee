@@ -9,9 +9,7 @@ type Story = StoryObj<typeof meta>
 export const Default: Story = {
   render: () => (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <Button variant="outline">Hover me</Button>
-      </TooltipTrigger>
+      <TooltipTrigger render={<Button variant="outline" />}>Hover me</TooltipTrigger>
       <TooltipContent>Deletes the record permanently</TooltipContent>
     </Tooltip>
   ),

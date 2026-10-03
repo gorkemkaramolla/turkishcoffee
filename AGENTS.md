@@ -1,6 +1,6 @@
 # turkishcoffee — guide for AI agents
 
-React 19 component library: Tailwind v4, Radix primitives, `cva` variants, `cn()`
+React 19 component library: Tailwind v4, Base UI primitives, `cva` variants, `cn()`
 class merging, ESM-only. It is **shaped like shadcn/ui but it is not shadcn**: it
 is an installed package (not copied source), and a few APIs differ. Read the
 "Differences from shadcn/ui" section before writing code; most mistakes come
@@ -29,6 +29,9 @@ stylesheet (e.g. `app/globals.css`) must contain all three lines:
   `tailwindcss-animate`, `tw-animate-css`, `lucide-react` or `sonner` for this
   library — it needs none of them.
 - Dark mode is class-based: `<html class="dark">`.
+- Wrap the app in an element with `isolation: isolate` (e.g. `<div className="isolate">`
+  inside `<body>`). Popups render in portals; the separate stacking context keeps
+  them above the page whatever `z-index` the page uses.
 
 ## Imports
 
@@ -37,7 +40,7 @@ stylesheet (e.g. `app/globals.css`) must contain all three lines:
 | All components, `cn`, `useDisclosure`, `useMediaQuery`, `toast` | `turkishcoffee` |
 | `Form`, `FormField`, `FormItem`, `FormLabel`, `FormControl`, `FormDescription`, `FormMessage`, `useFormField` | `turkishcoffee/form` (needs `react-hook-form`) |
 | `DataTable`, `DataTableColumn`, `dataTableFeatures` | `turkishcoffee/data-table` (needs `@tanstack/react-table` v9) |
-| Theme tokens and animations | `turkishcoffee/theme.css` (CSS only) |
+| Theme tokens | `turkishcoffee/theme.css` (CSS only) |
 
 There are no per-component paths like `turkishcoffee/button` and no
 `@/components/ui/*` files — never generate those imports.
@@ -47,15 +50,35 @@ There are no per-component paths like `turkishcoffee/button` and no
 | shadcn habit | turkishcoffee |
 |---|---|
 | `<Button size="default">` | `size="md"` (sizes: `sm` · `md` · `lg` · `icon`). Button also has `variant="success"`. |
-| `toast("Saved")` / `toast.success("Saved")` (sonner) | `toast({ title: 'Saved' })`, `toast.success({ title })`, `toast.error({ title, description })`. Always an object. No `toast.info` / `toast.warning`. |
+| `toast("Saved")` / `toast.success("Saved")` (sonner) | Same sonner API, re-exported: `toast('Saved')`, `toast.success('Saved', { description })`, `toast.error`, `toast.info`, `toast.warning`. Import `toast` from `turkishcoffee`, not from `sonner`. |
 | `<Toaster />` from `sonner`, or a `useToast()` hook | `import { Toaster, toast } from 'turkishcoffee'`; mount `<Toaster />` once at the app root. No `useToast`. |
 | `<TooltipProvider>` around the app | Not needed and not exported: each `Tooltip` provides itself. |
 | `import { Form } from '@/components/ui/form'` | `import { Form, … } from 'turkishcoffee/form'` — not from the root. |
 | DataTable built by hand with `ColumnDef` / `createColumnHelper` (TanStack v8) | `import { DataTable, type DataTableColumn } from 'turkishcoffee/data-table'`; columns are `DataTableColumn<Row>[]` (TanStack v9). Sorting and `pageSize` pagination are built in. |
 | `lucide-react` icons inside components | Components draw their own icons. Pass any icon element where a `ReactNode` is accepted (`EmptyState icon`, inside `Button`). |
-| `tailwindcss-animate` classes (`animate-in`, `fade-in-0`) | Animations are `animate-ui-*` tokens from `theme.css`, e.g. `animate-ui-fade-in`. Retime by redeclaring `--animate-ui-*`. |
+| `tailwindcss-animate` classes (`animate-in`, `fade-in-0`) | Overlays animate with CSS transitions on Base UI's `data-starting-style` / `data-ending-style`. There are no animation tokens; retime one with `className`, e.g. `duration-150`. |
+| `asChild` (Radix) | `render`: `<Button render={<Link href="/x" />}>Go</Button>`, `<DialogTrigger render={<Button />}>Open</DialogTrigger>`. |
+| `<Accordion type="single" collapsible>` | `<Accordion>` (one open at a time, closable) or `<Accordion multiple>`. `value` / `defaultValue` are arrays. |
+| `<DropdownMenuItem onSelect={…}>` | `onClick={…}`. The menu closes afterwards. |
+| `<SelectValue>` shows the item text | Pass `items` to `Select` (`{ value: label }` or `{ value, label }[]`); without it `SelectValue` shows the raw value. |
 | `<Alert variant="warning">` missing | `Alert` and `Badge` have `success` and `warning` variants; `Button` and `Toast` have `success`. |
 | `<AlertDialogAction>` is plain | `AlertDialogAction` is styled as a default Button and `AlertDialogCancel` as outline. For a destructive confirm: `className={buttonVariants({ variant: 'destructive' })}`. |
+
+## Upgrading from v2 (Radix) to v3 (Base UI)
+
+| v2 | v3 |
+|---|---|
+| `asChild` + child element | `render={<Element />}`, children on the outer component |
+| `<Accordion type="single" collapsible>` / `type="multiple"` | `<Accordion>` / `<Accordion multiple>`; `value` is always an array |
+| `<Checkbox checked="indeterminate">` | `<Checkbox indeterminate>` |
+| `<DropdownMenuItem onSelect>` | `onClick` |
+| `<Tooltip delayDuration={…}>` | `delay={…}` |
+| `<Select>` with `SelectValue` showing labels | add `items` to `Select` |
+| `PopoverAnchor` | `anchor` prop on `PopoverContent` |
+| `HoverCardTrigger asChild` around an `<a>` | `HoverCardTrigger` renders the `<a>`: give it `href` |
+| `data-[state=open]` / `data-[state=checked]` / `data-[state=active]` selectors | `data-open` / `data-checked` / `data-active` (tabs) |
+| `animate-ui-*` classes and `--animate-ui-*` tokens | removed; transitions on `data-starting-style` / `data-ending-style` |
+| `Button`, `BreadcrumbLink` server-renderable | client components now (`render` needs a hook); `Label`, `Separator` and `AspectRatio` became server-renderable |
 
 ## Rules
 
@@ -64,20 +87,23 @@ There are no per-component paths like `turkishcoffee/button` and no
 - **`className` always wins.** Components merge with `cn()` (tailwind-merge), so
   `className="px-8"` overrides the built-in padding. Use `cn()` from
   `turkishcoffee` in your own components too.
-- **Links:** use `asChild` on `Button`, `BreadcrumbLink`, and the `*Trigger` /
-  `*Close` parts: `<Button asChild><Link href="/x">Go</Link></Button>`.
-  `PaginationLink` takes `href` directly and does not support `asChild`.
+- **Links:** pass `render` to `Button`, `BreadcrumbLink`, and the `*Trigger` /
+  `*Close` parts: `<Button render={<Link href="/x" />}>Go</Button>`. The children
+  stay on the outer component. `PaginationLink` takes `href` directly and does
+  not support `render`.
 - **Colours come from tokens**, never hex or the default palette:
   `bg-primary`, `text-muted-foreground`, `border-border`, `bg-destructive`,
   `text-success`, `bg-warning`. Full list: `background`, `foreground`, `card`,
   `popover`, `primary`, `secondary`, `muted`, `accent`, `destructive`, `success`,
-  `warning` (each with `-foreground`), plus `border`, `input`, `ring`.
+  `warning`, `inverse` (each with `-foreground`), plus `border`, `input`, `ring`.
+  `inverse` is the grey behind toasts and tooltips.
 - **Server vs client:** components marked "Client component" in their doc ship
   `"use client"`. They can be imported from a server component as-is; your event
   handlers still need to live in a client component.
 - **Dialog, AlertDialog and Sheet need their Title** (`DialogTitle`, …) for
-  accessibility; Radix warns at runtime without it. Radix event props apply:
-  `onOpenChange`, `onCheckedChange`, `onValueChange`, `onSelect` on menu items.
+  accessibility. Base UI event props apply, and every change handler gets a
+  second `eventDetails` argument: `onOpenChange(open, eventDetails)`,
+  `onCheckedChange`, `onValueChange`; menu items use `onClick`.
 - **Choosing between look-alikes:**
   - Dialog (centered task) · AlertDialog (confirm a consequential action) · Sheet (panel from an edge)
   - Popover (click, interactive) · Tooltip (hover, short text) · HoverCard (hover, rich preview)
@@ -94,29 +120,29 @@ There are no per-component paths like `turkishcoffee/button` and no
 ## Components
 
 <!-- components:start -->
-- [Accordion](docs/accordion.md) · client — Vertically stacked sections that expand one (`type="single"`) or several (`type="multiple"`) at a time.
+- [Accordion](docs/accordion.md) · client — Vertically stacked sections.
 - [Alert](docs/alert.md) · server — Inline, non-dismissable message inside the page flow (`role="alert"`).
 - [AlertDialog](docs/alert-dialog.md) · client — Modal that interrupts the user to confirm a consequential action.
-- [AspectRatio](docs/aspect-ratio.md) · server — Constrains its child (usually an image or video) to `ratio` (width / height).
+- [AspectRatio](docs/aspect-ratio.md) · server — Constrains its child (usually an image or video) to `ratio` (width / height) with the CSS `aspect-ratio` property.
 - [Avatar](docs/avatar.md) · client — Round user image with a fallback while it loads or when it fails.
 - [Badge](docs/badge.md) · server — Small inline label for a status or count.
-- [Breadcrumb](docs/breadcrumb.md) · server — Trail of links to the current page.
-- [Button](docs/button.md) · server — A button.
+- [Breadcrumb](docs/breadcrumb.md) · client — Trail of links to the current page.
+- [Button](docs/button.md) · client — A button.
 - [Calendar](docs/calendar.md) · client — react-day-picker styled with the theme tokens instead of its stylesheet, so it follows `.dark`.
 - [Card](docs/card.md) · server — Bordered surface that groups related content.
 - [Checkbox](docs/checkbox.md) · client — A checkbox.
 - [Collapsible](docs/collapsible.md) · client — A single region the user can show and hide.
 - [DataTable](docs/data-table.md) · client · `turkishcoffee/data-table` — Table with click-to-sort headers and optional client-side pagination, over TanStack Table v9.
 - [DatePicker](docs/date-picker.md) · client — Controlled single-date picker.
-- [Dialog](docs/dialog.md) · client — Modal for a focused task (a form, details): centered on `sm` screens and up, a vaul bottom drawer below.
-- [Drawer](docs/drawer.md) · client — Bottom sheet built on vaul: slides up from the bottom edge and closes on a swipe down, outside tap or Escape.
+- [Dialog](docs/dialog.md) · client — Modal for a focused task (a form, details): centered on `sm` screens and up, a Base UI bottom drawer below.
+- [Drawer](docs/drawer.md) · client — Bottom sheet built on Base UI's Drawer: slides up from the bottom edge and closes on a swipe down, outside tap or Escape.
 - [DropdownMenu](docs/dropdown-menu.md) · client — Menu of actions opened from a trigger.
 - [EmptyState](docs/empty-state.md) · server — Placeholder for a list or page that has no content yet: icon, title, description and a call to action.
 - [Form](docs/form.md) · client · `turkishcoffee/form` — react-hook-form's FormProvider.
 - [HoverCard](docs/hover-card.md) · client — Rich preview shown when a pointer hovers a link (e.g.
 - [Input](docs/input.md) · server — Single-line text field; a styled `<input>` that forwards every prop.
 - [InputGroup](docs/input-group.md) · server — A field that combines a control with icons, text or buttons.
-- [Label](docs/label.md) · client — Accessible label for a form control; link it with `htmlFor`.
+- [Label](docs/label.md) · server — Accessible label for a form control; link it with `htmlFor`.
 - [NativeSelect](docs/native-select.md) · server — The platform <select>, styled to match Input.
 - [Pagination](docs/pagination.md) · server — Page navigation built from plain anchors, so it works with any router: pass `href` to each link.
 - [Popover](docs/popover.md) · client — Floating panel opened by clicking a trigger; for small forms, pickers and extra details.

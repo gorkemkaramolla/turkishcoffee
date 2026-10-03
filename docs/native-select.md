@@ -6,7 +6,7 @@
 import { NativeSelect, type NativeSelectProps } from 'turkishcoffee'
 ```
 
-The platform <select>, styled to match Input. Unlike the Radix-based Select
+The platform <select>, styled to match Input. Unlike the Base UI Select
 it needs no client boundary and keeps the OS picker on mobile — prefer it
 inside long forms and inside server components. `size`: `sm` | `md` (default).
 `className` goes on the wrapper div (use it for width); other props reach the `<select>`.
@@ -22,7 +22,7 @@ inside long forms and inside server components. `size`: `sm` | `md` (default).
 
 ## Props
 
-Only props this library adds or changes; everything else forwards to the underlying element or Radix primitive.
+Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
 
 - `size?: 'sm' | 'md'` — Height: `sm` (h-8) or `md` (h-9, default). Replaces the HTML `size` attribute.
 

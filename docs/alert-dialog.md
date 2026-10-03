@@ -14,9 +14,7 @@ AlertDialogTitle is required for accessibility.
 
 ```tsx
 <AlertDialog>
-  <AlertDialogTrigger asChild>
-    <Button variant="destructive">Delete project</Button>
-  </AlertDialogTrigger>
+  <AlertDialogTrigger render={<Button variant="destructive" />}>Delete project</AlertDialogTrigger>
   <AlertDialogContent>
     <AlertDialogHeader>
       <AlertDialogTitle>Delete this project?</AlertDialogTitle>
@@ -34,7 +32,7 @@ AlertDialogTitle is required for accessibility.
 
 ## Parts
 
-- `AlertDialogTrigger` — Opens the AlertDialog. Use `asChild` to make your own Button the trigger.
+- `AlertDialogTrigger` — Opens the AlertDialog. Pass `render={<Button />}` to make your own Button the trigger.
 - `AlertDialogPortal` — Portal used by AlertDialogContent. Rarely needed directly.
 - `AlertDialogOverlay` — Backdrop behind the AlertDialog. Already rendered by AlertDialogContent.
 - `AlertDialogContent` — The dialog panel. Renders its own portal and overlay.
@@ -42,5 +40,5 @@ AlertDialogTitle is required for accessibility.
 - `AlertDialogFooter` — Holds AlertDialogCancel and AlertDialogAction; stacks on mobile, right-aligns from `sm`.
 - `AlertDialogTitle` — Required: names the dialog for screen readers.
 - `AlertDialogDescription` — Explains the consequence of the action.
-- `AlertDialogAction` — The confirming button; closes the dialog. Styled as a default Button. Action and Cancel are pre-styled with buttonVariants: an alert dialog is a decision, so the two choices should never drift apart visually. For a destructive action pass `className={buttonVariants({ variant: 'destructive' })}`.
+- `AlertDialogAction` — The confirming button; closes the dialog after its `onClick`. Styled as a default Button. Action and Cancel are pre-styled with buttonVariants: an alert dialog is a decision, so the two choices should never drift apart visually. For a destructive action pass `className={buttonVariants({ variant: 'destructive' })}`.
 - `AlertDialogCancel` — The dismissing button; closes the dialog. Styled as an outline Button.

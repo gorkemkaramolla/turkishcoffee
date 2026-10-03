@@ -1,10 +1,11 @@
 'use client'
 
 import type * as React from 'react'
-import { Dialog as SheetPrimitive } from 'radix-ui'
+import { Dialog as SheetPrimitive } from '@base-ui/react/dialog'
 import { cva, type VariantProps } from 'class-variance-authority'
-import { cn } from '../../lib/cn'
+import { cn, cnState } from '../../lib/cn'
 import { XIcon } from '../../lib/icons'
+import { backdrop, slideFrom, slideMotion } from '../../lib/motion'
 
 /**
  * Modal panel that slides in from an edge — navigation drawers, filters,
@@ -13,9 +14,7 @@ import { XIcon } from '../../lib/icons'
  *
  * @example
  * <Sheet>
- *   <SheetTrigger asChild>
- *     <Button variant="outline">Filters</Button>
- *   </SheetTrigger>
+ *   <SheetTrigger render={<Button variant="outline" />}>Filters</SheetTrigger>
  *   <SheetContent side="left">
  *     <SheetHeader>
  *       <SheetTitle>Filters</SheetTitle>
@@ -23,35 +22,33 @@ import { XIcon } from '../../lib/icons'
  *     </SheetHeader>
  *     …
  *     <SheetFooter>
- *       <SheetClose asChild><Button>Apply</Button></SheetClose>
+ *       <SheetClose render={<Button />}>Apply</SheetClose>
  *     </SheetFooter>
  *   </SheetContent>
  * </Sheet>
  */
 export const Sheet = SheetPrimitive.Root
-/** Opens the Sheet. Use `asChild` to make your own Button the trigger. */
+/** Opens the Sheet. Pass `render={<Button />}` to make your own Button the trigger. */
 export const SheetTrigger = SheetPrimitive.Trigger
-/** Closes the Sheet. Use `asChild` to make your own Button close it. */
+/** Closes the Sheet. Pass `render={<Button />}` to make your own Button close it. */
 export const SheetClose = SheetPrimitive.Close
 
 const sheetVariants = cva(
-  'fixed z-50 flex flex-col gap-4 bg-background shadow-lg transition-none',
+  ['fixed z-50 flex flex-col gap-4 bg-background shadow-lg outline-none', slideMotion],
   {
     variants: {
       side: {
-        top: 'inset-x-0 top-0 h-auto border-b border-border data-[state=open]:animate-ui-slide-in-top data-[state=closed]:animate-ui-slide-out-top',
-        bottom:
-          'inset-x-0 bottom-0 h-auto border-t border-border data-[state=open]:animate-ui-slide-in-bottom data-[state=closed]:animate-ui-slide-out-bottom',
-        left: 'inset-y-0 left-0 h-full w-3/4 border-r border-border sm:max-w-sm data-[state=open]:animate-ui-slide-in-left data-[state=closed]:animate-ui-slide-out-left',
-        right:
-          'inset-y-0 right-0 h-full w-3/4 border-l border-border sm:max-w-sm data-[state=open]:animate-ui-slide-in-right data-[state=closed]:animate-ui-slide-out-right',
+        top: ['inset-x-0 top-0 h-auto border-b border-border', slideFrom.top],
+        bottom: ['inset-x-0 bottom-0 h-auto border-t border-border', slideFrom.bottom],
+        left: ['inset-y-0 left-0 h-full w-3/4 border-r border-border sm:max-w-sm', slideFrom.left],
+        right: ['inset-y-0 right-0 h-full w-3/4 border-l border-border sm:max-w-sm', slideFrom.right],
       },
     },
     defaultVariants: { side: 'right' },
   },
 )
 
-export type SheetContentProps = React.ComponentProps<typeof SheetPrimitive.Content> &
+export type SheetContentProps = SheetPrimitive.Popup.Props &
   VariantProps<typeof sheetVariants>
 
 /**
@@ -61,13 +58,13 @@ export type SheetContentProps = React.ComponentProps<typeof SheetPrimitive.Conte
 export function SheetContent({ className, children, side, ...props }: SheetContentProps) {
   return (
     <SheetPrimitive.Portal>
-      <SheetPrimitive.Overlay
+      <SheetPrimitive.Backdrop
         data-slot="sheet-overlay"
-        className="fixed inset-0 z-50 bg-black/50 data-[state=open]:animate-ui-fade-in data-[state=closed]:animate-ui-fade-out"
+        className={backdrop}
       />
-      <SheetPrimitive.Content
+      <SheetPrimitive.Popup
         data-slot="sheet-content"
-        className={cn(sheetVariants({ side }), className)}
+        className={cnState(sheetVariants({ side }), className)}
         {...props}
       >
         {children}
@@ -75,7 +72,7 @@ export function SheetContent({ className, children, side, ...props }: SheetConte
           <XIcon className="size-4" />
           <span className="sr-only">Close</span>
         </SheetPrimitive.Close>
-      </SheetPrimitive.Content>
+      </SheetPrimitive.Popup>
     </SheetPrimitive.Portal>
   )
 }
@@ -98,11 +95,11 @@ export function SheetFooter({ className, ...props }: React.ComponentProps<'div'>
 export function SheetTitle({
   className,
   ...props
-}: React.ComponentProps<typeof SheetPrimitive.Title>) {
+}: SheetPrimitive.Title.Props) {
   return (
     <SheetPrimitive.Title
       data-slot="sheet-title"
-      className={cn('font-semibold', className)}
+      className={cnState('font-semibold', className)}
       {...props}
     />
   )
@@ -112,11 +109,11 @@ export function SheetTitle({
 export function SheetDescription({
   className,
   ...props
-}: React.ComponentProps<typeof SheetPrimitive.Description>) {
+}: SheetPrimitive.Description.Props) {
   return (
     <SheetPrimitive.Description
       data-slot="sheet-description"
-      className={cn('text-muted-foreground text-sm', className)}
+      className={cnState('text-muted-foreground text-sm', className)}
       {...props}
     />
   )

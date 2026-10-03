@@ -7,8 +7,9 @@ import { alertVariants, Alert, AlertTitle, AlertDescription, type AlertProps } f
 ```
 
 Inline, non-dismissable message inside the page flow (`role="alert"`).
-Variants: `default` | `destructive` | `success` | `warning`. Put an icon as the
-first child and it gets its own column. For a transient message use `toast()`;
+Variants: `default` | `info` | `destructive` | `success` | `warning`. Pass an
+`icon` (or put an svg as the first child) and it gets its own column; `info`,
+`destructive` and `success` bring their own. For a transient message use `toast()`;
 for a blocking question use AlertDialog.
 
 ## Example
@@ -18,13 +19,23 @@ for a blocking question use AlertDialog.
   <AlertTitle>Trial ends soon</AlertTitle>
   <AlertDescription>Add a payment method to keep your projects.</AlertDescription>
 </Alert>
+
+<Alert variant="info">
+  <AlertTitle>Leave requests close on Friday</AlertTitle>
+</Alert>
 ```
 
 ## Variants
 
 | Prop | Options | Default |
 |---|---|---|
-| `variant` | `default` · `destructive` · `success` · `warning` | `default` |
+| `variant` | `default` · `info` · `destructive` · `success` · `warning` | `"default"` |
+
+## Props
+
+Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
+
+- `icon?: React.ReactNode` — Icon in its own column before the text. `info`, `destructive` and `success` show InfoIcon, ErrorIcon and SuccessIcon by default; pass your own node to replace it, or `null` to drop it.
 
 ## Parts
 

@@ -7,7 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from 'turkishcoffee'
 ```
 
 Switches between views in the same place. Uncontrolled with `defaultValue`,
-controlled with `value` + `onValueChange`.
+controlled with `value` + `onValueChange(value, eventDetails)`.
 
 ## Example
 

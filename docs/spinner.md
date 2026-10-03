@@ -20,7 +20,7 @@ library on consumers.
 
 ## Props
 
-Only props this library adds or changes; everything else forwards to the underlying element or Radix primitive.
+Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
 
 - `label?: string | null` — Announced to screen readers; pass null to keep the spinner silent.
 

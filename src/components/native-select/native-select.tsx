@@ -8,7 +8,7 @@ export type NativeSelectProps = Omit<React.ComponentProps<'select'>, 'size'> & {
 }
 
 /**
- * The platform <select>, styled to match Input. Unlike the Radix-based Select
+ * The platform <select>, styled to match Input. Unlike the Base UI Select
  * it needs no client boundary and keeps the OS picker on mobile — prefer it
  * inside long forms and inside server components. `size`: `sm` | `md` (default).
  * `className` goes on the wrapper div (use it for width); other props reach the `<select>`.

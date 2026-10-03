@@ -12,6 +12,13 @@ Renders through a portal, so placement in the tree does not matter.
 Colors come from the theme tokens, so it follows `.dark` without a `theme` prop.
 Pass `richColors` to render `toast.success` / `toast.error` in solid token colors.
 
+`toast.success`, `toast.error` and `toast.info` carry the library's filled
+SuccessIcon, ErrorIcon and InfoIcon; `toast.warning` shares ErrorIcon in the
+warning colour. Override any of them with the `icons` prop (`null` removes one).
+
+A plain `toast()` is white on the `--inverse` grey, the same surface Tooltip
+uses; its action button sits on that grey with a lighter outline.
+
 ## Example
 
 ```tsx

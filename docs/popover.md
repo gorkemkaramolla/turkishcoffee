@@ -3,7 +3,7 @@
 **Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
 
 ```tsx
-import { Popover, PopoverTrigger, PopoverAnchor, PopoverContent } from 'turkishcoffee'
+import { Popover, PopoverTrigger, PopoverContent, type PopoverContentProps } from 'turkishcoffee'
 ```
 
 Floating panel opened by clicking a trigger; for small forms, pickers and
@@ -14,15 +14,13 @@ use DropdownMenu.
 
 ```tsx
 <Popover>
-  <PopoverTrigger asChild>
-    <Button variant="outline">Filters</Button>
-  </PopoverTrigger>
+  <PopoverTrigger render={<Button variant="outline" />}>Filters</PopoverTrigger>
   <PopoverContent align="start">…</PopoverContent>
 </Popover>
 ```
 
 ## Parts
 
-- `PopoverTrigger` — Opens the Popover. Use `asChild` to make your own Button the trigger.
-- `PopoverAnchor` — Positions the Popover against an element other than the trigger.
-- `PopoverContent` — The panel; renders its own portal. `w-72` by default.
+- `PopoverTrigger` — Opens the Popover. Pass `render={<Button />}` to make your own Button the trigger.
+- `type PopoverContentProps`
+- `PopoverContent` — The panel; renders its own portal. `w-72` by default. Pass `anchor` (an element or ref) to position it against something other than the trigger.

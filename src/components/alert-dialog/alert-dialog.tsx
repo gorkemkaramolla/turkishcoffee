@@ -1,8 +1,9 @@
 'use client'
 
 import type * as React from 'react'
-import { AlertDialog as AlertDialogPrimitive } from 'radix-ui'
-import { cn } from '../../lib/cn'
+import { AlertDialog as AlertDialogPrimitive } from '@base-ui/react/alert-dialog'
+import { cn, cnState } from '../../lib/cn'
+import { backdrop, popMotion } from '../../lib/motion'
 import { buttonVariants } from '../button'
 
 /**
@@ -12,9 +13,7 @@ import { buttonVariants } from '../button'
  *
  * @example
  * <AlertDialog>
- *   <AlertDialogTrigger asChild>
- *     <Button variant="destructive">Delete project</Button>
- *   </AlertDialogTrigger>
+ *   <AlertDialogTrigger render={<Button variant="destructive" />}>Delete project</AlertDialogTrigger>
  *   <AlertDialogContent>
  *     <AlertDialogHeader>
  *       <AlertDialogTitle>Delete this project?</AlertDialogTitle>
@@ -30,7 +29,7 @@ import { buttonVariants } from '../button'
  * </AlertDialog>
  */
 export const AlertDialog = AlertDialogPrimitive.Root
-/** Opens the AlertDialog. Use `asChild` to make your own Button the trigger. */
+/** Opens the AlertDialog. Pass `render={<Button />}` to make your own Button the trigger. */
 export const AlertDialogTrigger = AlertDialogPrimitive.Trigger
 /** Portal used by AlertDialogContent. Rarely needed directly. */
 export const AlertDialogPortal = AlertDialogPrimitive.Portal
@@ -39,13 +38,12 @@ export const AlertDialogPortal = AlertDialogPrimitive.Portal
 export function AlertDialogOverlay({
   className,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Overlay>) {
+}: AlertDialogPrimitive.Backdrop.Props) {
   return (
-    <AlertDialogPrimitive.Overlay
+    <AlertDialogPrimitive.Backdrop
       data-slot="alert-dialog-overlay"
-      className={cn(
-        'fixed inset-0 z-50 bg-black/50',
-        'data-[state=open]:animate-ui-fade-in data-[state=closed]:animate-ui-fade-out',
+      className={cnState(
+        backdrop,
         className,
       )}
       {...props}
@@ -57,16 +55,16 @@ export function AlertDialogOverlay({
 export function AlertDialogContent({
   className,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
+}: AlertDialogPrimitive.Popup.Props) {
   return (
     <AlertDialogPortal>
       <AlertDialogOverlay />
-      <AlertDialogPrimitive.Content
+      <AlertDialogPrimitive.Popup
         data-slot="alert-dialog-content"
-        className={cn(
+        className={cnState(
           'fixed top-1/2 left-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4',
-          'rounded-lg border border-border bg-background p-6 shadow-lg',
-          'data-[state=open]:animate-ui-pop-in data-[state=closed]:animate-ui-pop-out',
+          'rounded-lg border border-border bg-background p-6 shadow-lg outline-none',
+          popMotion,
           className,
         )}
         {...props}
@@ -101,11 +99,11 @@ export function AlertDialogFooter({ className, ...props }: React.ComponentProps<
 export function AlertDialogTitle({
   className,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Title>) {
+}: AlertDialogPrimitive.Title.Props) {
   return (
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
-      className={cn('text-lg leading-none font-semibold', className)}
+      className={cnState('text-lg leading-none font-semibold', className)}
       {...props}
     />
   )
@@ -115,18 +113,18 @@ export function AlertDialogTitle({
 export function AlertDialogDescription({
   className,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Description>) {
+}: AlertDialogPrimitive.Description.Props) {
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
-      className={cn('text-sm text-muted-foreground', className)}
+      className={cnState('text-sm text-muted-foreground', className)}
       {...props}
     />
   )
 }
 
 /**
- * The confirming button; closes the dialog. Styled as a default Button.
+ * The confirming button; closes the dialog after its `onClick`. Styled as a default Button.
  * Action and Cancel are pre-styled with buttonVariants: an alert dialog is a
  * decision, so the two choices should never drift apart visually. For a
  * destructive action pass `className={buttonVariants({ variant: 'destructive' })}`.
@@ -134,11 +132,12 @@ export function AlertDialogDescription({
 export function AlertDialogAction({
   className,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Action>) {
+}: AlertDialogPrimitive.Close.Props) {
+  // Base UI has no Action/Cancel parts: both are Close buttons styled apart.
   return (
-    <AlertDialogPrimitive.Action
+    <AlertDialogPrimitive.Close
       data-slot="alert-dialog-action"
-      className={cn(buttonVariants(), className)}
+      className={cnState(buttonVariants(), className)}
       {...props}
     />
   )
@@ -148,11 +147,11 @@ export function AlertDialogAction({
 export function AlertDialogCancel({
   className,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Cancel>) {
+}: AlertDialogPrimitive.Close.Props) {
   return (
-    <AlertDialogPrimitive.Cancel
+    <AlertDialogPrimitive.Close
       data-slot="alert-dialog-cancel"
-      className={cn(buttonVariants({ variant: 'outline' }), className)}
+      className={cnState(buttonVariants({ variant: 'outline' }), className)}
       {...props}
     />
   )
