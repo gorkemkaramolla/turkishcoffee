@@ -1,5 +1,11 @@
 # turkishcoffee
 
+## 3.0.2
+
+### Patch Changes
+
+- 46586e6: `theme.css` now sets the body font: the platform's own UI font (San Francisco on Apple devices, Segoe UI on Windows, then Helvetica Neue, Tahoma and Arial) through `--font-sans`. Nothing is downloaded. An app that loads its own font keeps it by redeclaring `--font-sans`.
+
 ## 3.0.1
 
 ### Patch Changes
