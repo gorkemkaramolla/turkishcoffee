@@ -70,7 +70,7 @@ export function Toaster({
                     "--info-bg": "var(--primary)",
                     "--info-text": "var(--primary-foreground)",
                     "--info-border": "var(--primary)",
-                    "--border-radius": "var(--radius)",
+                    "--border-radius": "var(--radius-lg)",
                     ...style,
                 } as React.CSSProperties
             }
@@ -86,6 +86,8 @@ export function Toaster({
             toastOptions={{
                 ...toastOptions,
                 classNames: {
+                    // The library's one elevation, in place of sonner's own shadow.
+                    toast: "!shadow-float",
                     description: "opacity-90",
                     // sonner sizes the icon box to 16px with an attribute selector; the
                     // filled icons read better at 20px, which needs the important modifier.

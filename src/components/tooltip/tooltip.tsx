@@ -60,7 +60,7 @@ export function TooltipContent({
         <TooltipPrimitive.Popup
           data-slot="tooltip-content"
           className={cnState(
-            'w-fit rounded-md bg-inverse px-3 py-1.5 text-xs text-inverse-foreground',
+            'w-fit rounded-sm bg-inverse px-2 py-1 text-xs text-inverse-foreground',
             popupMotion,
             'data-instant:transition-none',
             className,
@@ -69,7 +69,7 @@ export function TooltipContent({
         >
           {children}
           {/* A rotated square; Base UI slides it along the edge, we tuck it half under. */}
-          <TooltipPrimitive.Arrow className="size-2.5 rotate-45 rounded-[2px] bg-inverse data-[side=top]:-bottom-1 data-[side=bottom]:-top-1 data-[side=left]:-right-1 data-[side=right]:-left-1" />
+          <TooltipPrimitive.Arrow className="size-2.5 rotate-45 rounded-sm bg-inverse data-[side=top]:-bottom-1 data-[side=bottom]:-top-1 data-[side=left]:-right-1 data-[side=right]:-left-1" />
         </TooltipPrimitive.Popup>
       </TooltipPrimitive.Positioner>
     </TooltipPrimitive.Portal>

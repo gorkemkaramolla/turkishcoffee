@@ -7,8 +7,9 @@ import { buttonVariants, Button, type ButtonProps } from 'turkishcoffee'
 ```
 
 A button. Variants: `default` | `secondary` | `destructive` | `success` |
-`outline` | `ghost` | `link`. Sizes: `sm` | `md` (default) | `lg` | `icon` —
-there is no `size="default"`. Pass `render` to style another element, such
+`outline` | `ghost` | `link`. Sizes: `sm` (28px) | `md` (32px, default) |
+`lg` (36px) | `icon` — from the `--spacing-control*` tokens; there is no
+`size="default"`. Pass `render` to style another element, such
 as your router's link, as a button. Client component.
 
 ## Example

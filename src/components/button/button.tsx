@@ -17,23 +17,23 @@ export const buttonVariants = cva(
         variants: {
             variant: {
                 default:
-                    "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+                    "bg-primary text-primary-foreground hover:bg-primary/90",
                 secondary:
-                    "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+                    "bg-secondary text-secondary-foreground hover:bg-secondary/80",
                 destructive:
-                    "bg-destructive text-destructive-foreground shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20",
+                    "bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:ring-destructive/20",
                 success:
-                    "bg-success text-success-foreground shadow-xs hover:bg-success/90",
+                    "bg-success text-success-foreground hover:bg-success/90",
                 outline:
-                    "border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground",
+                    "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
                 ghost: "hover:bg-accent hover:text-accent-foreground",
                 link: "text-primary underline-offset-4 hover:underline",
             },
             size: {
-                sm: "h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5",
-                md: "h-9 px-4 py-2 has-[>svg]:px-3",
-                lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
-                icon: "size-9",
+                sm: "h-control-sm gap-1.5 px-2.5 text-xs has-[>svg]:px-2",
+                md: "h-control px-3 has-[>svg]:px-2.5",
+                lg: "h-control-lg px-4 has-[>svg]:px-3",
+                icon: "size-control",
             },
         },
         defaultVariants: {
@@ -48,8 +48,9 @@ export type ButtonProps = useRender.ComponentProps<"button"> &
 
 /**
  * A button. Variants: `default` | `secondary` | `destructive` | `success` |
- * `outline` | `ghost` | `link`. Sizes: `sm` | `md` (default) | `lg` | `icon` —
- * there is no `size="default"`. Pass `render` to style another element, such
+ * `outline` | `ghost` | `link`. Sizes: `sm` (28px) | `md` (32px, default) |
+ * `lg` (36px) | `icon` — from the `--spacing-control*` tokens; there is no
+ * `size="default"`. Pass `render` to style another element, such
  * as your router's link, as a button. Client component.
  *
  * @example

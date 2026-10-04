@@ -5,6 +5,7 @@ import { Menu as MenuPrimitive } from '@base-ui/react/menu'
 import { cn, cnState } from '../../lib/cn'
 import { CheckIcon, ChevronRightIcon } from '../../lib/icons'
 import { popupMotion } from '../../lib/motion'
+import { highlightedItem } from '../../lib/states'
 
 /**
  * Menu of actions opened from a trigger. Built on Base UI's Menu. For choosing a
@@ -32,11 +33,11 @@ export const DropdownMenuSub = MenuPrimitive.SubmenuRoot
 export const DropdownMenuRadioGroup = MenuPrimitive.RadioGroup
 
 const surface =
-  'min-w-32 max-h-(--available-height) overflow-y-auto overflow-x-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md outline-none'
+  'min-w-32 max-h-(--available-height) overflow-y-auto overflow-x-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-float outline-none'
 
 const item = [
-  'relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none select-none',
-  'data-highlighted:bg-accent data-highlighted:text-accent-foreground',
+  'relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1 text-sm outline-none select-none',
+  highlightedItem,
   'data-disabled:pointer-events-none data-disabled:opacity-50',
   "[&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0",
 ]
@@ -150,7 +151,7 @@ export function DropdownMenuLabel({ className, ...props }: React.ComponentProps<
   return (
     <div
       data-slot="dropdown-menu-label"
-      className={cn('px-2 py-1.5 text-sm font-medium', className)}
+      className={cn('px-2 py-1 text-xs font-medium text-muted-foreground', className)}
       {...props}
     />
   )
@@ -187,7 +188,7 @@ export function DropdownMenuSubTrigger({
   return (
     <MenuPrimitive.SubmenuTrigger
       data-slot="dropdown-menu-sub-trigger"
-      className={cnState(item, 'data-popup-open:bg-accent', className)}
+      className={cnState(item, 'data-popup-open:bg-selection', className)}
       {...props}
     >
       {children}

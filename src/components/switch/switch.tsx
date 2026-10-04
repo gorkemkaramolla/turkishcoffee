@@ -27,7 +27,7 @@ export function Switch({ className, ...props }: SwitchProps) {
       nativeButton
       render={<button type="button" />}
       className={cnState(
-        'peer inline-flex h-5 w-9 shrink-0 items-center rounded-full border border-transparent shadow-xs outline-none transition-all',
+        'peer inline-flex h-5 w-9 shrink-0 items-center rounded-full border border-transparent outline-none transition-all',
         'data-checked:bg-primary data-unchecked:bg-input',
         'focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50',
         'data-disabled:cursor-not-allowed data-disabled:opacity-50',

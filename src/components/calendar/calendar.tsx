@@ -51,7 +51,7 @@ function DayButton({ day, modifiers, className, ...props }: DayButtonProps) {
         'data-[selected-single]:bg-primary data-[selected-single]:text-primary-foreground',
         'data-[range-start]:bg-primary data-[range-start]:text-primary-foreground',
         'data-[range-end]:bg-primary data-[range-end]:text-primary-foreground',
-        'data-[range-middle]:rounded-none data-[range-middle]:bg-accent data-[range-middle]:text-accent-foreground',
+        'data-[range-middle]:rounded-none data-[range-middle]:bg-selection data-[range-middle]:text-foreground',
         className,
       )}
       {...props}
@@ -112,9 +112,9 @@ export function Calendar({
           defaults.day,
         ),
         day_button: defaults.day_button,
-        range_start: cn('rounded-l-md bg-accent', defaults.range_start),
+        range_start: cn('rounded-l-md bg-selection', defaults.range_start),
         range_middle: cn('rounded-none', defaults.range_middle),
-        range_end: cn('rounded-r-md bg-accent', defaults.range_end),
+        range_end: cn('rounded-r-md bg-selection', defaults.range_end),
         today: cn(
           '[&>button]:ring-1 [&>button]:ring-ring/60 data-selected:[&>button]:ring-0',
           defaults.today,

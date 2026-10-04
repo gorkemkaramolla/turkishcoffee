@@ -48,7 +48,7 @@ export function HoverCardContent({
         <PreviewCardPrimitive.Popup
           data-slot="hover-card-content"
           className={cnState(
-            'w-64 rounded-md border border-border bg-popover p-4 text-popover-foreground shadow-md outline-none',
+            'w-64 rounded-md border border-border bg-popover p-4 text-popover-foreground shadow-float outline-none',
             fadeMotion,
             className,
           )}

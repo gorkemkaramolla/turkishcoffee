@@ -4,6 +4,7 @@ import { Select as SelectPrimitive } from '@base-ui/react/select'
 import { cn, cnState } from '../../lib/cn'
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from '../../lib/icons'
 import { popupMotion } from '../../lib/motion'
+import { highlightedItem } from '../../lib/states'
 
 /**
  * Custom-styled dropdown for picking one value. Controlled with `value` +
@@ -41,7 +42,7 @@ export function SelectTrigger({
   children,
   ...props
 }: SelectPrimitive.Trigger.Props & {
-  /** Height: `sm` (h-8) or `md` (h-9, default) — matches Input and NativeSelect. */
+  /** Height: `sm` (28px) or `md` (32px, default) — matches Button, Input and NativeSelect. */
   size?: 'sm' | 'md'
 }) {
   return (
@@ -49,8 +50,8 @@ export function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cnState(
-        'flex w-fit items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none',
-        'data-[size=md]:h-9 data-[size=sm]:h-8',
+        'flex w-fit items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap transition-[color,box-shadow] outline-none',
+        'data-[size=md]:h-control data-[size=sm]:h-control-sm',
         'data-placeholder:text-muted-foreground',
         'focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50',
         'data-disabled:cursor-not-allowed data-disabled:opacity-50',
@@ -99,7 +100,7 @@ export function SelectContent({
         <SelectPrimitive.Popup
           data-slot="select-content"
           className={cnState(
-            'relative max-h-(--available-height) min-w-(--anchor-width) overflow-x-hidden overflow-y-auto rounded-md border border-border bg-popover text-popover-foreground shadow-md',
+            'relative max-h-(--available-height) min-w-(--anchor-width) overflow-x-hidden overflow-y-auto rounded-md border border-border bg-popover text-popover-foreground shadow-float',
             popupMotion,
             className,
           )}
@@ -120,8 +121,8 @@ export function SelectItem({ className, children, ...props }: SelectPrimitive.It
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cnState(
-        'relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-none select-none',
-        'data-highlighted:bg-accent data-highlighted:text-accent-foreground',
+        'relative flex w-full cursor-default items-center gap-2 rounded-sm py-1 pr-8 pl-2 text-sm outline-none select-none',
+        highlightedItem,
         'data-disabled:pointer-events-none data-disabled:opacity-50',
         className,
       )}
@@ -142,7 +143,7 @@ export function SelectLabel({ className, ...props }: SelectPrimitive.GroupLabel.
   return (
     <SelectPrimitive.GroupLabel
       data-slot="select-label"
-      className={cnState('text-muted-foreground px-2 py-1.5 text-xs', className)}
+      className={cnState('text-muted-foreground px-2 py-1 text-xs', className)}
       {...props}
     />
   )

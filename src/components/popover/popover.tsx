@@ -48,7 +48,7 @@ export function PopoverContent({
         <PopoverPrimitive.Popup
           data-slot="popover-content"
           className={cnState(
-            'w-72 rounded-md border border-border bg-popover p-4 text-popover-foreground shadow-md outline-none',
+            'w-72 rounded-md border border-border bg-popover p-4 text-popover-foreground shadow-float outline-none',
             popupMotion,
             className,
           )}

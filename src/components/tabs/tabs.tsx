@@ -2,6 +2,7 @@
 
 import { Tabs as TabsPrimitive } from '@base-ui/react/tabs'
 import { cnState } from '../../lib/cn'
+import { activeTab } from '../../lib/states'
 
 /**
  * Switches between views in the same place. Uncontrolled with `defaultValue`,
@@ -39,7 +40,7 @@ export function TabsList({
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={cnState(
-        'inline-flex h-9 w-fit items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground',
+        'inline-flex h-control w-fit items-center justify-center rounded-md bg-muted p-0.5 text-muted-foreground',
         className,
       )}
       {...props}
@@ -56,8 +57,8 @@ export function TabsTrigger({
     <TabsPrimitive.Tab
       data-slot="tabs-trigger"
       className={cnState(
-        "inline-flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] outline-none",
-        'data-active:bg-background data-active:text-foreground data-active:shadow-sm',
+        "inline-flex flex-1 items-center justify-center gap-1.5 self-stretch rounded-sm px-2 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] outline-none",
+        activeTab,
         'focus-visible:ring-[3px] focus-visible:ring-ring/50',
         'data-disabled:pointer-events-none data-disabled:opacity-50',
         "[&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",

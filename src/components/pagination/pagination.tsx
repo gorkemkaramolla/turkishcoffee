@@ -113,7 +113,7 @@ export function PaginationEllipsis({ className, ...props }: React.ComponentProps
     <span
       aria-hidden
       data-slot="pagination-ellipsis"
-      className={cn('flex size-9 items-center justify-center', className)}
+      className={cn('flex size-control items-center justify-center', className)}
       {...props}
     >
       <EllipsisIcon className="size-4" />

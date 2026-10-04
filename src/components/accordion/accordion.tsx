@@ -3,6 +3,7 @@
 import { Accordion as AccordionPrimitive } from "@base-ui/react/accordion";
 import { cn, cnState } from "../../lib/cn";
 import { ChevronDownIcon } from "../../lib/icons";
+import { openHeader } from "../../lib/states";
 
 /**
  * Vertically stacked sections. One opens at a time and can be closed again;
@@ -44,12 +45,10 @@ export function AccordionTrigger({
 }: AccordionPrimitive.Trigger.Props) {
     return (
         <AccordionPrimitive.Header
-            className="
-          flex
-          focus-within:ring-2
-          focus-within:ring-primary/50
-          data-open:bg-primary/5
-          outline-1  outline-secondary"
+            className={cn(
+                "flex outline-1 outline-secondary focus-within:ring-2 focus-within:ring-primary/50",
+                openHeader,
+            )}
         >
             <AccordionPrimitive.Trigger
                 data-slot="accordion-trigger"

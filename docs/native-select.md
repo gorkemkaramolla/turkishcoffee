@@ -24,7 +24,7 @@ inside long forms and inside server components. `size`: `sm` | `md` (default).
 
 Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
 
-- `size?: 'sm' | 'md'` — Height: `sm` (h-8) or `md` (h-9, default). Replaces the HTML `size` attribute.
+- `size?: 'sm' | 'md'` — Height: `sm` (28px) or `md` (32px, default). Replaces the HTML `size` attribute.
 
 ## Parts
 

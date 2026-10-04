@@ -24,7 +24,7 @@ export function InputGroup({ className, ...props }: React.ComponentProps<'div'>)
       data-slot="input-group"
       role="group"
       className={cn(
-        'relative flex w-full min-w-0 items-center rounded-md border border-input bg-transparent shadow-xs transition-[color,box-shadow]',
+        'relative flex w-full min-w-0 items-center rounded-md border border-input bg-transparent transition-[color,box-shadow]',
         'has-[[data-slot=input-group-control]:focus-visible]:border-ring has-[[data-slot=input-group-control]:focus-visible]:ring-[3px] has-[[data-slot=input-group-control]:focus-visible]:ring-ring/50',
         'has-[[data-slot=input-group-control][aria-invalid=true]]:border-destructive has-[[data-slot=input-group-control][aria-invalid=true]]:ring-destructive/20',
         'has-[[data-slot=input-group-control]:disabled]:opacity-50',
@@ -73,7 +73,7 @@ export function InputGroupInput({ className, ...props }: React.ComponentProps<'i
     <input
       data-slot="input-group-control"
       className={cn(
-        'h-9 w-full min-w-0 flex-1 bg-transparent px-3 py-1 text-base outline-none md:text-sm',
+        'h-control w-full min-w-0 flex-1 bg-transparent px-3 py-1 text-base outline-none md:text-sm',
         'placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground',
         'disabled:cursor-not-allowed',
         className,

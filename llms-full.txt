@@ -49,7 +49,7 @@ There are no per-component paths like `turkishcoffee/button` and no
 
 | shadcn habit | turkishcoffee |
 |---|---|
-| `<Button size="default">` | `size="md"` (sizes: `sm` · `md` · `lg` · `icon`). Button also has `variant="success"`. |
+| `<Button size="default">` | `size="md"` (sizes: `sm` · `md` · `lg` · `icon`; 28/32/36px). Button also has `variant="success"`. |
 | `toast("Saved")` / `toast.success("Saved")` (sonner) | Same sonner API, re-exported: `toast('Saved')`, `toast.success('Saved', { description })`, `toast.error`, `toast.info`, `toast.warning`. Import `toast` from `turkishcoffee`, not from `sonner`. |
 | `<Toaster />` from `sonner`, or a `useToast()` hook | `import { Toaster, toast } from 'turkishcoffee'`; mount `<Toaster />` once at the app root. No `useToast`. |
 | `<TooltipProvider>` around the app | Not needed and not exported: each `Tooltip` provides itself. |
@@ -80,6 +80,32 @@ There are no per-component paths like `turkishcoffee/button` and no
 | `animate-ui-*` classes and `--animate-ui-*` tokens | removed; transitions on `data-starting-style` / `data-ending-style` |
 | `Button`, `BreadcrumbLink` server-renderable | client components now (`render` needs a hook); `Label`, `Separator` and `AspectRatio` became server-renderable |
 
+## Design language
+
+turkishcoffee is built for data-dense business screens: fast, flat and sharp.
+Every rule below is a token in `theme.css`; retune the token, not the components.
+
+- **Corners are sharp.** `--radius` is 4px. `rounded-sm` (2px) for checkboxes,
+  badges and list items; `rounded-md` (4px) for controls and popups;
+  `rounded-lg` (6px) for cards, dialogs, sheets and toasts; `rounded-full` only
+  for pills (switch, radio, avatar, progress). Never `rounded-[…]`.
+- **Compact and aligned.** Controls use `h-control-sm` 28px · `h-control` 32px ·
+  `h-control-lg` 36px (`--spacing-control*`). Button, Input, Select, NativeSelect,
+  InputGroup and TabsList share them, so a form row lines up. Match them in your
+  own controls instead of `h-9`.
+- **Flat, with hairline borders.** Resting surfaces (buttons, inputs, cards)
+  have no shadow; a 1px `border-border` separates them. `shadow-float` is the
+  only elevation, reserved for layers that float: popovers, menus, dialogs,
+  sheets, toasts.
+- **Active means tinted.** Highlighted and active states use `bg-selection` (a
+  faint primary tint), not grey. "You are here" states add a 2px primary edge as
+  an inset shadow: open accordion header (left), active tab (bottom), selected
+  table row (left, via `data-state="selected"`).
+- **Fast.** Overlays enter and leave in 50ms. Don't slow them down per use.
+- **Quiet colour.** Solid primary is for values and the main action (checked
+  checkbox, primary button); `--inverse` grey is for transient surfaces
+  (toast, tooltip).
+
 ## Rules
 
 - **Compose sub-parts**, don't look for props: `<Card><CardHeader><CardTitle>`,
@@ -95,7 +121,8 @@ There are no per-component paths like `turkishcoffee/button` and no
   `bg-primary`, `text-muted-foreground`, `border-border`, `bg-destructive`,
   `text-success`, `bg-warning`. Full list: `background`, `foreground`, `card`,
   `popover`, `primary`, `secondary`, `muted`, `accent`, `destructive`, `success`,
-  `warning`, `inverse` (each with `-foreground`), plus `border`, `input`, `ring`.
+  `warning`, `inverse` (each with `-foreground`), plus `border`, `input`, `ring`,
+  `selection`.
   `inverse` is the grey behind toasts and tooltips.
 - **Server vs client:** components marked "Client component" in their doc ship
   `"use client"`. They can be imported from a server component as-is; your event
@@ -427,8 +454,9 @@ import { buttonVariants, Button, type ButtonProps } from 'turkishcoffee'
 ```
 
 A button. Variants: `default` | `secondary` | `destructive` | `success` |
-`outline` | `ghost` | `link`. Sizes: `sm` | `md` (default) | `lg` | `icon` —
-there is no `size="default"`. Pass `render` to style another element, such
+`outline` | `ghost` | `link`. Sizes: `sm` (28px) | `md` (32px, default) |
+`lg` (36px) | `icon` — from the `--spacing-control*` tokens; there is no
+`size="default"`. Pass `render` to style another element, such
 as your router's link, as a button. Client component.
 
 ## Example
@@ -1016,7 +1044,7 @@ inside long forms and inside server components. `size`: `sm` | `md` (default).
 
 Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
 
-- `size?: 'sm' | 'md'` — Height: `sm` (h-8) or `md` (h-9, default). Replaces the HTML `size` attribute.
+- `size?: 'sm' | 'md'` — Height: `sm` (28px) or `md` (32px, default). Replaces the HTML `size` attribute.
 
 ## Parts
 
@@ -1192,7 +1220,7 @@ const plans = { free: 'Free', pro: 'Pro' }
 
 Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
 
-- `size?: 'sm' | 'md'` — Height: `sm` (h-8) or `md` (h-9, default) — matches Input and NativeSelect.
+- `size?: 'sm' | 'md'` — Height: `sm` (28px) or `md` (32px, default) — matches Button, Input and NativeSelect.
 
 ## Parts
 

@@ -32,7 +32,7 @@ const plans = { free: 'Free', pro: 'Pro' }
 
 Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
 
-- `size?: 'sm' | 'md'` — Height: `sm` (h-8) or `md` (h-9, default) — matches Input and NativeSelect.
+- `size?: 'sm' | 'md'` — Height: `sm` (28px) or `md` (32px, default) — matches Button, Input and NativeSelect.
 
 ## Parts
 

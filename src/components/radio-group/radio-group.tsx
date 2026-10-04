@@ -45,7 +45,7 @@ export function RadioGroupItem({
       nativeButton
       render={<button type="button" />}
       className={cnState(
-        'aspect-square size-4 shrink-0 rounded-full border border-input text-primary shadow-xs transition-[color,box-shadow] outline-none',
+        'aspect-square size-4 shrink-0 rounded-full border border-input text-primary transition-[color,box-shadow] outline-none',
         'data-checked:border-primary',
         'focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50',
         'data-disabled:cursor-not-allowed data-disabled:opacity-50',

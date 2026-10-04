@@ -27,7 +27,7 @@ export function Checkbox({ className, ...props }: CheckboxProps) {
       nativeButton
       render={<button type="button" />}
       className={cnState(
-        'peer size-4 shrink-0 rounded-[4px] border border-input shadow-xs transition-shadow outline-none',
+        'peer size-4 shrink-0 rounded-sm border border-input transition-shadow outline-none',
         'data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground',
         'data-indeterminate:border-primary data-indeterminate:bg-primary data-indeterminate:text-primary-foreground',
         'focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50',

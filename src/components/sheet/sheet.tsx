@@ -34,7 +34,7 @@ export const SheetTrigger = SheetPrimitive.Trigger
 export const SheetClose = SheetPrimitive.Close
 
 const sheetVariants = cva(
-  ['fixed z-50 flex flex-col gap-4 bg-background shadow-lg outline-none', slideMotion],
+  ['fixed z-50 flex flex-col gap-4 bg-background shadow-float outline-none', slideMotion],
   {
     variants: {
       side: {

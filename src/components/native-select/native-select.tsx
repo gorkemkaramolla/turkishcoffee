@@ -3,7 +3,7 @@ import { cn } from '../../lib/cn'
 import { ChevronDownIcon } from '../../lib/icons'
 
 export type NativeSelectProps = Omit<React.ComponentProps<'select'>, 'size'> & {
-  /** Height: `sm` (h-8) or `md` (h-9, default). Replaces the HTML `size` attribute. */
+  /** Height: `sm` (28px) or `md` (32px, default). Replaces the HTML `size` attribute. */
   size?: 'sm' | 'md'
 }
 
@@ -26,8 +26,8 @@ export function NativeSelect({ className, size = 'md', ...props }: NativeSelectP
         data-slot="native-select"
         data-size={size}
         className={cn(
-          'w-full appearance-none rounded-md border border-input bg-background py-1 pr-8 pl-3 text-sm shadow-xs outline-none transition-colors',
-          size === 'sm' ? 'h-8' : 'h-9',
+          'w-full appearance-none rounded-md border border-input bg-background py-1 pr-8 pl-3 text-sm outline-none transition-colors',
+          size === 'sm' ? 'h-control-sm' : 'h-control',
           'focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50',
           'disabled:cursor-not-allowed disabled:opacity-50',
           'aria-invalid:border-destructive aria-invalid:ring-destructive/20',

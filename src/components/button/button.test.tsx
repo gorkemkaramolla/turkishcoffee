@@ -12,7 +12,7 @@ describe('Button', () => {
     render(<Button variant="destructive" size="lg">Delete</Button>)
     const btn = screen.getByRole('button')
     expect(btn.className).toContain('bg-destructive')
-    expect(btn.className).toContain('h-10')
+    expect(btn.className).toContain('h-control-lg')
   })
 
   // The reason cn() exists: a consumer's className must beat the built-in default.
@@ -20,7 +20,7 @@ describe('Button', () => {
     render(<Button className="px-10">Wide</Button>)
     const cls = screen.getByRole('button').className
     expect(cls).toContain('px-10')
-    expect(cls).not.toContain('px-4')
+    expect(cls).not.toContain('px-3')
   })
 
   it('renders as another element with render', () => {
