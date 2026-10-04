@@ -1,5 +1,36 @@
 # turkishcoffee
 
+## 3.0.0
+
+### Major Changes
+
+- 8c0a3d1: Move every component from Radix UI (and vaul) to Base UI. Radix is no longer in the dependency tree.
+  
+  Breaking changes — see "Upgrading from v2 (Radix) to v3 (Base UI)" in AGENTS.md:
+  
+  - `asChild` is replaced by `render`: `<Button render={<Link href="/x" />}>Go</Button>`.
+  - Accordion: `type="single" | "multiple"` + `collapsible` become `multiple?: boolean`; `value` is always an array.
+  - Checkbox: `checked="indeterminate"` becomes the `indeterminate` prop.
+  - DropdownMenuItem: `onSelect` becomes `onClick`.
+  - Tooltip: `delayDuration` becomes `delay`.
+  - Select: pass `items` so SelectValue shows the item's label.
+  - `PopoverAnchor` is removed; use the `anchor` prop on PopoverContent.
+  - Change handlers receive a second `eventDetails` argument.
+  - `data-[state=*]` selectors become `data-open`, `data-checked`, `data-active`, …
+  - The `animate-ui-*` animation tokens are removed from theme.css; overlays use CSS transitions.
+  - Drawer, and Dialog on mobile, run on Base UI's Drawer instead of vaul.
+  - Button and BreadcrumbLink are now client components; Label, Separator and AspectRatio are now server-renderable.
+
+### Minor Changes
+
+- d3b27c0: Ship docs for AI agents inside the package: `AGENTS.md` (setup, import map,
+  differences from shadcn/ui, rules), `docs/<component>.md` for every component,
+  and `llms.txt` / `llms-full.txt`. Every export now carries JSDoc with an
+  example, so hover and go-to-definition explain the API.
+  
+  Point your agent at it with one line in your project's `CLAUDE.md` or `AGENTS.md`:
+  `UI: use turkishcoffee — read node_modules/turkishcoffee/AGENTS.md before writing components.`
+
 ## 2.0.0
 
 ### Major Changes
