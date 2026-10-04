@@ -180,6 +180,19 @@
 }
 
 /*
+ * The platform's own UI font: San Francisco on Apple devices (-apple-system for
+ * Safari, BlinkMacSystemFont for Chrome), Segoe UI on Windows, then common
+ * fallbacks. Nothing to download, so text never shifts while a webfont loads,
+ * and every listed font covers Turkish (ğ, ş, ı, İ). The emoji fonts keep
+ * emoji in colour. Plain @theme, not inline, so Tailwind's preflight picks it
+ * up for <html> as well as for the font-sans utility.
+ */
+@theme {
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Tahoma, Arial,
+        sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+/*
  * Base styles every consumer needs. Without the border rule Tailwind v4 draws
  * every `border` in currentColor; without the body rule the page ignores the
  * background/foreground tokens. `position: relative` lets modal backdrops
