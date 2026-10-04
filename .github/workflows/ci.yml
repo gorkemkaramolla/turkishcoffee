@@ -18,6 +18,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm run typecheck
       - run: pnpm run lint
+      # docs/, llms*.txt and the AGENTS.md index are generated from JSDoc;
+      # fail when a component changed without `pnpm run docs`.
+      - run: pnpm run docs && git diff --exit-code -- docs AGENTS.md llms.txt llms-full.txt
       - run: pnpm test
       - run: pnpm run build
       # Catches a broken exports map before it reaches a project.

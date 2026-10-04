@@ -1,32 +1,60 @@
 'use client'
 
-import type * as React from 'react'
-import { Popover as PopoverPrimitive } from 'radix-ui'
-import { cn } from '../../lib/cn'
+import { Popover as PopoverPrimitive } from '@base-ui/react/popover'
+import { cnState } from '../../lib/cn'
+import { popupMotion } from '../../lib/motion'
 
+/**
+ * Floating panel opened by clicking a trigger; for small forms, pickers and
+ * extra details. Non-modal. For a hover hint use Tooltip; for a list of actions
+ * use DropdownMenu.
+ *
+ * @example
+ * <Popover>
+ *   <PopoverTrigger render={<Button variant="outline" />}>Filters</PopoverTrigger>
+ *   <PopoverContent align="start">…</PopoverContent>
+ * </Popover>
+ */
 export const Popover = PopoverPrimitive.Root
+/** Opens the Popover. Pass `render={<Button />}` to make your own Button the trigger. */
 export const PopoverTrigger = PopoverPrimitive.Trigger
-export const PopoverAnchor = PopoverPrimitive.Anchor
 
+export type PopoverContentProps = PopoverPrimitive.Popup.Props &
+  Pick<PopoverPrimitive.Positioner.Props, 'side' | 'sideOffset' | 'align' | 'alignOffset' | 'anchor'>
+
+/**
+ * The panel; renders its own portal. `w-72` by default. Pass `anchor` (an
+ * element or ref) to position it against something other than the trigger.
+ */
 export function PopoverContent({
   className,
-  align = 'center',
+  side,
   sideOffset = 4,
+  align = 'center',
+  alignOffset,
+  anchor,
   ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Content>) {
+}: PopoverContentProps) {
   return (
     <PopoverPrimitive.Portal>
-      <PopoverPrimitive.Content
-        data-slot="popover-content"
-        align={align}
+      <PopoverPrimitive.Positioner
+        className="z-50"
+        side={side}
         sideOffset={sideOffset}
-        className={cn(
-          'z-50 w-72 origin-(--radix-popover-content-transform-origin) rounded-md border border-border bg-popover p-4 text-popover-foreground shadow-md outline-none',
-          'data-[state=open]:animate-ui-pop-in data-[state=closed]:animate-ui-pop-out',
-          className,
-        )}
-        {...props}
-      />
+        align={align}
+        alignOffset={alignOffset}
+        anchor={anchor}
+      >
+        <PopoverPrimitive.Popup
+          data-slot="popover-content"
+          className={cnState(
+            'w-72 rounded-md border border-border bg-popover p-4 text-popover-foreground shadow-md outline-none',
+            popupMotion,
+            className,
+          )}
+          {...props}
+        />
+      </PopoverPrimitive.Positioner>
     </PopoverPrimitive.Portal>
   )
 }

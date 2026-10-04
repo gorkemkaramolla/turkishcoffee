@@ -1,4 +1,5 @@
 export { cn } from './lib/cn'
+export { InfoIcon, ErrorIcon, SuccessIcon } from './lib/icons'
 export { useMediaQuery, useDisclosure, type Disclosure } from './hooks'
 
 // Form and DataTable are NOT exported here: they need optional peers
@@ -104,7 +105,7 @@ export {
 } from './components/input-group'
 export { Label, type LabelProps } from './components/label'
 export { NativeSelect, type NativeSelectProps } from './components/native-select'
-export { Popover, PopoverTrigger, PopoverAnchor, PopoverContent } from './components/popover'
+export { Popover, PopoverTrigger, PopoverContent } from './components/popover'
 export { Progress, type ProgressProps } from './components/progress'
 export { RadioGroup, RadioGroupItem } from './components/radio-group'
 export {

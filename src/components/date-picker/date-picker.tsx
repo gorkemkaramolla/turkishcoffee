@@ -18,7 +18,7 @@ type ResponsivePickerProps = {
   onOpenChange: (open: boolean) => void
   /** Accessible name for the drawer; the popover is labelled by its trigger. */
   title: string
-  trigger: React.ReactNode
+  trigger: React.ReactElement
   children: React.ReactNode
 }
 
@@ -29,7 +29,7 @@ function ResponsivePicker({ open, onOpenChange, title, trigger, children }: Resp
   if (isDesktop) {
     return (
       <Popover open={open} onOpenChange={onOpenChange}>
-        <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+        <PopoverTrigger render={trigger} />
         <PopoverContent align="start" className="w-auto p-0">
           {children}
         </PopoverContent>
@@ -39,7 +39,7 @@ function ResponsivePicker({ open, onOpenChange, title, trigger, children }: Resp
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerTrigger asChild>{trigger}</DrawerTrigger>
+      <DrawerTrigger render={trigger} />
       <DrawerContent>
         <DrawerTitle className="sr-only">{title}</DrawerTitle>
         <div className="flex justify-center">{children}</div>

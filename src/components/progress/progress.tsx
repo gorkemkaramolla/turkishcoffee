@@ -1,24 +1,38 @@
 'use client'
 
-import type * as React from 'react'
-import { Progress as ProgressPrimitive } from 'radix-ui'
-import { cn } from '../../lib/cn'
+import { Progress as ProgressPrimitive } from '@base-ui/react/progress'
+import { cnState } from '../../lib/cn'
 
-export type ProgressProps = React.ComponentProps<typeof ProgressPrimitive.Root>
+export type ProgressProps = Omit<ProgressPrimitive.Root.Props, 'value'> & {
+  /** 0–100 by default. Leave out, or pass `null`, for an indeterminate bar. */
+  value?: number | null
+}
 
-export function Progress({ className, value, ...props }: ProgressProps) {
+/**
+ * Horizontal bar for a known completion percentage (`value`, 0–100). For
+ * unknown durations use Spinner or Skeleton.
+ *
+ * @example
+ * <Progress value={uploadPercent} aria-label="Upload progress" />
+ */
+export function Progress({ className, value = null, ...props }: ProgressProps) {
   return (
     <ProgressPrimitive.Root
       data-slot="progress"
       value={value}
-      className={cn('relative h-2 w-full overflow-hidden rounded-full bg-muted', className)}
+      className={cnState('relative w-full', className)}
       {...props}
     >
-      <ProgressPrimitive.Indicator
-        data-slot="progress-indicator"
-        className="h-full w-full flex-1 bg-primary transition-transform"
-        style={{ transform: `translateX(-${100 - (value ?? 0)}%)` }}
-      />
+      <ProgressPrimitive.Track
+        data-slot="progress-track"
+        className="h-2 w-full overflow-hidden rounded-full bg-muted"
+      >
+        {/* Base UI sets the indicator's width from `value`. */}
+        <ProgressPrimitive.Indicator
+          data-slot="progress-indicator"
+          className="h-full bg-primary transition-[width]"
+        />
+      </ProgressPrimitive.Track>
     </ProgressPrimitive.Root>
   )
 }

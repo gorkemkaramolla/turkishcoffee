@@ -1,11 +1,27 @@
 import type * as React from 'react'
-import { AspectRatio as AspectRatioPrimitive } from 'radix-ui'
+import { cn } from '../../lib/cn'
 
-export type AspectRatioProps = React.ComponentProps<typeof AspectRatioPrimitive.Root>
+export type AspectRatioProps = React.ComponentProps<'div'> & {
+  /** Width divided by height, e.g. `16 / 9`. Defaults to 1 (square). */
+  ratio?: number
+}
 
 /**
- * Server-safe: the primitive only computes padding, it holds no state.
+ * Constrains its child (usually an image or video) to `ratio` (width / height)
+ * with the CSS `aspect-ratio` property. Server-renderable.
+ *
+ * @example
+ * <AspectRatio ratio={16 / 9}>
+ *   <img src={src} alt="" className="size-full rounded-md object-cover" />
+ * </AspectRatio>
  */
-export function AspectRatio(props: AspectRatioProps) {
-  return <AspectRatioPrimitive.Root data-slot="aspect-ratio" {...props} />
+export function AspectRatio({ ratio = 1, className, style, ...props }: AspectRatioProps) {
+  return (
+    <div
+      data-slot="aspect-ratio"
+      className={cn('relative w-full', className)}
+      style={{ aspectRatio: ratio, ...style }}
+      {...props}
+    />
+  )
 }

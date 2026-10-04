@@ -7,8 +7,14 @@ export type SpinnerProps = React.ComponentProps<'svg'> & {
 }
 
 /**
- * Drawn inline rather than pulled from an icon set, so the package still pins
- * no icon library on consumers.
+ * Indeterminate loading indicator; `size-4`, inherits text colour. Drawn
+ * inline rather than pulled from an icon set, so the package still pins no icon
+ * library on consumers.
+ *
+ * @example
+ * <Button disabled>
+ *   <Spinner label={null} /> Saving…
+ * </Button>
  */
 export function Spinner({ className, label = 'Loading', ...props }: SpinnerProps) {
   return (

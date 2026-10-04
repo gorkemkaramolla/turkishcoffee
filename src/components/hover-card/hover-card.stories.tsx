@@ -13,9 +13,7 @@ type Story = StoryObj<typeof meta>
 export const Default: Story = {
   render: () => (
     <HoverCard>
-      <HoverCardTrigger asChild>
-        <Button variant="link">@gorkemkaramolla</Button>
-      </HoverCardTrigger>
+      <HoverCardTrigger render={<Button variant="link" />}>@gorkemkaramolla</HoverCardTrigger>
       <HoverCardContent>
         <p className="text-sm font-medium">Görkem Karamolla</p>
         <p className="mt-1 text-sm text-muted-foreground">Builds the design system this page runs on.</p>

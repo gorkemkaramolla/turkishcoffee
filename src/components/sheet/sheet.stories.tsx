@@ -11,9 +11,7 @@ export const Sides: Story = {
     <div className="flex flex-wrap gap-3">
       {(['top', 'right', 'bottom', 'left'] as const).map((side) => (
         <Sheet key={side}>
-          <SheetTrigger asChild>
-            <Button variant="outline" className="capitalize">{side}</Button>
-          </SheetTrigger>
+          <SheetTrigger render={<Button variant="outline" className="capitalize" />}>{side}</SheetTrigger>
           <SheetContent side={side}>
             <SheetHeader>
               <SheetTitle className="capitalize">{side} sheet</SheetTitle>

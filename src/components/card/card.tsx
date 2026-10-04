@@ -2,8 +2,21 @@ import type * as React from 'react'
 import { cn } from '../../lib/cn'
 
 /**
- * Server-renderable by design: no state, no handlers, no "use client".
- * Compose with the sub-parts rather than passing title/footer props.
+ * Bordered surface that groups related content. Server-renderable by design:
+ * no state, no handlers, no "use client". Compose with the sub-parts rather than
+ * passing title/footer props.
+ *
+ * @example
+ * <Card>
+ *   <CardHeader>
+ *     <CardTitle>Team</CardTitle>
+ *     <CardDescription>Invite people to your workspace.</CardDescription>
+ *   </CardHeader>
+ *   <CardContent>…</CardContent>
+ *   <CardFooter className="justify-end">
+ *     <Button>Invite</Button>
+ *   </CardFooter>
+ * </Card>
  */
 export function Card({ className, ...props }: React.ComponentProps<'div'>) {
   return (
@@ -18,6 +31,7 @@ export function Card({ className, ...props }: React.ComponentProps<'div'>) {
   )
 }
 
+/** Top section holding CardTitle and CardDescription. */
 export function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -28,6 +42,7 @@ export function CardHeader({ className, ...props }: React.ComponentProps<'div'>)
   )
 }
 
+/** Card heading; renders an `<h3>`. */
 export function CardTitle({ className, ...props }: React.ComponentProps<'h3'>) {
   return (
     <h3
@@ -38,6 +53,7 @@ export function CardTitle({ className, ...props }: React.ComponentProps<'h3'>) {
   )
 }
 
+/** Muted text under CardTitle. */
 export function CardDescription({ className, ...props }: React.ComponentProps<'p'>) {
   return (
     <p
@@ -48,10 +64,12 @@ export function CardDescription({ className, ...props }: React.ComponentProps<'p
   )
 }
 
+/** Main body of the Card. */
 export function CardContent({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="card-content" className={cn('px-6', className)} {...props} />
 }
 
+/** Bottom row, usually actions. A flex row: align with `justify-*`. */
 export function CardFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div

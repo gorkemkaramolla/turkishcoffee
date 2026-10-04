@@ -17,13 +17,11 @@ const meta = { title: 'Components/Dialog', component: Dialog } satisfies Meta<ty
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** Centered modal on `sm` and up; switch Storybook to a mobile viewport to see the vaul drawer. */
+/** Centered modal on `sm` and up; switch Storybook to a mobile viewport to see the Base UI drawer. */
 export const Default: Story = {
   render: () => (
     <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline">Edit profile</Button>
-      </DialogTrigger>
+      <DialogTrigger render={<Button variant="outline" />}>Edit profile</DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit profile</DialogTitle>
@@ -34,9 +32,7 @@ export const Default: Story = {
           <Input id="name" defaultValue="Görkem" />
         </div>
         <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="ghost">Cancel</Button>
-          </DialogClose>
+          <DialogClose render={<Button variant="ghost" />}>Cancel</DialogClose>
           <Button>Save</Button>
         </DialogFooter>
       </DialogContent>

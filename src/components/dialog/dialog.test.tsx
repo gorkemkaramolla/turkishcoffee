@@ -24,16 +24,17 @@ describe('Dialog', () => {
     render(<OpenDialog />)
     const dialog = screen.getByRole('dialog', { name: 'Edit profile' })
     expect(dialog.getAttribute('data-slot')).toBe('dialog-content')
-    expect(dialog.hasAttribute('data-vaul-drawer')).toBe(false)
+    expect(dialog.hasAttribute('data-swipe-direction')).toBe(false)
     expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy()
   })
 
-  it('renders a vaul drawer without the close button on mobile', () => {
+  it('renders a Base UI drawer without the close button on mobile', () => {
     setViewport(MOBILE_WIDTH)
     render(<OpenDialog />)
     const dialog = screen.getByRole('dialog', { name: 'Edit profile' })
     expect(dialog.getAttribute('data-slot')).toBe('dialog-content')
-    expect(dialog.hasAttribute('data-vaul-drawer')).toBe(true)
+    // Only Base UI's Drawer popup carries the swipe direction.
+    expect(dialog.getAttribute('data-swipe-direction')).toBe('down')
     expect(screen.queryByRole('button', { name: 'Close' })).toBeNull()
   })
 })

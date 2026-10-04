@@ -1,12 +1,32 @@
+'use client'
+
 import type * as React from 'react'
-import { Slot } from 'radix-ui'
+import { useRender } from '@base-ui/react/use-render'
 import { cn } from '../../lib/cn'
 import { ChevronRightIcon, EllipsisIcon } from '../../lib/icons'
 
+/**
+ * Trail of links to the current page. The last item is a BreadcrumbPage,
+ * not a link.
+ *
+ * @example
+ * <Breadcrumb>
+ *   <BreadcrumbList>
+ *     <BreadcrumbItem>
+ *       <BreadcrumbLink render={<Link href="/" />}>Home</BreadcrumbLink>
+ *     </BreadcrumbItem>
+ *     <BreadcrumbSeparator />
+ *     <BreadcrumbItem>
+ *       <BreadcrumbPage>Settings</BreadcrumbPage>
+ *     </BreadcrumbItem>
+ *   </BreadcrumbList>
+ * </Breadcrumb>
+ */
 export function Breadcrumb(props: React.ComponentProps<'nav'>) {
   return <nav aria-label="breadcrumb" data-slot="breadcrumb" {...props} />
 }
 
+/** The ordered list holding BreadcrumbItems and BreadcrumbSeparators. */
 export function BreadcrumbList({ className, ...props }: React.ComponentProps<'ol'>) {
   return (
     <ol
@@ -20,6 +40,7 @@ export function BreadcrumbList({ className, ...props }: React.ComponentProps<'ol
   )
 }
 
+/** One step of the trail. */
 export function BreadcrumbItem({ className, ...props }: React.ComponentProps<'li'>) {
   return (
     <li
@@ -30,25 +51,24 @@ export function BreadcrumbItem({ className, ...props }: React.ComponentProps<'li
   )
 }
 
-export type BreadcrumbLinkProps = React.ComponentProps<'a'> & {
-  /** Render as the child element instead of an <a> — e.g. wrap a <Link>. */
-  asChild?: boolean
-}
+export type BreadcrumbLinkProps = useRender.ComponentProps<'a'>
 
-export function BreadcrumbLink({ className, asChild = false, ...props }: BreadcrumbLinkProps) {
-  const Comp = asChild ? Slot.Root : 'a'
-
-  return (
-    <Comp
-      data-slot="breadcrumb-link"
-      className={cn('transition-colors hover:text-foreground', className)}
-      {...props}
-    />
-  )
+/** A link to an ancestor page. Pass `render` to use your router's `<Link>`. */
+export function BreadcrumbLink({ className, render, ref, ...props }: BreadcrumbLinkProps) {
+  return useRender({
+    defaultTagName: 'a',
+    render,
+    ref,
+    props: {
+      'data-slot': 'breadcrumb-link',
+      className: cn('transition-colors hover:text-foreground', className),
+      ...props,
+    },
+  })
 }
 
 /**
- * The current page is not a link: it carries aria-current and is removed from
+ * The current page. Not a link: it carries aria-current and is removed from
  * the tab order, which is what screen readers expect at the end of a trail.
  */
 export function BreadcrumbPage({ className, ...props }: React.ComponentProps<'span'>) {
@@ -64,6 +84,7 @@ export function BreadcrumbPage({ className, ...props }: React.ComponentProps<'sp
   )
 }
 
+/** Goes between BreadcrumbItems; a chevron unless you pass children. */
 export function BreadcrumbSeparator({
   children,
   className,
@@ -82,6 +103,7 @@ export function BreadcrumbSeparator({
   )
 }
 
+/** Stands in for collapsed middle steps of a long trail. */
 export function BreadcrumbEllipsis({ className, ...props }: React.ComponentProps<'span'>) {
   return (
     <span

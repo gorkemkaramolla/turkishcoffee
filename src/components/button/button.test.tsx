@@ -23,12 +23,8 @@ describe('Button', () => {
     expect(cls).not.toContain('px-4')
   })
 
-  it('renders as the child element with asChild', () => {
-    render(
-      <Button asChild>
-        <a href="/home">Home</a>
-      </Button>,
-    )
+  it('renders as another element with render', () => {
+    render(<Button render={<a href="/home" />}>Home</Button>)
     const link = screen.getByRole('link', { name: 'Home' })
     expect(link.tagName).toBe('A')
     expect(link.className).toContain('bg-primary')

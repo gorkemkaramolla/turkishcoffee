@@ -4,12 +4,26 @@ import { cn } from '../../lib/cn'
 export type EmptyStateProps = React.ComponentProps<'div'> & {
   /** Pass any icon element — the package pins no icon library. */
   icon?: React.ReactNode
+  /** Required: one short line saying what is missing. */
   title: React.ReactNode
+  /** Muted text under the title: why it is empty or what to do next. */
   description?: React.ReactNode
   /** Buttons or links rendered under the description. */
   action?: React.ReactNode
 }
 
+/**
+ * Placeholder for a list or page that has no content yet: icon, title,
+ * description and a call to action.
+ *
+ * @example
+ * <EmptyState
+ *   icon={<InboxIcon />}
+ *   title="No invoices yet"
+ *   description="Invoices you create will show up here."
+ *   action={<Button>New invoice</Button>}
+ * />
+ */
 export function EmptyState({
   className,
   icon,

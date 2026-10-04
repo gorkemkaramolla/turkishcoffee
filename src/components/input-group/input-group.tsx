@@ -4,9 +4,19 @@ import { cn } from '../../lib/cn'
 import { Button, type ButtonProps } from '../button'
 
 /**
- * The group owns the border and the focus ring; the control inside is stripped
- * of both. That way an icon, a prefix and a button read as one field instead of
- * a row of separately outlined boxes.
+ * A field that combines a control with icons, text or buttons. The group owns
+ * the border and the focus ring; the control inside is stripped of both. That way
+ * an icon, a prefix and a button read as one field instead of a row of separately
+ * outlined boxes. Use InputGroupInput / InputGroupTextarea inside, not Input.
+ *
+ * @example
+ * <InputGroup>
+ *   <InputGroupAddon><SearchIcon /></InputGroupAddon>
+ *   <InputGroupInput placeholder="Search…" />
+ *   <InputGroupAddon align="end">
+ *     <InputGroupButton>Go</InputGroupButton>
+ *   </InputGroupAddon>
+ * </InputGroup>
  */
 export function InputGroup({ className, ...props }: React.ComponentProps<'div'>) {
   return (
@@ -26,6 +36,7 @@ export function InputGroup({ className, ...props }: React.ComponentProps<'div'>)
   )
 }
 
+/** InputGroupAddon classes as a function. */
 export const inputGroupAddonVariants = cva(
   'flex shrink-0 items-center gap-2 text-sm text-muted-foreground select-none [&>svg:not([class*=size-])]:size-4',
   {
@@ -44,6 +55,7 @@ export const inputGroupAddonVariants = cva(
 export type InputGroupAddonProps = React.ComponentProps<'div'> &
   VariantProps<typeof inputGroupAddonVariants>
 
+/** Icon, text or button beside the control. `align`: `start` (default) | `end`. */
 export function InputGroupAddon({ className, align, ...props }: InputGroupAddonProps) {
   return (
     <div
@@ -55,6 +67,7 @@ export function InputGroupAddon({ className, align, ...props }: InputGroupAddonP
   )
 }
 
+/** The `<input>` inside an InputGroup (unbordered). */
 export function InputGroupInput({ className, ...props }: React.ComponentProps<'input'>) {
   return (
     <input
@@ -70,6 +83,7 @@ export function InputGroupInput({ className, ...props }: React.ComponentProps<'i
   )
 }
 
+/** The `<textarea>` inside an InputGroup (unbordered). */
 export function InputGroupTextarea({ className, ...props }: React.ComponentProps<'textarea'>) {
   return (
     <textarea
@@ -86,8 +100,9 @@ export function InputGroupTextarea({ className, ...props }: React.ComponentProps
 }
 
 /**
- * Sized down and de-shadowed by default so it sits inside the field rather than
- * next to it.
+ * A Button sized for the inside of an InputGroup: defaults to
+ * `variant="ghost"` and `size="sm"`, without a shadow, so it sits inside the field
+ * rather than next to it.
  */
 export function InputGroupButton({ className, variant = 'ghost', size = 'sm', ...props }: ButtonProps) {
   return (

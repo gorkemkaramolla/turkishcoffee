@@ -4,8 +4,13 @@ import { cn } from '../../lib/cn'
 export type InputProps = React.ComponentProps<'input'>
 
 /**
- * No "use client": a plain input that forwards props is server-renderable.
- * Handlers like onChange come from the consumer's own client component.
+ * Single-line text field; a styled `<input>` that forwards every prop.
+ * Server-renderable; handlers like onChange come from your own client component.
+ * For an icon, prefix or inline button inside the field use InputGroup.
+ *
+ * @example
+ * <Label htmlFor="email">Email</Label>
+ * <Input id="email" type="email" placeholder="you@example.com" />
  */
 export function Input({ className, type, ...props }: InputProps) {
   return (
