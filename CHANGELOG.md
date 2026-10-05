@@ -1,5 +1,17 @@
 # turkishcoffee
 
+## 3.1.0
+
+### Minor Changes
+
+- 8e08c3d: Add `FormTabs` to `turkishcoffee/form`: one react-hook-form form split across tabs that keep their values while hidden. Tabs with an error get a dot and a failed submit opens the first one; `linear` turns it into a stepper whose Next (`FormTabsNext`/`FormTabsPrevious`, `useFormTabs`) validates the current step first.
+- 8e08c3d: Add `UsersIcon`, `UserIcon` and `FolderUserIcon` (Tabler Icons, MIT), exported from the package root.
+
+### Patch Changes
+
+- 8e08c3d: Drop the primary tint from active states: the active tab drops its blue underline for a solid primary fill, the open accordion header its tint and left edge, and the selected table row its left edge. `--selection` is now the neutral `--accent` grey, so highlighted menu items, selected rows and calendar ranges stay grey.
+- 8e08c3d: Redraw the stroke icons (X, Check, Chevrons, ChevronsUpDown, Ellipsis, Calendar) and `SuccessIcon` from Tabler Icons (MIT); the license ships in `THIRD_PARTY_LICENSES.md`. `InfoIcon` and `ErrorIcon` are unchanged.
+
 ## 3.0.2
 
 ### Patch Changes
