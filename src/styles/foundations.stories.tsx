@@ -80,11 +80,11 @@ export const Tokens: Story = {
         </div>
       </Section>
 
-      <Section title="Selection" note="Active states tint with --selection and mark 'you are here' with a 2px primary edge">
+      <Section title="Selection" note="Highlighted and selected states use the neutral --selection grey">
         <div className="flex flex-col gap-1 w-64 rounded-md border border-border p-1 text-sm">
           <div className="rounded-sm px-2 py-1">Resting item</div>
           <div className="rounded-sm bg-selection px-2 py-1">Highlighted item</div>
-          <div className="bg-selection px-2 py-1 shadow-[inset_2px_0_0_var(--color-primary)]">Selected row</div>
+          <div className="bg-selection px-2 py-1">Selected row</div>
         </div>
       </Section>
     </div>

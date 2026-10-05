@@ -20,7 +20,7 @@ describe('Toaster', () => {
     })
     await screen.findByText('Heads up')
 
-    expect(iconOf('Saved')?.getAttribute('viewBox')).toBe('0 0 36 36')
+    expect(iconOf('Saved')?.getAttribute('fill')).toBe('currentColor')
     expect(iconOf('Saved')?.getAttribute('class')).toContain('text-success')
     expect(iconOf('Failed')?.getAttribute('class')).toContain('text-destructive')
     expect(iconOf('Heads up')?.getAttribute('class')).toContain('text-primary')

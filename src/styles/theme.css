@@ -72,11 +72,11 @@
     --ring: oklch(0.563 0.193 256.2); /* the primary blue: Apple's focus ring */
 
     /*
-     * Faint primary tint for active and highlighted states (open accordion,
-     * highlighted menu item, selected row). Redeclared under .dark so it follows
-     * the dark --primary even when .dark sits below the root.
+     * Neutral grey for highlighted and selected states (highlighted menu item,
+     * selected row, calendar range). Redeclared under .dark so it follows the
+     * dark --accent even when .dark sits below the root.
      */
-    --selection: color-mix(in oklch, var(--primary), transparent 90%);
+    --selection: var(--accent);
 }
 
 /* iOS dark system colors. */
@@ -115,7 +115,7 @@
     --input: oklch(0.402 0.003 286.3); /* #48484A */
     --ring: oklch(0.624 0.206 255.5);
 
-    --selection: color-mix(in oklch, var(--primary), transparent 84%);
+    --selection: var(--accent);
 }
 
 @theme inline {
@@ -168,15 +168,16 @@
      * default for data-dense screens; every control in a form row shares them,
      * so they line up. Override these three to change the density everywhere.
      */
-    --spacing-control-sm: 1.75rem;
-    --spacing-control: 2rem;
-    --spacing-control-lg: 2.25rem;
+    --spacing-control-sm: 2.25rem;
+    --spacing-control: 2.5rem;
+    --spacing-control-lg: 2.75rem;
 
     /*
      * The only elevation: floating layers (popovers, menus, dialogs, toasts).
      * Resting surfaces stay flat and are separated by hairline borders.
      */
-    --shadow-float: 0 1px 2px oklch(0 0 0 / 0.06), 0 8px 24px -6px oklch(0 0 0 / 0.18);
+    --shadow-float:
+        0 1px 2px oklch(0 0 0 / 0.06), 0 8px 24px -6px oklch(0 0 0 / 0.18);
 }
 
 /*
@@ -188,8 +189,10 @@
  * up for <html> as well as for the font-sans utility.
  */
 @theme {
-    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Tahoma, Arial,
-        sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    --font-sans:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Tahoma,
+        Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+        "Segoe UI Symbol";
 }
 
 /*

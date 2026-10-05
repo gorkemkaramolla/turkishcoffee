@@ -8,3 +8,11 @@ export {
   FormMessage,
   useFormField,
 } from './form'
+export {
+  FormTabs,
+  FormTabsTrigger,
+  FormTabsContent,
+  FormTabsNext,
+  FormTabsPrevious,
+  useFormTabs,
+} from './form-tabs'

@@ -13,6 +13,7 @@ import {
 } from 'react-hook-form'
 import { cn } from '../../lib/cn'
 import { Label } from '../label/label'
+import { useStepField } from '../../lib/form-steps'
 
 /**
  * react-hook-form's FormProvider. Imported from `turkishcoffee/form`, not the
@@ -54,6 +55,7 @@ export function FormField<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 >(props: ControllerProps<TFieldValues, TName>) {
+  useStepField(props.name)
   return (
     <FieldContext.Provider value={{ name: props.name }}>
       <Controller {...props} />

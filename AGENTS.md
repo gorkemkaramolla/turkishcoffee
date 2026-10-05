@@ -97,13 +97,12 @@ Every rule below is a token in `theme.css`; retune the token, not the components
   have no shadow; a 1px `border-border` separates them. `shadow-float` is the
   only elevation, reserved for layers that float: popovers, menus, dialogs,
   sheets, toasts.
-- **Active means tinted.** Highlighted and active states use `bg-selection` (a
-  faint primary tint), not grey. "You are here" states add a 2px primary edge as
-  an inset shadow: open accordion header (left), active tab (bottom), selected
-  table row (left, via `data-state="selected"`).
+- **No tint.** Highlighted and selected states use `bg-selection`, a neutral
+  grey, never a primary tint or a coloured edge. An open accordion header looks
+  like a closed one.
 - **Fast.** Overlays enter and leave in 50ms. Don't slow them down per use.
-- **Quiet colour.** Solid primary is for values and the main action (checked
-  checkbox, primary button); `--inverse` grey is for transient surfaces
+- **Quiet colour.** Solid primary is for values, the main action and the
+  active tab (checked checkbox, primary button, selected TabsTrigger); `--inverse` grey is for transient surfaces
   (toast, tooltip).
 
 ## Rules

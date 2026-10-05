@@ -3,6 +3,9 @@ import type * as React from 'react'
 /**
  * Minimal inline icons so the package pins no icon library on consumers.
  * Anything richer should be passed in as a ReactNode prop.
+ *
+ * Icons marked "Tabler Icons" are copied from https://tabler.io/icons (MIT);
+ * see THIRD_PARTY_LICENSES.md.
  */
 type IconProps = React.ComponentProps<'svg'>
 
@@ -23,84 +26,132 @@ function Icon({ children, ...props }: IconProps) {
   )
 }
 
+/** Tabler Icons `x` (MIT). */
 export function XIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M18 6 6 18M6 6l12 12" />
+      <path d="M18 6l-12 12" />
+      <path d="M6 6l12 12" />
     </Icon>
   )
 }
 
+/** Tabler Icons `check` (MIT). */
 export function CheckIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M20 6 9 17l-5-5" />
+      <path d="M5 12l5 5l10 -10" />
     </Icon>
   )
 }
 
+/** Tabler Icons `chevron-down` (MIT). */
 export function ChevronDownIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="m6 9 6 6 6-6" />
+      <path d="M6 9l6 6l6 -6" />
     </Icon>
   )
 }
 
+/** Tabler Icons `chevron-up` (MIT). */
 export function ChevronUpIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="m18 15-6-6-6 6" />
+      <path d="M6 15l6 -6l6 6" />
     </Icon>
   )
 }
 
+/** Tabler Icons `chevron-right` (MIT). */
 export function ChevronRightIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="m9 18 6-6-6-6" />
+      <path d="M9 6l6 6l-6 6" />
     </Icon>
   )
 }
 
+/** Tabler Icons `chevron-left` (MIT). */
 export function ChevronLeftIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="m15 18-6-6 6-6" />
+      <path d="M15 6l-6 6l6 6" />
     </Icon>
   )
 }
 
+/** Tabler Icons `selector` (MIT). */
 export function ChevronsUpDownIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="m7 15 5 5 5-5M7 9l5-5 5 5" />
+      <path d="M8 9l4 -4l4 4" />
+      <path d="M16 15l-4 4l-4 -4" />
     </Icon>
   )
 }
 
+/** Tabler Icons `dots` (MIT). */
 export function EllipsisIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <circle cx="12" cy="12" r="1" />
-      <circle cx="19" cy="12" r="1" />
-      <circle cx="5" cy="12" r="1" />
+      <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+      <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+      <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
     </Icon>
   )
 }
 
+/** Tabler Icons `calendar` (MIT). */
 export function CalendarIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <rect width="18" height="18" x="3" y="4" rx="2" />
-      <path d="M16 2v4M8 2v4M3 10h18" />
+      <path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12" />
+      <path d="M16 3v4" />
+      <path d="M8 3v4" />
+      <path d="M4 11h16" />
+      <path d="M11 15h1" />
+      <path d="M12 15v3" />
+    </Icon>
+  )
+}
+
+/** One person, for a single employee's details. Tabler Icons `user` (MIT). */
+export function UserIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+      <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+    </Icon>
+  )
+}
+
+/** Folder with a person, for a personnel file. Tabler Icons `folder-user` (MIT). */
+export function FolderUserIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12.75 19h-7.75a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h4l3 3h7a2 2 0 0 1 2 2v2.5" />
+      <path d="M17 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+      <path d="M22 22a2 2 0 0 0 -2 -2h-2a2 2 0 0 0 -2 2" />
+    </Icon>
+  )
+}
+
+/** Two people, for staff/team/member lists. Tabler Icons `users` (MIT). */
+export function UsersIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M5 7a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
+      <path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      <path d="M21 21v-2a4 4 0 0 0 -3 -3.85" />
     </Icon>
   )
 }
 
 /**
- * Filled status icons. Drawn on a 36-unit grid with a fill rather than the
- * 24-unit stroke grid above, so they share their own wrapper.
+ * Filled status icons: a fill rather than a stroke, so they share their own
+ * wrapper. Drawn on a 36-unit grid; a Tabler icon passes `viewBox="0 0 24 24"`.
  */
 function FilledIcon({ children, ...props }: IconProps) {
   return (
@@ -135,11 +186,14 @@ export function ErrorIcon(props: IconProps) {
   )
 }
 
-/** Filled circle with a check. The default icon of `<Alert variant="success">`. */
+/**
+ * Filled circle with a check. The default icon of `<Alert variant="success">`.
+ * Tabler Icons `circle-check-filled` (MIT), on Tabler's 24-unit grid.
+ */
 export function SuccessIcon(props: IconProps) {
   return (
-    <FilledIcon {...props}>
-      <path d="M18 2a16 16 0 1 0 16 16A16 16 0 0 0 18 2Zm10.666 9.08L16.018 27.341a1.208 1.208 0 0 1-.875.461c-.024.002-.05.002-.073.002a1.2 1.2 0 0 1-.85-.351l-7.784-7.795a1.2 1.2 0 0 1 0-1.698l1.326-1.325a1.201 1.201 0 0 1 1.695 0l5.346 5.347L25.314 8.473A1.203 1.203 0 0 1 27 8.263l1.455 1.133a1.205 1.205 0 0 1 .211 1.684Z" />
+    <FilledIcon viewBox="0 0 24 24" {...props}>
+      <path d="M17 3.34a10 10 0 1 1 -14.995 8.984l-.005 -.324l.005 -.324a10 10 0 0 1 14.995 -8.336zm-1.293 5.953a1 1 0 0 0 -1.32 -.083l-.094 .083l-3.293 3.292l-1.293 -1.292l-.094 -.083a1 1 0 0 0 -1.403 1.403l.083 .094l2 2l.094 .083a1 1 0 0 0 1.226 0l.094 -.083l4 -4l.083 -.094a1 1 0 0 0 -.083 -1.32z" />
     </FilledIcon>
   )
 }

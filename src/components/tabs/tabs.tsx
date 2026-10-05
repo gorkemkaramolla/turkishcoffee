@@ -1,8 +1,8 @@
-'use client'
+"use client";
 
-import { Tabs as TabsPrimitive } from '@base-ui/react/tabs'
-import { cnState } from '../../lib/cn'
-import { activeTab } from '../../lib/states'
+import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
+import { cnState } from "../../lib/cn";
+import { activeTab } from "../../lib/states";
 
 /**
  * Switches between views in the same place. Uncontrolled with `defaultValue`,
@@ -18,55 +18,46 @@ import { activeTab } from '../../lib/states'
  *   <TabsContent value="password">…</TabsContent>
  * </Tabs>
  */
-export function Tabs({
-  className,
-  ...props
-}: TabsPrimitive.Root.Props) {
+export function Tabs({ className, ...props }: TabsPrimitive.Root.Props) {
   return (
     <TabsPrimitive.Root
       data-slot="tabs"
-      className={cnState('flex flex-col gap-2', className)}
+      className={cnState("flex flex-col gap-2", className)}
       {...props}
     />
-  )
+  );
 }
 
 /** The row of TabsTriggers. */
-export function TabsList({
-  className,
-  ...props
-}: TabsPrimitive.List.Props) {
+export function TabsList({ className, ...props }: TabsPrimitive.List.Props) {
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={cnState(
-        'inline-flex h-control w-fit items-center justify-center rounded-md bg-muted p-0.5 text-muted-foreground',
+        "inline-flex h-control w-fit items-center justify-center rounded-md bg-muted text-muted-foreground",
         className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 /** Selects the TabsContent with the same `value`. */
-export function TabsTrigger({
-  className,
-  ...props
-}: TabsPrimitive.Tab.Props) {
+export function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
   return (
     <TabsPrimitive.Tab
       data-slot="tabs-trigger"
       className={cnState(
-        "inline-flex flex-1 items-center justify-center gap-1.5 self-stretch rounded-sm px-2 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] outline-none",
+        "inline-flex flex-1 items-center justify-center gap-1.5 self-stretch px-2 first:rounded-l-md last:rounded-r-md text-sm font-medium whitespace-nowrap transition-[color,box-shadow] outline-none",
         activeTab,
-        'focus-visible:ring-[3px] focus-visible:ring-ring/50',
-        'data-disabled:pointer-events-none data-disabled:opacity-50',
+        "focus-visible:ring-[3px] focus-visible:ring-ring/50",
+        "data-disabled:pointer-events-none data-disabled:opacity-50",
         "[&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 /** Panel shown while its `value` is selected. */
@@ -77,8 +68,8 @@ export function TabsContent({
   return (
     <TabsPrimitive.Panel
       data-slot="tabs-content"
-      className={cnState('flex-1 outline-none', className)}
+      className={cnState("flex-1 outline-none", className)}
       {...props}
     />
-  )
+  );
 }

@@ -1,5 +1,5 @@
 export { cn } from './lib/cn'
-export { InfoIcon, ErrorIcon, SuccessIcon } from './lib/icons'
+export { InfoIcon, ErrorIcon, SuccessIcon, UserIcon, UsersIcon, FolderUserIcon } from './lib/icons'
 export { useMediaQuery, useDisclosure, type Disclosure } from './hooks'
 
 // Form and DataTable are NOT exported here: they need optional peers
