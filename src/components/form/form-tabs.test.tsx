@@ -2,13 +2,20 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { useForm } from 'react-hook-form'
 import { Input } from '../input/input'
-import { TabsList } from '../tabs/tabs'
-import { Form, FormControl, FormField, FormItem, FormLabel } from './form'
-import { FormTabs, FormTabsContent, FormTabsNext, FormTabsPrevious, FormTabsTrigger } from './form-tabs'
+import { Form, FormControl, FormErrorSummary, FormField, FormItem, FormLabel } from './form'
+import { FormTabs, FormTabsContent, FormTabsList, FormTabsNext, FormTabsPrevious, FormTabsTrigger } from './form-tabs'
 
 type Values = { name: string; nationalId: string }
 
-function Wizard({ linear, onSubmit = () => {} }: { linear?: boolean; onSubmit?: (v: Values) => void }) {
+function Wizard({
+  linear,
+  summary,
+  onSubmit = () => {},
+}: {
+  linear?: boolean
+  summary?: boolean
+  onSubmit?: (v: Values) => void
+}) {
   const form = useForm<Values>({ defaultValues: { name: '', nationalId: '' } })
   const field = (name: keyof Values, label: string) => (
     <FormField
@@ -28,11 +35,12 @@ function Wizard({ linear, onSubmit = () => {} }: { linear?: boolean; onSubmit?: 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
+        {summary && <FormErrorSummary />}
         <FormTabs defaultValue="one" linear={linear}>
-          <TabsList>
+          <FormTabsList>
             <FormTabsTrigger value="one">One</FormTabsTrigger>
             <FormTabsTrigger value="two">Two</FormTabsTrigger>
-          </TabsList>
+          </FormTabsList>
           <FormTabsContent value="one">{field('name', 'Name')}</FormTabsContent>
           <FormTabsContent value="two">{field('nationalId', 'National ID')}</FormTabsContent>
           <FormTabsPrevious />
@@ -89,5 +97,31 @@ describe('FormTabs', () => {
     expect(tab('Two').hasAttribute('data-invalid')).toBe(true)
     expect(tab('One').hasAttribute('data-invalid')).toBe(false)
     expect(onSubmit).not.toHaveBeenCalled()
+  })
+
+  it('names the number of errors on a tab', async () => {
+    render(<Wizard />)
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(tab('Two').textContent).toContain('1 field to fix'))
+  })
+
+  it('in linear mode, marks a passed step done and the current one', async () => {
+    render(<Wizard linear />)
+    expect(tab('One').getAttribute('aria-current')).toBe('step')
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ayşe' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+    await waitFor(() => expect(tab('One').getAttribute('data-state')).toBe('complete'))
+    expect(tab('Two').getAttribute('aria-current')).toBe('step')
+  })
+
+  it('lists errors in FormErrorSummary and opens the tab of the one picked', async () => {
+    render(<Wizard summary />)
+    expect(screen.queryByRole('alert')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('2 fields need attention'))
+
+    fireEvent.click(screen.getByRole('button', { name: 'National ID is required' }))
+    await waitFor(() => expect(panel('National ID').hasAttribute('hidden')).toBe(false))
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText('National ID')))
   })
 })

@@ -2,11 +2,11 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useForm } from 'react-hook-form'
 import { Button } from '../button/button'
 import { Input } from '../input/input'
-import { TabsList } from '../tabs/tabs'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './form'
+import { Form, FormControl, FormErrorSummary, FormField, FormItem, FormLabel, FormMessage } from './form'
 import {
   FormTabs,
   FormTabsContent,
+  FormTabsList,
   FormTabsNext,
   FormTabsPrevious,
   FormTabsTrigger,
@@ -17,7 +17,7 @@ const meta = { title: 'Components/FormTabs' } satisfies Meta
 export default meta
 type Story = StoryObj<typeof meta>
 
-type Values = { firstName: string; lastName: string; nationalId: string; startDate: string }
+type Values = { firstName: string; lastName: string; nationalId: string; startDate: string; email: string }
 
 function Field({ name, label, required }: { name: keyof Values; label: string; required?: boolean }) {
   return (
@@ -51,7 +51,7 @@ function Actions() {
 
 function Example({ linear }: { linear?: boolean }) {
   const form = useForm<Values>({
-    defaultValues: { firstName: '', lastName: '', nationalId: '', startDate: '' },
+    defaultValues: { firstName: '', lastName: '', nationalId: '', startDate: '', email: '' },
   })
   return (
     <Form {...form}>
@@ -59,11 +59,13 @@ function Example({ linear }: { linear?: boolean }) {
         onSubmit={form.handleSubmit((v) => alert(JSON.stringify(v, null, 2)))}
         className="flex max-w-xl flex-col gap-4"
       >
+        {!linear && <FormErrorSummary />}
         <FormTabs defaultValue="employee" linear={linear} className="gap-4">
-          <TabsList>
+          <FormTabsList>
             <FormTabsTrigger value="employee">Employee</FormTabsTrigger>
             <FormTabsTrigger value="personnel">Personnel file</FormTabsTrigger>
-          </TabsList>
+            <FormTabsTrigger value="contact">Contact</FormTabsTrigger>
+          </FormTabsList>
           <FormTabsContent value="employee">
             <div className="flex flex-col gap-3">
               <Field name="firstName" label="First name" required />
@@ -73,7 +75,12 @@ function Example({ linear }: { linear?: boolean }) {
           <FormTabsContent value="personnel">
             <div className="flex flex-col gap-3">
               <Field name="nationalId" label="National ID" required />
-              <Field name="startDate" label="Start date" />
+              <Field name="startDate" label="Start date" required />
+            </div>
+          </FormTabsContent>
+          <FormTabsContent value="contact">
+            <div className="flex flex-col gap-3">
+              <Field name="email" label="Email" required />
             </div>
           </FormTabsContent>
           {linear ? <Actions /> : <Button type="submit" className="self-start">Create</Button>}
@@ -83,8 +90,11 @@ function Example({ linear }: { linear?: boolean }) {
   )
 }
 
-/** Free tabs: switch any time; a failed submit opens the tab with the error. */
+/**
+ * Free tabs: switch any time. A failed submit opens the first tab with an error,
+ * marks every tab that has one, and FormErrorSummary links to each field.
+ */
 export const Tabs: Story = { render: () => <Example /> }
 
-/** Stepper: Next validates the current step before moving on. */
+/** Stepper: Next validates the current step before moving on; done steps get a check. */
 export const Linear: Story = { render: () => <Example linear /> }

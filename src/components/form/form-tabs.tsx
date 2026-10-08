@@ -2,17 +2,25 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type * as React from 'react'
+import { Tabs as TabsPrimitive } from '@base-ui/react/tabs'
 import { useFormContext, useFormState } from 'react-hook-form'
-import { RegistryContext, StepContext, type Registry } from '../../lib/form-steps'
+import { cn, cnState } from '../../lib/cn'
+import { NavigatorContext, RegistryContext, StepContext, type FieldNavigator, type Registry } from '../../lib/form-steps'
+import { CheckIcon, ErrorIcon } from '../../lib/icons'
 import { Button } from '../button/button'
-import { Tabs, TabsContent, TabsTrigger } from '../tabs/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../tabs/tabs'
+
+/** Where a step stands in a linear form. */
+export type FormStepState = 'complete' | 'current' | 'upcoming' | 'invalid'
 
 type FormTabsContextValue = {
   value: string | undefined
   steps: string[]
   linear: boolean
+  /** The furthest step index reached through validation. */
+  reached: number
   goTo: (step: string) => Promise<boolean>
-  hasError: (step: string) => boolean
+  errorCount: (step: string) => number
 }
 
 const FormTabsContext = createContext<FormTabsContextValue | null>(null)
@@ -20,20 +28,25 @@ const FormTabsContext = createContext<FormTabsContextValue | null>(null)
 /**
  * Splits one react-hook-form form across tabs or steps without losing input.
  * Every step stays mounted while hidden, so values survive switching. Each
- * FormField inside a FormTabsContent belongs to that step: a tab with an error
- * shows a dot, and a failed submit jumps to the first such tab and focuses the
- * field. With `linear`, a step can only be left forwards once its fields (and
- * every earlier step's) validate: a stepper. Steps are ordered as they mount.
- * Must be inside `<Form>`; put it inside the `<form>` so the submit button works.
+ * FormField inside a FormTabsContent belongs to that step: a tab with errors
+ * shows an error icon and their count, and a failed submit jumps to the first
+ * such tab and focuses the field. Add FormErrorSummary to list every error
+ * with a link that opens its tab.
+ *
+ * With `linear` it is a stepper: FormTabsList draws numbered steps instead of
+ * tabs, a step can only be left forwards once its fields (and every earlier
+ * step's) validate, done steps show a check and a step left with errors says
+ * how many. Steps are ordered as they mount. Must be inside `<Form>`; put it
+ * inside the `<form>` so the submit button works.
  *
  * @example
  * <Form {...form}>
  *   <form onSubmit={form.handleSubmit(onSubmit)}>
  *     <FormTabs defaultValue="employee" linear>
- *       <TabsList>
+ *       <FormTabsList>
  *         <FormTabsTrigger value="employee">Employee</FormTabsTrigger>
  *         <FormTabsTrigger value="personnel">Personnel file</FormTabsTrigger>
- *       </TabsList>
+ *       </FormTabsList>
  *       <FormTabsContent value="employee">…FormFields…</FormTabsContent>
  *       <FormTabsContent value="personnel">…FormFields…</FormTabsContent>
  *       <FormTabsPrevious />
@@ -53,7 +66,7 @@ export function FormTabs({
   value?: string
   defaultValue?: string
   onValueChange?: (value: string) => void
-  /** Only move forwards once the steps before the target validate. */
+  /** A stepper: only move forwards once the steps before the target validate. */
   linear?: boolean
 }) {
   const form = useFormContext()
@@ -62,7 +75,11 @@ export function FormTabs({
   const [steps, setSteps] = useState<string[]>([])
   const [internal, setInternal] = useState(defaultValue)
   const value = valueProp ?? internal ?? steps[0]
+  const index = value === undefined ? -1 : steps.indexOf(value)
+  const [reached, setReached] = useState(0)
   const pendingFocus = useRef<string | null>(null)
+
+  useEffect(() => setReached((r) => Math.max(r, index)), [index])
 
   const fieldsOf = useCallback((step: string) => {
     let set = fields.current.get(step)
@@ -89,8 +106,8 @@ export function FormTabs({
     [fieldsOf],
   )
 
-  const firstError = (step: string) =>
-    [...fieldsOf(step)].find((name) => form.getFieldState(name, formState).invalid)
+  const invalidIn = (step: string) =>
+    [...fieldsOf(step)].filter((name) => form.getFieldState(name, formState).invalid)
 
   const show = (step: string, focus?: string) => {
     pendingFocus.current = focus ?? null
@@ -110,7 +127,7 @@ export function FormTabs({
   useEffect(() => {
     if (!formState.submitCount) return
     for (const step of steps) {
-      const name = firstError(step)
+      const [name] = invalidIn(step)
       if (name) return show(step, name)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only on a new submit
@@ -118,11 +135,11 @@ export function FormTabs({
 
   const goTo = async (target: string) => {
     const to = steps.indexOf(target)
-    if (linear && value !== undefined && to > steps.indexOf(value)) {
+    if (linear && to > index) {
       for (const step of steps.slice(0, to)) {
         const names = [...fieldsOf(step)]
         if (names.length && !(await form.trigger(names))) {
-          show(step, firstError(step) ?? names[0])
+          show(step, invalidIn(step)[0] ?? names[0])
           return false
         }
       }
@@ -131,12 +148,38 @@ export function FormTabs({
     return true
   }
 
+  const stepOf = (name: string) => steps.find((step) => fields.current.get(step)?.has(name))
+
+  const navigator: FieldNavigator = {
+    reveal: (name) => {
+      const step = stepOf(name)
+      if (step === undefined || step === value) form.setFocus(name)
+      else show(step, name)
+    },
+    rank: (name) => {
+      const step = stepOf(name)
+      if (step === undefined) return Number.MAX_SAFE_INTEGER
+      return steps.indexOf(step) * 10_000 + [...fieldsOf(step)].indexOf(name)
+    },
+  }
+
+  // Fill Form's slot every render, so FormErrorSummary always calls the latest steps.
+  const slot = useContext(NavigatorContext)
+  useEffect(() => {
+    if (!slot) return
+    slot.current = navigator
+    return () => {
+      slot.current = null
+    }
+  })
+
   const ctx: FormTabsContextValue = {
     value,
     steps,
     linear,
+    reached,
     goTo,
-    hasError: (step) => firstError(step) !== undefined,
+    errorCount: (step) => invalidIn(step).length,
   }
 
   return (
@@ -148,23 +191,135 @@ export function FormTabs({
   )
 }
 
-/** A TabsTrigger that marks its step when one of its fields has an error. */
+/**
+ * The row of tabs, or with `linear` the row of steps. Use it in place of
+ * TabsList inside FormTabs so a stepper gets its own layout.
+ */
+export function FormTabsList({ className, ...props }: React.ComponentProps<typeof TabsList>) {
+  const { linear } = useContext(FormTabsContext) ?? {}
+  if (!linear) return <TabsList className={className} {...props} />
+  return (
+    <TabsPrimitive.List
+      data-slot="form-steps"
+      className={cnState('flex w-full items-start gap-2', className)}
+      {...props}
+    />
+  )
+}
+
+/**
+ * One tab, or with `linear` one step. A tab with errors shows an error icon
+ * and how many fields to fix. A step shows its number, a check once done, or
+ * an error icon and "N fields to fix" when left with errors; steps further
+ * than the next one can't be picked until the ones before them are done.
+ */
 export function FormTabsTrigger({
   value,
   children,
+  className,
   ...props
 }: React.ComponentProps<typeof TabsTrigger> & { value: string }) {
-  const invalid = useFormTabs().hasError(value)
+  const ctx = useContext(FormTabsContext)
+  if (!ctx) throw new Error('FormTabsTrigger must be used inside <FormTabs>')
+  const errors = ctx.errorCount(value)
+  const errorText = `${errors} ${errors === 1 ? 'field' : 'fields'} to fix`
+
+  if (!ctx.linear) {
+    return (
+      <TabsTrigger
+        value={value}
+        data-invalid={errors ? '' : undefined}
+        className={cnState('data-invalid:not-data-active:text-danger-text', className)}
+        {...props}
+      >
+        {errors > 0 && <ErrorIcon aria-hidden="true" className="size-3.5" />}
+        {children}
+        {errors > 0 && (
+          <>
+            <span aria-hidden="true" className="text-xs tabular-nums">
+              {errors}
+            </span>
+            <span className="sr-only">({errorText})</span>
+          </>
+        )}
+      </TabsTrigger>
+    )
+  }
+
+  const position = ctx.steps.indexOf(value)
+  const current = value === ctx.value
+  // The step being fixed already shows its errors on the fields; the marker is for steps left behind.
+  const state: FormStepState = current
+    ? 'current'
+    : errors
+      ? 'invalid'
+      : position < ctx.reached
+        ? 'complete'
+        : 'upcoming'
+
   return (
-    <TabsTrigger value={value} data-invalid={invalid ? '' : undefined} {...props}>
-      {children}
-      {invalid && (
-        <>
-          <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-destructive" />
-          <span className="sr-only">(has errors)</span>
-        </>
+    <TabsPrimitive.Tab
+      value={value}
+      data-slot="form-step"
+      data-state={state}
+      data-invalid={errors ? '' : undefined}
+      aria-current={current ? 'step' : undefined}
+      disabled={position > ctx.reached + 1}
+      className={cnState(
+        'group/step flex min-w-0 flex-1 flex-col gap-2 rounded-sm pb-1 text-left outline-none',
+        'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        'data-disabled:cursor-not-allowed',
+        className,
       )}
-    </TabsTrigger>
+      {...props}
+    >
+      {/* The progress line: filled up to the current step. */}
+      <span
+        aria-hidden="true"
+        className={cn(
+          'h-1 w-full rounded-full bg-border transition-colors',
+          'group-data-[state=complete]/step:bg-primary group-data-[state=current]/step:bg-primary',
+          'group-data-[state=invalid]/step:bg-danger',
+        )}
+      />
+      <span
+        aria-hidden="true"
+        className={cn(
+          'grid size-6 shrink-0 place-items-center rounded-full border text-xs font-semibold tabular-nums transition-colors',
+          'border-field text-muted-foreground',
+          'group-data-[state=current]/step:border-primary group-data-[state=current]/step:bg-primary group-data-[state=current]/step:text-primary-foreground',
+          'group-data-[state=complete]/step:border-primary-soft group-data-[state=complete]/step:bg-primary-soft group-data-[state=complete]/step:text-primary-text',
+          'group-data-[state=invalid]/step:border-transparent group-data-[state=invalid]/step:text-danger-text',
+        )}
+      >
+        {state === 'complete' ? (
+          <CheckIcon className="size-3.5 stroke-[2.5]" />
+        ) : state === 'invalid' ? (
+          <ErrorIcon className="size-5" />
+        ) : (
+          position + 1
+        )}
+      </span>
+      {/* Under the marker, not beside it, so the name has the column's full width and wraps between words. */}
+      <span className="flex flex-col gap-0.5">
+        <span
+          className={cn(
+            'text-sm leading-5 text-balance text-muted-foreground',
+            'group-data-[state=current]/step:font-semibold group-data-[state=current]/step:text-foreground',
+            'group-data-[state=complete]/step:text-foreground',
+            'group-data-[state=invalid]/step:text-danger-text',
+            // On a phone only the current step keeps its name; the others keep their marker.
+            'max-sm:sr-only group-data-[state=current]/step:max-sm:not-sr-only',
+          )}
+        >
+          {children}
+        </span>
+        {state === 'invalid' && (
+          <span className="text-xs text-danger-text max-sm:sr-only">{errorText}</span>
+        )}
+        {state === 'complete' && <span className="sr-only">(done)</span>}
+      </span>
+    </TabsPrimitive.Tab>
   )
 }
 
@@ -216,7 +371,7 @@ export function FormTabsPrevious({
 export function useFormTabs() {
   const ctx = useContext(FormTabsContext)
   if (!ctx) throw new Error('useFormTabs must be used inside <FormTabs>')
-  const { value, steps, goTo, hasError } = ctx
+  const { value, steps, goTo, errorCount } = ctx
   const index = value === undefined ? -1 : steps.indexOf(value)
   return {
     value,
@@ -224,7 +379,8 @@ export function useFormTabs() {
     index,
     isFirst: index <= 0,
     isLast: index === steps.length - 1,
-    hasError,
+    hasError: (step: string) => errorCount(step) > 0,
+    errorCount,
     goTo,
     next: () => {
       const step = steps[index + 1]
