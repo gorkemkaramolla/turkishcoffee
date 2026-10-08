@@ -26,6 +26,8 @@ export default defineConfig({
       /^react\//,
       'react-hook-form',
       /^@tanstack\//,
+      'react-window',
+      /^write-excel-file/,
       'radix-ui',
       /^@radix-ui\//,
     ],

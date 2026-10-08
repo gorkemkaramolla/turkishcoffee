@@ -6,26 +6,40 @@ import '../src/styles/storybook.css'
  * The `dark` class goes on <html>, not on a wrapper div — otherwise html/body
  * keep their light background and show through below the story content.
  */
-function ThemeCanvas({ isDark, children }: { isDark: boolean; children: ReactNode }) {
+function ThemeCanvas({
+  isDark,
+  inDocs,
+  children,
+}: {
+  isDark: boolean
+  inDocs: boolean
+  children: ReactNode
+}) {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark)
   }, [isDark])
 
   return (
-    <div className="bg-background text-foreground flex min-h-dvh items-center justify-center p-10">
+    // On a Docs page every story renders inline, so a full-height canvas would
+    // push each code block a screen apart.
+    <div
+      className={`bg-background text-foreground flex items-center justify-center p-10 ${inDocs ? '' : 'min-h-dvh'}`}
+    >
       {children}
     </div>
   )
 }
 
 const withTheme: Decorator = (Story, context) => (
-  <ThemeCanvas isDark={context.globals.theme === 'dark'}>
+  <ThemeCanvas isDark={context.globals.theme === 'dark'} inDocs={context.viewMode === 'docs'}>
     <Story />
   </ThemeCanvas>
 )
 
 const preview: Preview = {
   decorators: [withTheme],
+  // A Docs page per component: its JSDoc, a props table and every story with its code.
+  tags: ['autodocs'],
   initialGlobals: {
     theme: 'light',
   },
@@ -48,6 +62,11 @@ const preview: Preview = {
     controls: { expanded: true },
     // Storybook's own backgrounds addon would paint over the token background.
     backgrounds: { disable: true },
+    docs: {
+      // A "Code" tab under each story, and code open by default on Docs pages.
+      codePanel: true,
+      canvas: { sourceState: 'shown' },
+    },
   },
 }
 
