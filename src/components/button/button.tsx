@@ -9,25 +9,21 @@ export const buttonVariants = cva(
     [
         "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap outline-none transition-all",
         "disabled:pointer-events-none disabled:opacity-50",
-        "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
-        "aria-invalid:border-destructive aria-invalid:ring-destructive/20",
+        "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring",
+        // A gap between ring and fill, so a solid ring stays visible on a filled button.
+        "focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "aria-invalid:border-danger aria-invalid:ring-danger",
         "[&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
     ],
     {
         variants: {
             variant: {
-                default:
+                primary:
                     "bg-primary text-primary-foreground hover:bg-primary/90",
                 secondary:
-                    "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-                destructive:
-                    "bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:ring-destructive/20",
-                success:
-                    "bg-success text-success-foreground hover:bg-success/90",
-                outline:
                     "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
                 ghost: "hover:bg-accent hover:text-accent-foreground",
-                link: "text-primary underline-offset-4 hover:underline",
+                link: "text-primary-text underline-offset-4 hover:underline",
             },
             size: {
                 sm: "h-control-sm gap-1.5 px-2.5 text-xs has-[>svg]:px-2",
@@ -37,7 +33,7 @@ export const buttonVariants = cva(
             },
         },
         defaultVariants: {
-            variant: "default",
+            variant: "primary",
             size: "md",
         },
     },
@@ -47,16 +43,19 @@ export type ButtonProps = useRender.ComponentProps<"button"> &
     VariantProps<typeof buttonVariants>;
 
 /**
- * A button. Variants: `default` | `secondary` | `destructive` | `success` |
- * `outline` | `ghost` | `link`. Sizes: `sm` (28px) | `md` (32px, default) |
- * `lg` (36px) | `icon` — from the `--spacing-control*` tokens; there is no
+ * A button. Variants rank emphasis, not meaning: `primary` (default; one per
+ * screen), `secondary` (bordered, for every other action), `ghost` (toolbars
+ * and icon buttons) and `link` (inline in text). There is no coloured tone:
+ * for a dangerous action say the consequence in the label ("Delete
+ * employee") and confirm it in an AlertDialog. Sizes: `sm` (32px) | `md` (36px, default) |
+ * `lg` (40px) | `icon` — from the `--spacing-control*` tokens; there is no
  * `size="default"`. Pass `render` to style another element, such
  * as your router's link, as a button. Client component.
  *
  * @example
- * <Button variant="destructive" size="sm">Delete</Button>
+ * <Button variant="secondary" size="sm">Export</Button>
  *
- * <Button render={<Link href="/settings" />} variant="outline">
+ * <Button render={<Link href="/settings" />} variant="ghost">
  *   Settings
  * </Button>
  */

@@ -14,7 +14,7 @@ import { backdrop, slideFrom, slideMotion } from '../../lib/motion'
  *
  * @example
  * <Sheet>
- *   <SheetTrigger render={<Button variant="outline" />}>Filters</SheetTrigger>
+ *   <SheetTrigger render={<Button variant="secondary" />}>Filters</SheetTrigger>
  *   <SheetContent side="left">
  *     <SheetHeader>
  *       <SheetTitle>Filters</SheetTitle>
@@ -68,7 +68,7 @@ export function SheetContent({ className, children, side, ...props }: SheetConte
         {...props}
       >
         {children}
-        <SheetPrimitive.Close className="absolute top-4 right-4 rounded-sm opacity-70 transition-opacity outline-none hover:opacity-100 focus-visible:ring-[3px] focus-visible:ring-ring/50">
+        <SheetPrimitive.Close className="absolute top-4 right-4 rounded-sm opacity-70 transition-opacity outline-none hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring">
           <XIcon className="size-4" />
           <span className="sr-only">Close</span>
         </SheetPrimitive.Close>

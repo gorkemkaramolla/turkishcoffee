@@ -9,9 +9,9 @@ describe('Button', () => {
   })
 
   it('applies variant and size classes', () => {
-    render(<Button variant="destructive" size="lg">Delete</Button>)
+    render(<Button variant="secondary" size="lg">Export</Button>)
     const btn = screen.getByRole('button')
-    expect(btn.className).toContain('bg-destructive')
+    expect(btn.className).toContain('border-input')
     expect(btn.className).toContain('h-control-lg')
   })
 

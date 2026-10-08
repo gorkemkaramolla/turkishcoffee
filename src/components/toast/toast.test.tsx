@@ -22,8 +22,8 @@ describe('Toaster', () => {
 
     expect(iconOf('Saved')?.getAttribute('fill')).toBe('currentColor')
     expect(iconOf('Saved')?.getAttribute('class')).toContain('text-success')
-    expect(iconOf('Failed')?.getAttribute('class')).toContain('text-destructive')
-    expect(iconOf('Heads up')?.getAttribute('class')).toContain('text-primary')
+    expect(iconOf('Failed')?.getAttribute('class')).toContain('text-danger')
+    expect(iconOf('Heads up')?.getAttribute('class')).toContain('text-primary-text')
   })
 
   it('gives warning toasts the error icon in the warning colour', async () => {

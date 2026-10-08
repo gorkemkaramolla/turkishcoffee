@@ -11,7 +11,7 @@ type Story = StoryObj<typeof meta>
 export const Default: Story = {
   render: () => (
     <Popover>
-      <PopoverTrigger render={<Button variant="outline" />}>Dimensions</PopoverTrigger>
+      <PopoverTrigger render={<Button variant="secondary" />}>Dimensions</PopoverTrigger>
       <PopoverContent className="flex flex-col gap-3">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="w">Width</Label>

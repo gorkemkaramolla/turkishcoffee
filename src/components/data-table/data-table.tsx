@@ -160,7 +160,7 @@ export function DataTable<TData extends RowData>({
             Page {pagination.pageIndex + 1} of {table.getPageCount() || 1}
           </span>
           <Button
-            variant="outline"
+            variant="secondary"
             size="sm"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
@@ -168,7 +168,7 @@ export function DataTable<TData extends RowData>({
             Previous
           </Button>
           <Button
-            variant="outline"
+            variant="secondary"
             size="sm"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}

@@ -57,10 +57,14 @@ function PickerButton({
   return (
     <Button
       type="button"
-      variant="outline"
+      variant="secondary"
       data-empty={!label || undefined}
       className={cn(
         'w-full justify-start text-left font-normal data-[empty]:text-muted-foreground sm:w-64',
+        // Dressed as a field, not a button, so it lines up with the inputs beside it.
+        'border-field bg-transparent hover:border-field-hover hover:bg-transparent',
+        'focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:inset-ring focus-visible:inset-ring-ring',
+        'data-popup-open:border-ring data-popup-open:inset-ring data-popup-open:inset-ring-ring',
         className,
       )}
       {...props}

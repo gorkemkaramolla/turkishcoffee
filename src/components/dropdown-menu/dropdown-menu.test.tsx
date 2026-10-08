@@ -15,7 +15,7 @@ function Menu({ onRename = () => {} }: { onRename?: () => void }) {
       <DropdownMenuContent>
         <DropdownMenuLabel>Project</DropdownMenuLabel>
         <DropdownMenuItem onClick={onRename}>Rename</DropdownMenuItem>
-        <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
+        <DropdownMenuItem tone="danger">Delete</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )

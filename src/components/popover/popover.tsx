@@ -11,7 +11,7 @@ import { popupMotion } from '../../lib/motion'
  *
  * @example
  * <Popover>
- *   <PopoverTrigger render={<Button variant="outline" />}>Filters</PopoverTrigger>
+ *   <PopoverTrigger render={<Button variant="secondary" />}>Filters</PopoverTrigger>
  *   <PopoverContent align="start">…</PopoverContent>
  * </Popover>
  */

@@ -19,7 +19,7 @@ const columns: Array<DataTableColumn<Payment>> = [
     cell: (info) => {
       const status = info.getValue<Payment['status']>()
       return (
-        <Badge variant={status === 'success' ? 'success' : status === 'pending' ? 'warning' : 'destructive'}>
+        <Badge tone={status === 'success' ? 'success' : status === 'pending' ? 'warning' : 'danger'}>
           {status}
         </Badge>
       )

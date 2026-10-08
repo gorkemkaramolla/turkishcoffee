@@ -50,7 +50,7 @@ export function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
       className={cnState(
         "inline-flex flex-1 items-center justify-center gap-1.5 self-stretch px-2 first:rounded-l-md last:rounded-r-md text-sm font-medium whitespace-nowrap transition-[color,box-shadow] outline-none",
         activeTab,
-        "focus-visible:ring-[3px] focus-visible:ring-ring/50",
+        "focus-visible:ring-2 focus-visible:ring-ring",
         "data-disabled:pointer-events-none data-disabled:opacity-50",
         "[&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
         className,

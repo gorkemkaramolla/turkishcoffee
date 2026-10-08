@@ -42,7 +42,7 @@ export function SelectTrigger({
   children,
   ...props
 }: SelectPrimitive.Trigger.Props & {
-  /** Height: `sm` (28px) or `md` (32px, default) — matches Button, Input and NativeSelect. */
+  /** Height: `sm` (32px) or `md` (36px, default) — matches Button, Input and NativeSelect. */
   size?: 'sm' | 'md'
 }) {
   return (
@@ -50,12 +50,12 @@ export function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cnState(
-        'flex w-fit items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap transition-[color,box-shadow] outline-none',
+        'flex w-fit items-center justify-between gap-2 rounded-md border border-field bg-transparent px-3 py-2 text-sm whitespace-nowrap transition-[color,border-color,box-shadow] outline-none',
         'data-[size=md]:h-control data-[size=sm]:h-control-sm',
         'data-placeholder:text-muted-foreground',
-        'focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50',
+        'hover:border-field-hover focus-visible:border-ring focus-visible:inset-ring focus-visible:inset-ring-ring data-popup-open:border-ring data-popup-open:inset-ring data-popup-open:inset-ring-ring',
         'data-disabled:cursor-not-allowed data-disabled:opacity-50',
-        'aria-invalid:border-destructive aria-invalid:ring-destructive/20',
+        'aria-invalid:border-danger aria-invalid:inset-ring-danger',
         className,
       )}
       {...props}

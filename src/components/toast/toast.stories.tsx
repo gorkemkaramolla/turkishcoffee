@@ -19,11 +19,11 @@ export const Default: Story = {
             >
                 Default
             </Button>
-            <Button variant="success" onClick={() => toast.success("Saved")}>
+            <Button variant="secondary" onClick={() => toast.success("Saved")}>
                 Success
             </Button>
             <Button
-                variant="destructive"
+                variant="secondary"
                 onClick={() =>
                     toast.error("Failed", {
                         description: "Could not reach the server.",
@@ -45,7 +45,7 @@ export const Default: Story = {
                 Warning
             </Button>
             <Button
-                variant="outline"
+                variant="secondary"
                 onClick={() =>
                     toast("Message archived", {
                         action: { label: "Undo", onClick: () => {} },

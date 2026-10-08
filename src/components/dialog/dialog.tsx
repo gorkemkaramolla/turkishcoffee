@@ -37,7 +37,7 @@ const useIsDrawer = () => React.useContext(DialogModeContext) === 'drawer'
  *     </DialogHeader>
  *     …
  *     <DialogFooter>
- *       <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>
+ *       <DialogClose render={<Button variant="secondary" />}>Cancel</DialogClose>
  *       <Button type="submit">Save</Button>
  *     </DialogFooter>
  *   </DialogContent>
@@ -131,7 +131,7 @@ export function DialogContent({
         {showCloseButton ? (
           <DialogPrimitive.Close
             data-slot="dialog-close"
-            className="absolute top-4 right-4 rounded-sm opacity-70 transition-opacity outline-none hover:opacity-100 focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none"
+            className="absolute top-4 right-4 rounded-sm opacity-70 transition-opacity outline-none hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none"
           >
             <XIcon className="size-4" />
             <span className="sr-only">Close</span>

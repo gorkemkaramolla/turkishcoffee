@@ -162,7 +162,7 @@ function FilledIcon({ children, ...props }: IconProps) {
 }
 
 /**
- * Filled circle with an "i". The default icon of `<Alert variant="info">`.
+ * Filled circle with an "i". The default icon of `<Alert tone="info">`.
  *
  * @example
  * <Alert icon={<InfoIcon />}>
@@ -177,7 +177,51 @@ export function InfoIcon(props: IconProps) {
   )
 }
 
-/** Filled triangle with an "!". The default icon of `<Alert variant="destructive">`. */
+/** Tabler Icons `plus` (MIT). */
+export function PlusIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 5l0 14" />
+      <path d="M5 12l14 0" />
+    </Icon>
+  )
+}
+
+/** Tabler Icons `mail` (MIT). */
+export function MailIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10z" />
+      <path d="M3 7l9 6l9 -6" />
+    </Icon>
+  )
+}
+
+/** Tabler Icons `trash` (MIT). */
+export function TrashIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M4 7l16 0" />
+      <path d="M10 11l0 6" />
+      <path d="M14 11l0 6" />
+      <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+      <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
+    </Icon>
+  )
+}
+
+/** Tabler Icons `info-circle` (MIT). The outline "i" of InfoLabel's button. */
+export function InfoCircleIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
+      <path d="M12 9h.01" />
+      <path d="M11 12h1v4h1" />
+    </Icon>
+  )
+}
+
+/** Filled triangle with an "!". The default icon of a `warning` or `danger` Alert. */
 export function ErrorIcon(props: IconProps) {
   return (
     <FilledIcon {...props}>
@@ -187,7 +231,7 @@ export function ErrorIcon(props: IconProps) {
 }
 
 /**
- * Filled circle with a check. The default icon of `<Alert variant="success">`.
+ * Filled circle with a check. The default icon of `<Alert tone="success">`.
  * Tabler Icons `circle-check-filled` (MIT), on Tabler's 24-unit grid.
  */
 export function SuccessIcon(props: IconProps) {
@@ -195,5 +239,109 @@ export function SuccessIcon(props: IconProps) {
     <FilledIcon viewBox="0 0 24 24" {...props}>
       <path d="M17 3.34a10 10 0 1 1 -14.995 8.984l-.005 -.324l.005 -.324a10 10 0 0 1 14.995 -8.336zm-1.293 5.953a1 1 0 0 0 -1.32 -.083l-.094 .083l-3.293 3.292l-1.293 -1.292l-.094 -.083a1 1 0 0 0 -1.403 1.403l.083 .094l2 2l.094 .083a1 1 0 0 0 1.226 0l.094 -.083l4 -4l.083 -.094a1 1 0 0 0 -.083 -1.32z" />
     </FilledIcon>
+  )
+}
+
+/** Tabler Icons `arrow-up` (MIT). DataTable's ascending sort indicator. */
+export function ArrowUpIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 5l0 14" />
+      <path d="M18 11l-6 -6" />
+      <path d="M6 11l6 -6" />
+    </Icon>
+  )
+}
+
+/** Tabler Icons `arrow-down` (MIT). DataTable's descending sort indicator. */
+export function ArrowDownIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 5l0 14" />
+      <path d="M18 13l-6 6" />
+      <path d="M6 13l6 6" />
+    </Icon>
+  )
+}
+
+/** Tabler Icons `columns-3` (MIT). DataTable's column chooser. */
+export function ColumnsIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M3 3m0 1a1 1 0 0 1 1 -1h16a1 1 0 0 1 1 1v16a1 1 0 0 1 -1 1h-16a1 1 0 0 1 -1 -1zm6 -1v18m6 -18v18" />
+    </Icon>
+  )
+}
+
+/** Tabler Icons `arrow-autofit-width` (MIT). Fit a column to its content. */
+export function AutofitWidthIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M4 12v-6a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v6" />
+      <path d="M10 18h-7" />
+      <path d="M21 18h-7" />
+      <path d="M6 15l-3 3l3 3" />
+      <path d="M18 15l3 3l-3 3" />
+    </Icon>
+  )
+}
+
+/** Tabler Icons `eye-off` (MIT). */
+export function EyeOffIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M10.585 10.587a2 2 0 0 0 2.829 2.828" />
+      <path d="M16.681 16.673a8.717 8.717 0 0 1 -4.681 1.327c-3.6 0 -6.6 -2 -9 -6c1.272 -2.12 2.712 -3.678 4.32 -4.674m2.86 -1.146a9.055 9.055 0 0 1 1.82 -.18c3.6 0 6.6 2 9 6c-.666 1.11 -1.379 2.067 -2.138 2.87" />
+      <path d="M3 3l18 18" />
+    </Icon>
+  )
+}
+
+/** Tabler Icons `rotate` (MIT). Reset to defaults. */
+export function RotateIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M19.95 11a8 8 0 1 0 -.5 4m.5 5v-5h-5" />
+    </Icon>
+  )
+}
+
+/** Tabler Icons `filter` (MIT). A column filter; add `fill-current` for an active one. */
+export function FilterIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M4 4h16v2.172a2 2 0 0 1 -.586 1.414l-4.414 4.414v7l-6 2v-8.5l-4.48 -4.928a2 2 0 0 1 -.52 -1.345v-2.227z" />
+    </Icon>
+  )
+}
+
+/** Tabler Icons `chevron-left-pipe` (MIT). First page. */
+export function ChevronLeftPipeIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M7 6v12" />
+      <path d="M18 6l-6 6l6 6" />
+    </Icon>
+  )
+}
+
+/** Tabler Icons `chevron-right-pipe` (MIT). Last page. */
+export function ChevronRightPipeIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M6 6l6 6l-6 6" />
+      <path d="M17 5v13" />
+    </Icon>
+  )
+}
+
+/** Tabler Icons `download` (MIT). */
+export function DownloadIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
+      <path d="M7 11l5 5l5 -5" />
+      <path d="M12 4l0 12" />
+    </Icon>
   )
 }

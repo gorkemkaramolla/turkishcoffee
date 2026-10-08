@@ -29,7 +29,7 @@ export const Default: Story = {
           <TableRow key={i.id}>
             <TableCell className="font-medium">{i.id}</TableCell>
             <TableCell>
-              <Badge variant={i.status === 'Paid' ? 'success' : i.status === 'Pending' ? 'warning' : 'destructive'}>
+              <Badge tone={i.status === 'Paid' ? 'success' : i.status === 'Pending' ? 'warning' : 'danger'}>
                 {i.status}
               </Badge>
             </TableCell>

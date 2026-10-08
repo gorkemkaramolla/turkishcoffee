@@ -197,7 +197,7 @@ export function FormTabsNext({ children = 'Next', ...props }: React.ComponentPro
 /** Goes to the previous step. Renders nothing on the first step. */
 export function FormTabsPrevious({
   children = 'Back',
-  variant = 'outline',
+  variant = 'secondary',
   ...props
 }: React.ComponentProps<typeof Button>) {
   const { previous, isFirst } = useFormTabs()

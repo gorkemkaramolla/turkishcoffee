@@ -13,7 +13,7 @@ type Story = StoryObj<typeof meta>
 export const Default: Story = {
   render: () => (
     <Collapsible className="w-80">
-      <CollapsibleTrigger render={<Button variant="outline" size="sm" />}>
+      <CollapsibleTrigger render={<Button variant="secondary" size="sm" />}>
         Show advanced settings
       </CollapsibleTrigger>
       <CollapsibleContent>

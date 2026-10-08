@@ -45,14 +45,14 @@ export function AccordionTrigger({
     return (
         <AccordionPrimitive.Header
             className={cn(
-                "flex outline-1 outline-secondary focus-within:ring-2 focus-within:ring-primary/50",
+                "flex outline-1 outline-secondary focus-within:ring-2 focus-within:ring-ring",
             )}
         >
             <AccordionPrimitive.Trigger
                 data-slot="accordion-trigger"
                 className={cnState(
                     "flex flex-1 items-start justify-between gap-4 text-left text-sm font-medium outline-none",
-                    "hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50 px-4 py-2",
+                    "hover:underline focus-visible:ring-2 focus-visible:ring-ring px-4 py-2",
                     "data-disabled:pointer-events-none data-disabled:opacity-50",
                     "[&[data-panel-open]>svg]:rotate-180",
                     className,

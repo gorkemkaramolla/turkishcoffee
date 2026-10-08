@@ -12,16 +12,21 @@ type Story = StoryObj<typeof meta>
 
 export const Default: Story = {}
 
-export const AllVariants: Story = {
+const tones = ['neutral', 'info', 'success', 'warning', 'danger'] as const
+
+/** Every tone in both variants: `soft` (default) on top, `solid` below. */
+export const Tones: Story = {
   render: () => (
-    <div className="flex flex-wrap items-center gap-2">
-      <Badge>Default</Badge>
-      <Badge variant="secondary">Secondary</Badge>
-      <Badge variant="destructive">Destructive</Badge>
-      <Badge variant="success">Success</Badge>
-      <Badge variant="warning">Warning</Badge>
-      <Badge variant="inverse">Inverse</Badge>
-      <Badge variant="outline">Outline</Badge>
+    <div className="flex flex-col gap-2">
+      {(['soft', 'solid'] as const).map((variant) => (
+        <div key={variant} className="flex flex-wrap items-center gap-2">
+          {tones.map((tone) => (
+            <Badge key={tone} tone={tone} variant={variant}>
+              {tone}
+            </Badge>
+          ))}
+        </div>
+      ))}
     </div>
   ),
 }
