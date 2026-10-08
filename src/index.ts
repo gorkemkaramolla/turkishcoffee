@@ -1,5 +1,5 @@
 export { cn } from './lib/cn'
-export { InfoIcon, ErrorIcon, SuccessIcon, UserIcon, UsersIcon, FolderUserIcon } from './lib/icons'
+export { InfoIcon, ErrorIcon, SuccessIcon, UserIcon, UsersIcon, FolderUserIcon, TrashIcon } from './lib/icons'
 export { useMediaQuery, useDisclosure, type Disclosure } from './hooks'
 
 // Form and DataTable are NOT exported here: they need optional peers
@@ -25,6 +25,8 @@ export { AspectRatio, type AspectRatioProps } from './components/aspect-ratio'
 export { Avatar, AvatarImage, AvatarFallback } from './components/avatar'
 export { Badge, badgeVariants, type BadgeProps } from './components/badge'
 export { Button, buttonVariants, type ButtonProps } from './components/button'
+export { CommandButton, type CommandButtonProps } from './components/command-button'
+export { SplitButton, SplitButtonAction, SplitButtonMenu } from './components/split-button'
 export {
   Card,
   CardHeader,
@@ -41,6 +43,7 @@ export {
   BreadcrumbPage,
   BreadcrumbSeparator,
   BreadcrumbEllipsis,
+  BreadcrumbButton,
   type BreadcrumbLinkProps,
 } from './components/breadcrumb'
 export { Calendar, type CalendarProps, type DateRange } from './components/calendar'
@@ -103,6 +106,8 @@ export {
   inputGroupAddonVariants,
   type InputGroupAddonProps,
 } from './components/input-group'
+export { AvatarGroup, AvatarGroupItem } from './components/avatar-group'
+export { InfoLabel, type InfoLabelProps } from './components/info-label'
 export { Label, type LabelProps } from './components/label'
 export { NativeSelect, type NativeSelectProps } from './components/native-select'
 export { Popover, PopoverTrigger, PopoverContent } from './components/popover'
@@ -146,6 +151,7 @@ export { Spinner, type SpinnerProps } from './components/spinner'
 export { Switch, type SwitchProps } from './components/switch'
 export {
   Table,
+  type TableProps,
   TableHeader,
   TableBody,
   TableFooter,
@@ -153,6 +159,24 @@ export {
   TableHead,
   TableCell,
   TableCaption,
+  TablePagination,
+  defaultTablePaginationLabels,
+  type TablePageSize,
+  type TablePaginationLabels,
+  type TablePaginationProps,
+  TableCheckbox,
+  type TableCheckboxProps,
+  TableColumnFilter,
+  defaultTableColumnFilterLabels,
+  type TableColumnFilterLabels,
+  type TableColumnFilterProps,
+  exportTable,
+  toCsv,
+  toXlsxBlob,
+  downloadFile,
+  type TableExportColumn,
+  type TableExportFormat,
+  type TableExportOptions,
 } from './components/table'
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './components/tabs'
 export { Textarea, type TextareaProps } from './components/textarea'
@@ -164,3 +188,4 @@ export {
   type ToasterProps,
 } from './components/toast'
 export { Tooltip, TooltipTrigger, TooltipContent } from './components/tooltip'
+export { SearchField, type SearchFieldProps } from './components/search-field'
