@@ -18,6 +18,7 @@ Installed copies ship these files: `node_modules/turkishcoffee/AGENTS.md` and
 - [AlertDialog](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/alert-dialog.md): Modal that interrupts the user to confirm a consequential action.
 - [AspectRatio](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/aspect-ratio.md): Constrains its child (usually an image or video) to `ratio` (width / height) with the CSS `aspect-ratio` property.
 - [Avatar](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/avatar.md): Round user image with a fallback while it loads or when it fails.
+- [AvatarGroup](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/avatar-group.md): A stack of overlapping avatars for the people on a record.
 - [Badge](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/badge.md): Small inline label for a status or count.
 - [Breadcrumb](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/breadcrumb.md): Trail of links to the current page.
 - [Button](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/button.md): A button.
@@ -25,7 +26,8 @@ Installed copies ship these files: `node_modules/turkishcoffee/AGENTS.md` and
 - [Card](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/card.md): Bordered surface that groups related content.
 - [Checkbox](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/checkbox.md): A checkbox.
 - [Collapsible](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/collapsible.md): A single region the user can show and hide.
-- [DataTable](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/data-table.md): Table with click-to-sort headers and optional client-side pagination, over TanStack Table v9. (`turkishcoffee/data-table`)
+- [CommandButton](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/command-button.md): A borderless command for toolbars and command bars: the icon in the brand colour, the text neutral, a grey fill on hover.
+- [DataTable](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/data-table.md): A data grid over TanStack Table v9. (`turkishcoffee/data-table`)
 - [DatePicker](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/date-picker.md): Controlled single-date picker.
 - [Dialog](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/dialog.md): Modal for a focused task (a form, details): centered on `sm` screens and up, a Base UI bottom drawer below.
 - [Drawer](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/drawer.md): Bottom sheet built on Base UI's Drawer: slides up from the bottom edge and closes on a swipe down, outside tap or Escape.
@@ -33,6 +35,7 @@ Installed copies ship these files: `node_modules/turkishcoffee/AGENTS.md` and
 - [EmptyState](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/empty-state.md): Placeholder for a list or page that has no content yet: icon, title, description and a call to action.
 - [Form](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/form.md): react-hook-form's FormProvider. (`turkishcoffee/form`)
 - [HoverCard](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/hover-card.md): Rich preview shown when a pointer hovers a link (e.g.
+- [InfoLabel](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/info-label.md): A Label with an info button beside it that opens a short explanation.
 - [Input](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/input.md): Single-line text field; a styled `<input>` that forwards every prop.
 - [InputGroup](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/input-group.md): A field that combines a control with icons, text or buttons.
 - [Label](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/label.md): Accessible label for a form control; link it with `htmlFor`.
@@ -41,11 +44,13 @@ Installed copies ship these files: `node_modules/turkishcoffee/AGENTS.md` and
 - [Popover](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/popover.md): Floating panel opened by clicking a trigger; for small forms, pickers and extra details.
 - [Progress](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/progress.md): Horizontal bar for a known completion percentage (`value`, 0–100).
 - [RadioGroup](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/radio-group.md): One choice out of a few visible options.
+- [SearchField](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/search-field.md): A reusable search field with a label, debounce, clear button and loading indicator.
 - [Select](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/select.md): Custom-styled dropdown for picking one value.
 - [Separator](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/separator.md): Thin horizontal or vertical (`orientation="vertical"`) rule.
 - [Sheet](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/sheet.md): Modal panel that slides in from an edge — navigation drawers, filters, detail views.
 - [Skeleton](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/skeleton.md): Pulsing placeholder in the shape of content that is still loading.
 - [Spinner](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/spinner.md): Indeterminate loading indicator; `size-4`, inherits text colour.
+- [SplitButton](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/split-button.md): A button with a main action and a menu of related ones: the left half runs the action, the chevron on the right opens the menu, which opens under the whole button from its left edge.
 - [Switch](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/switch.md): On/off toggle for a setting that takes effect immediately.
 - [Table](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/table.md): Plain styled table primitives — no data library, server-renderable; wraps the table in a horizontally scrolling container.
 - [Tabs](https://github.com/gorkemkaramolla/turkishcoffee/blob/main/docs/tabs.md): Switches between views in the same place.

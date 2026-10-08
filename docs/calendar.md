@@ -1,6 +1,6 @@
 # Calendar
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { Calendar, type DateRange, type CalendarProps } from 'turkishcoffee'

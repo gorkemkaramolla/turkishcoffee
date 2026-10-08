@@ -38,7 +38,7 @@ stylesheet (e.g. `app/globals.css`) must contain all three lines:
 | What | Import from |
 |---|---|
 | All components, `cn`, `useDisclosure`, `useMediaQuery`, `toast` | `turkishcoffee` |
-| `Form`, `FormField`, `FormItem`, `FormLabel`, `FormControl`, `FormDescription`, `FormMessage`, `useFormField` | `turkishcoffee/form` (needs `react-hook-form`) |
+| `Form`, `FormField`, `FormItem`, `FormLabel`, `FormControl`, `FormDescription`, `FormMessage`, `FormErrorSummary`, `useFormField`, `FormTabs`, `FormTabsList`, `FormTabsTrigger`, `FormTabsContent`, `FormTabsNext`, `FormTabsPrevious`, `useFormTabs` | `turkishcoffee/form` (needs `react-hook-form`) |
 | `DataTable`, `DataTableColumn`, `dataTableFeatures` | `turkishcoffee/data-table` (needs `@tanstack/react-table` v9) |
 | Theme tokens | `turkishcoffee/theme.css` (CSS only) |
 
@@ -49,20 +49,20 @@ There are no per-component paths like `turkishcoffee/button` and no
 
 | shadcn habit | turkishcoffee |
 |---|---|
-| `<Button size="default">` | `size="md"` (sizes: `sm` · `md` · `lg` · `icon`; 28/32/36px). Button also has `variant="success"`. |
+| `<Button size="default">` | `size="md"` (sizes: `sm` · `md` · `lg` · `icon`; 32/36/40px). Variants: `primary` (default) · `secondary` (bordered) · `ghost` · `link` — no `default`, `outline`, `destructive` or `success`. |
 | `toast("Saved")` / `toast.success("Saved")` (sonner) | Same sonner API, re-exported: `toast('Saved')`, `toast.success('Saved', { description })`, `toast.error`, `toast.info`, `toast.warning`. Import `toast` from `turkishcoffee`, not from `sonner`. |
 | `<Toaster />` from `sonner`, or a `useToast()` hook | `import { Toaster, toast } from 'turkishcoffee'`; mount `<Toaster />` once at the app root. No `useToast`. |
 | `<TooltipProvider>` around the app | Not needed and not exported: each `Tooltip` provides itself. |
 | `import { Form } from '@/components/ui/form'` | `import { Form, … } from 'turkishcoffee/form'` — not from the root. |
-| DataTable built by hand with `ColumnDef` / `createColumnHelper` (TanStack v8) | `import { DataTable, type DataTableColumn } from 'turkishcoffee/data-table'`; columns are `DataTableColumn<Row>[]` (TanStack v9). Sorting and `pageSize` pagination are built in. |
+| DataTable built by hand with `ColumnDef` / `createColumnHelper` (TanStack v8) | `import { DataTable, type DataTableColumn } from 'turkishcoffee/data-table'`; columns are `DataTableColumn<Row>[]` (TanStack v9). Interactions are opt-in props: `sortable`, `resizable` (double-click an edge to fit), `reorderable`, `hideable`, `selectable`, `selectableColumns`, `filterable`, `exportable`; `pageSize` paginates; `height` and `columnVirtualization` virtualize. Every state slice is controllable (`sorting` + `onSortingChange`, `rowSelection`, `pagination`, …) or seeded with `initialState`; `ref` gives resets and `getExportData`. Server data: `server={{ rowCount }}` — sorting, filtering and paging then happen on the server; `getRowId` is required with `selectable`. Name the grid with `aria-label` or `aria-labelledby`. `locale` defaults to `en-US`: pass `locale="tr-TR"` in Turkish apps. |
 | `lucide-react` icons inside components | Components draw their own icons. Pass any icon element where a `ReactNode` is accepted (`EmptyState icon`, inside `Button`). |
 | `tailwindcss-animate` classes (`animate-in`, `fade-in-0`) | Overlays animate with CSS transitions on Base UI's `data-starting-style` / `data-ending-style`. There are no animation tokens; retime one with `className`, e.g. `duration-150`. |
 | `asChild` (Radix) | `render`: `<Button render={<Link href="/x" />}>Go</Button>`, `<DialogTrigger render={<Button />}>Open</DialogTrigger>`. |
 | `<Accordion type="single" collapsible>` | `<Accordion>` (one open at a time, closable) or `<Accordion multiple>`. `value` / `defaultValue` are arrays. |
 | `<DropdownMenuItem onSelect={…}>` | `onClick={…}`. The menu closes afterwards. |
 | `<SelectValue>` shows the item text | Pass `items` to `Select` (`{ value: label }` or `{ value, label }[]`); without it `SelectValue` shows the raw value. |
-| `<Alert variant="warning">` missing | `Alert` and `Badge` have `success` and `warning` variants; `Button` and `Toast` have `success`. |
-| `<AlertDialogAction>` is plain | `AlertDialogAction` is styled as a default Button and `AlertDialogCancel` as outline. For a destructive confirm: `className={buttonVariants({ variant: 'destructive' })}`. |
+| `variant="destructive"` on Alert, Badge, DropdownMenuItem | Meaning is the `tone` prop: `neutral` · `info` · `success` · `warning` · `danger`. `<Alert tone="danger">`, `<Badge tone="success">`, `<DropdownMenuItem tone="danger">`. `Button` has no tone. |
+| `<AlertDialogAction>` is plain | `AlertDialogAction` is styled as a primary Button and `AlertDialogCancel` as secondary. There is no destructive Button: keep the action primary and name the consequence in its label ("Delete project", not "OK"). |
 
 ## Upgrading from v2 (Radix) to v3 (Base UI)
 
@@ -89,8 +89,8 @@ Every rule below is a token in `theme.css`; retune the token, not the components
   badges and list items; `rounded-md` (4px) for controls and popups;
   `rounded-lg` (6px) for cards, dialogs, sheets and toasts; `rounded-full` only
   for pills (switch, radio, avatar, progress). Never `rounded-[…]`.
-- **Compact and aligned.** Controls use `h-control-sm` 28px · `h-control` 32px ·
-  `h-control-lg` 36px (`--spacing-control*`). Button, Input, Select, NativeSelect,
+- **Compact and aligned.** Controls use `h-control-sm` 32px · `h-control` 36px ·
+  `h-control-lg` 40px (`--spacing-control*`). Button, Input, Select, NativeSelect,
   InputGroup and TabsList share them, so a form row lines up. Match them in your
   own controls instead of `h-9`.
 - **Flat, with hairline borders.** Resting surfaces (buttons, inputs, cards)
@@ -116,13 +116,33 @@ Every rule below is a token in `theme.css`; retune the token, not the components
   `*Close` parts: `<Button render={<Link href="/x" />}>Go</Button>`. The children
   stay on the outer component. `PaginationLink` takes `href` directly and does
   not support `render`.
+- **Two props, two questions.** `tone` says what something means and is the
+  same closed list everywhere: `neutral` · `info` · `success` · `warning` ·
+  `danger` (Alert, Badge, DropdownMenuItem `neutral`/`danger`). `variant` says
+  how loud it is: Button `primary` · `secondary` · `ghost` · `link`, Badge
+  `soft` · `solid`. Never invent a new tone or variant name; compose the two.
 - **Colours come from tokens**, never hex or the default palette:
-  `bg-primary`, `text-muted-foreground`, `border-border`, `bg-destructive`,
-  `text-success`, `bg-warning`. Full list: `background`, `foreground`, `card`,
-  `popover`, `primary`, `secondary`, `muted`, `accent`, `destructive`, `success`,
-  `warning`, `inverse` (each with `-foreground`), plus `border`, `input`, `ring`,
-  `selection`.
+  `bg-primary`, `text-muted-foreground`, `border-border`, `bg-danger`,
+  `text-success-text`, `bg-warning-soft`. Full list: `background`, `foreground`,
+  `card`, `popover`, `primary`, `secondary`, `muted`, `accent`, `danger`,
+  `success`, `warning`, `inverse` (each with `-foreground`), the soft tints
+  `primary-soft`, `danger-soft`, `success-soft`, `warning-soft`, the readable
+  text colours `primary-text`, `danger-text`, `success-text`, `warning-text`,
+  plus `border`, `input`, `field`, `field-hover`, `ring` and `selection`.
   `inverse` is the grey behind toasts and tooltips.
+- **Coloured text and icons use the `-text` token, not the fill.**
+  `primary`, `danger`, `success` and `warning` are fills (buttons, checked
+  controls, solid badges); in dark mode a fill dark enough for white text is
+  too dark to read as text, and the orange warning fill is under 3:1 on white.
+  `text-primary-text`, `text-danger-text`, `text-success-text` and
+  `text-warning-text` are at least 4.5:1 on the page and on their soft tint.
+- **Fields** (Input, Textarea, Select, NativeSelect, InputGroup, DatePicker,
+  Checkbox, RadioGroup) share one edge: `border-field`, `hover:border-field-hover`.
+  A text field's focus stays inside its box: `focus-visible:border-ring
+  focus-visible:inset-ring focus-visible:inset-ring-ring` (a 2px brand edge).
+  Match it in your own fields. Bordered buttons keep the fainter `border-input`.
+- **Focus** elsewhere is a solid 2px `ring-ring` (the readable brand blue);
+  filled controls add `ring-offset-2 ring-offset-background` so it stays visible.
 - **Server vs client:** components marked "Client component" in their doc ship
   `"use client"`. They can be imported from a server component as-is; your event
   handlers still need to live in a client component.
@@ -131,10 +151,13 @@ Every rule below is a token in `theme.css`; retune the token, not the components
   second `eventDetails` argument: `onOpenChange(open, eventDetails)`,
   `onCheckedChange`, `onValueChange`; menu items use `onClick`.
 - **Choosing between look-alikes:**
+  - Button (a form's or dialog's action) · CommandButton (borderless command in a toolbar; as a DropdownMenuTrigger it adds a chevron) · SplitButton (a main action plus a menu of related ones)
   - Dialog (centered task) · AlertDialog (confirm a consequential action) · Sheet (panel from an edge)
   - Popover (click, interactive) · Tooltip (hover, short text) · HoverCard (hover, rich preview)
+  - Label · InfoLabel (label with an info button explaining the field; in a form, `<FormLabel info="…">`) — not a Tooltip on an icon, which touch users never see
   - Select (custom, client) · NativeSelect (platform picker, server-renderable, better on mobile)
-  - Table (static markup) · DataTable (sorting + pagination)
+  - Table (static markup, plus `TablePagination`, `TableCheckbox`, `TableColumnFilter`, `exportTable`) · DataTable (data grid: sort, filter, select rows/columns, resize, reorder, hide, export, virtualization, keyboard; client or server data)
+  - Tabs (separate views) · FormTabs (one react-hook-form form split across tabs; `linear` for a stepper; use `FormTabsList`, not `TabsList`, inside it)
   - Checkbox (submitted with a form) · Switch (applies immediately)
   - Alert (inline, persistent) · `toast()` (transient)
   - Accordion (several sections) · Collapsible (one region)
@@ -151,6 +174,7 @@ Every rule below is a token in `theme.css`; retune the token, not the components
 - [AlertDialog](docs/alert-dialog.md) · client — Modal that interrupts the user to confirm a consequential action.
 - [AspectRatio](docs/aspect-ratio.md) · server — Constrains its child (usually an image or video) to `ratio` (width / height) with the CSS `aspect-ratio` property.
 - [Avatar](docs/avatar.md) · client — Round user image with a fallback while it loads or when it fails.
+- [AvatarGroup](docs/avatar-group.md) · client — A stack of overlapping avatars for the people on a record.
 - [Badge](docs/badge.md) · server — Small inline label for a status or count.
 - [Breadcrumb](docs/breadcrumb.md) · client — Trail of links to the current page.
 - [Button](docs/button.md) · client — A button.
@@ -158,7 +182,8 @@ Every rule below is a token in `theme.css`; retune the token, not the components
 - [Card](docs/card.md) · server — Bordered surface that groups related content.
 - [Checkbox](docs/checkbox.md) · client — A checkbox.
 - [Collapsible](docs/collapsible.md) · client — A single region the user can show and hide.
-- [DataTable](docs/data-table.md) · client · `turkishcoffee/data-table` — Table with click-to-sort headers and optional client-side pagination, over TanStack Table v9.
+- [CommandButton](docs/command-button.md) · client — A borderless command for toolbars and command bars: the icon in the brand colour, the text neutral, a grey fill on hover.
+- [DataTable](docs/data-table.md) · client · `turkishcoffee/data-table` — A data grid over TanStack Table v9.
 - [DatePicker](docs/date-picker.md) · client — Controlled single-date picker.
 - [Dialog](docs/dialog.md) · client — Modal for a focused task (a form, details): centered on `sm` screens and up, a Base UI bottom drawer below.
 - [Drawer](docs/drawer.md) · client — Bottom sheet built on Base UI's Drawer: slides up from the bottom edge and closes on a swipe down, outside tap or Escape.
@@ -166,6 +191,7 @@ Every rule below is a token in `theme.css`; retune the token, not the components
 - [EmptyState](docs/empty-state.md) · server — Placeholder for a list or page that has no content yet: icon, title, description and a call to action.
 - [Form](docs/form.md) · client · `turkishcoffee/form` — react-hook-form's FormProvider.
 - [HoverCard](docs/hover-card.md) · client — Rich preview shown when a pointer hovers a link (e.g.
+- [InfoLabel](docs/info-label.md) · client — A Label with an info button beside it that opens a short explanation.
 - [Input](docs/input.md) · server — Single-line text field; a styled `<input>` that forwards every prop.
 - [InputGroup](docs/input-group.md) · server — A field that combines a control with icons, text or buttons.
 - [Label](docs/label.md) · server — Accessible label for a form control; link it with `htmlFor`.
@@ -174,11 +200,13 @@ Every rule below is a token in `theme.css`; retune the token, not the components
 - [Popover](docs/popover.md) · client — Floating panel opened by clicking a trigger; for small forms, pickers and extra details.
 - [Progress](docs/progress.md) · client — Horizontal bar for a known completion percentage (`value`, 0–100).
 - [RadioGroup](docs/radio-group.md) · client — One choice out of a few visible options.
+- [SearchField](docs/search-field.md) · client — A reusable search field with a label, debounce, clear button and loading indicator.
 - [Select](docs/select.md) · client — Custom-styled dropdown for picking one value.
 - [Separator](docs/separator.md) · server — Thin horizontal or vertical (`orientation="vertical"`) rule.
 - [Sheet](docs/sheet.md) · client — Modal panel that slides in from an edge — navigation drawers, filters, detail views.
 - [Skeleton](docs/skeleton.md) · server — Pulsing placeholder in the shape of content that is still loading.
 - [Spinner](docs/spinner.md) · server — Indeterminate loading indicator; `size-4`, inherits text colour.
+- [SplitButton](docs/split-button.md) · client — A button with a main action and a menu of related ones: the left half runs the action, the chevron on the right opens the menu, which opens under the whole button from its left edge.
 - [Switch](docs/switch.md) · client — On/off toggle for a setting that takes effect immediately.
 - [Table](docs/table.md) · server — Plain styled table primitives — no data library, server-renderable; wraps the table in a horizontally scrolling container.
 - [Tabs](docs/tabs.md) · client — Switches between views in the same place.
@@ -191,7 +219,7 @@ Every rule below is a token in `theme.css`; retune the token, not the components
 
 # Accordion
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from 'turkishcoffee'
@@ -229,20 +257,20 @@ import { alertVariants, Alert, AlertTitle, AlertDescription, type AlertProps } f
 ```
 
 Inline, non-dismissable message inside the page flow (`role="alert"`).
-Variants: `default` | `info` | `destructive` | `success` | `warning`. Pass an
-`icon` (or put an svg as the first child) and it gets its own column; `info`,
-`destructive` and `success` bring their own. For a transient message use `toast()`;
-for a blocking question use AlertDialog.
+`tone`: `neutral` (default) | `info` | `success` | `warning` | `danger`. Pass
+an `icon` (or put an svg as the first child) and it gets its own column;
+every tone but `neutral` brings its own. For a transient message use
+`toast()`; for a blocking question use AlertDialog.
 
 ## Example
 
 ```tsx
-<Alert variant="warning">
+<Alert tone="warning">
   <AlertTitle>Trial ends soon</AlertTitle>
   <AlertDescription>Add a payment method to keep your projects.</AlertDescription>
 </Alert>
 
-<Alert variant="info">
+<Alert tone="info">
   <AlertTitle>Leave requests close on Friday</AlertTitle>
 </Alert>
 ```
@@ -251,26 +279,26 @@ for a blocking question use AlertDialog.
 
 | Prop | Options | Default |
 |---|---|---|
-| `variant` | `default` · `info` · `destructive` · `success` · `warning` | `"default"` |
+| `tone` | `neutral` · `info` · `success` · `warning` · `danger` | `"neutral"` |
 
 ## Props
 
 Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
 
-- `icon?: React.ReactNode` — Icon in its own column before the text. `info`, `destructive` and `success` show InfoIcon, ErrorIcon and SuccessIcon by default; pass your own node to replace it, or `null` to drop it.
+- `icon?: React.ReactNode` — Icon in its own column before the text. Every tone but `neutral` brings one (InfoIcon, SuccessIcon, ErrorIcon for warning and danger); pass your own node to replace it, or `null` to drop it.
 
 ## Parts
 
 - `alertVariants` — Alert classes as a function, for building alert-like elements.
 - `type AlertProps`
 - `AlertTitle` — Heading line of an Alert.
-- `AlertDescription` — Body text of an Alert. Inherits the variant colour at 80% rather than always going muted, so a destructive alert stays readable as one block of colour.
+- `AlertDescription` — Body text of an Alert. Inherits the tone's colour at 80% rather than always going muted, so a danger alert stays readable as one block of colour.
 
 ---
 
 # AlertDialog
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { AlertDialog, AlertDialogTrigger, AlertDialogPortal, AlertDialogOverlay, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from 'turkishcoffee'
@@ -284,7 +312,7 @@ AlertDialogTitle is required for accessibility.
 
 ```tsx
 <AlertDialog>
-  <AlertDialogTrigger render={<Button variant="destructive" />}>Delete project</AlertDialogTrigger>
+  <AlertDialogTrigger render={<Button variant="secondary" />}>Delete project</AlertDialogTrigger>
   <AlertDialogContent>
     <AlertDialogHeader>
       <AlertDialogTitle>Delete this project?</AlertDialogTitle>
@@ -292,9 +320,7 @@ AlertDialogTitle is required for accessibility.
     </AlertDialogHeader>
     <AlertDialogFooter>
       <AlertDialogCancel>Cancel</AlertDialogCancel>
-      <AlertDialogAction className={buttonVariants({ variant: 'destructive' })} onClick={remove}>
-        Delete
-      </AlertDialogAction>
+      <AlertDialogAction onClick={remove}>Delete project</AlertDialogAction>
     </AlertDialogFooter>
   </AlertDialogContent>
 </AlertDialog>
@@ -310,8 +336,8 @@ AlertDialogTitle is required for accessibility.
 - `AlertDialogFooter` — Holds AlertDialogCancel and AlertDialogAction; stacks on mobile, right-aligns from `sm`.
 - `AlertDialogTitle` — Required: names the dialog for screen readers.
 - `AlertDialogDescription` — Explains the consequence of the action.
-- `AlertDialogAction` — The confirming button; closes the dialog after its `onClick`. Styled as a default Button. Action and Cancel are pre-styled with buttonVariants: an alert dialog is a decision, so the two choices should never drift apart visually. For a destructive action pass `className={buttonVariants({ variant: 'destructive' })}`.
-- `AlertDialogCancel` — The dismissing button; closes the dialog. Styled as an outline Button.
+- `AlertDialogAction` — The confirming button; closes the dialog after its `onClick`. Styled as a primary Button. Action and Cancel are pre-styled with buttonVariants: an alert dialog is a decision, so the two choices should never drift apart visually. A destructive action stays primary; its label names the consequence ("Delete project", not "OK").
+- `AlertDialogCancel` — The dismissing button; closes the dialog. Styled as a secondary Button.
 
 ---
 
@@ -348,14 +374,14 @@ Only props this library adds or changes; everything else forwards to the underly
 
 # Avatar
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { Avatar, AvatarImage, AvatarFallback } from 'turkishcoffee'
 ```
 
 Round user image with a fallback while it loads or when it fails.
-Defaults to `size-8`; resize with `className`.
+Defaults to `size-8`; resize with `className`. For several people, use AvatarGroup.
 
 ## Example
 
@@ -373,6 +399,53 @@ Defaults to `size-8`; resize with `className`.
 
 ---
 
+# AvatarGroup
+
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
+
+```tsx
+import { AvatarGroup, AvatarGroupItem } from 'turkishcoffee'
+```
+
+A stack of overlapping avatars for the people on a record. It spreads apart
+on hover and keyboard focus. Shows `max` avatars (4 by default); the rest
+collapse into a `+N` button that lists them by name. Children must be
+AvatarGroupItems, passed directly (an array from `.map()` is fine). Give the
+group an `aria-label` saying who they are.
+
+## Example
+
+```tsx
+<AvatarGroup aria-label="Reviewers">
+  {reviewers.map((r) => (
+    <AvatarGroupItem key={r.id} name={r.name} src={r.avatarUrl} />
+  ))}
+</AvatarGroup>
+```
+
+## Props
+
+Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
+
+### `AvatarGroup`
+
+- `max?: number` — How many avatars show before the rest collapse into `+N`.
+- `size?: Size` — `sm` 28px · `md` 32px · `lg` 36px.
+- `overflowLabel?: (count: number) => string` — Accessible name of the `+N` button.
+
+### `AvatarGroupItem`
+
+- `name: string` — The person's full name.
+- `src?: string` — Image URL; initials show without one.
+- `initials?: string` — Overrides the initials taken from `name`.
+- `render?: React.ReactElement` — An element to render the avatar as, usually a link to the person.
+
+## Parts
+
+- `AvatarGroupItem` — One person in an AvatarGroup: their image, or their initials while it loads or when there is none. `name` is what screen readers announce, what the hover tooltip and the overflow list show. Pass `render` to make the avatar a link, e.g. to a profile: `render={<Link href="/people/42" />}`.
+
+---
+
 # Badge
 
 **Server-renderable**: no `"use client"`; it adds no client boundary.
@@ -381,22 +454,25 @@ Defaults to `size-8`; resize with `className`.
 import { badgeVariants, Badge, type BadgeProps } from 'turkishcoffee'
 ```
 
-Small inline label for a status or count. Variants: `default` | `secondary` |
-`destructive` | `success` | `warning` | `inverse` | `outline`. `inverse` is the
-neutral grey of toasts and tooltips, for tags like "Beta" or "New". Not
+Small inline label for a status or count. `tone` says what it means:
+`neutral` (default) | `info` | `success` | `warning` | `danger`. `variant`
+says how loud: `soft` (default, a tinted fill for statuses in tables and
+lists) or `solid` (for counts and the one badge that must stand out). Not
 interactive — wrap it in a Button or link if it needs to be clickable.
 
 ## Example
 
 ```tsx
-<Badge variant="success">Paid</Badge>
+<Badge tone="success">Paid</Badge>
+<Badge tone="danger" variant="solid">3</Badge>
 ```
 
 ## Variants
 
 | Prop | Options | Default |
 |---|---|---|
-| `variant` | `default` · `secondary` · `destructive` · `success` · `warning` · `inverse` · `outline` | `default` |
+| `tone` | `neutral` · `info` · `success` · `warning` · `danger` | `neutral` |
+| `variant` | `soft` · `solid` | `soft` |
 
 ## Parts
 
@@ -407,14 +483,15 @@ interactive — wrap it in a Button or link if it needs to be clickable.
 
 # Breadcrumb
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
-import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator, BreadcrumbEllipsis, type BreadcrumbLinkProps } from 'turkishcoffee'
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbButton, BreadcrumbSeparator, BreadcrumbEllipsis, type BreadcrumbLinkProps } from 'turkishcoffee'
 ```
 
 Trail of links to the current page. The last item is a BreadcrumbPage,
-not a link.
+not a link. A step's text truncates at about 30 characters and shows in full
+in a tooltip; change the limit with `className="[--breadcrumb-text-max:50ch]"`.
 
 ## Example
 
@@ -437,33 +514,37 @@ not a link.
 - `BreadcrumbList` — The ordered list holding BreadcrumbItems and BreadcrumbSeparators.
 - `BreadcrumbItem` — One step of the trail.
 - `type BreadcrumbLinkProps`
-- `BreadcrumbLink` — A link to an ancestor page. Pass `render` to use your router's `<Link>`.
+- `BreadcrumbLink` — A link to an ancestor page. Pass `render` to use your router's `<Link>`. Put an icon before the text as a child; it turns primary on hover.
 - `BreadcrumbPage` — The current page. Not a link: it carries aria-current and is removed from the tab order, which is what screen readers expect at the end of a trail.
+- `BreadcrumbButton` — A step that acts instead of navigating, styled like BreadcrumbLink. Use it as the trigger for a menu of collapsed steps: `<DropdownMenuTrigger render={<BreadcrumbButton aria-label="Show 3 more" />}><BreadcrumbEllipsis /></DropdownMenuTrigger>`.
 - `BreadcrumbSeparator` — Goes between BreadcrumbItems; a chevron unless you pass children.
-- `BreadcrumbEllipsis` — Stands in for collapsed middle steps of a long trail.
+- `BreadcrumbEllipsis` — Stands in for collapsed middle steps of a long trail. Decorative: to let people reach those steps, put it inside a BreadcrumbButton that opens a menu.
 
 ---
 
 # Button
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { buttonVariants, Button, type ButtonProps } from 'turkishcoffee'
 ```
 
-A button. Variants: `default` | `secondary` | `destructive` | `success` |
-`outline` | `ghost` | `link`. Sizes: `sm` (28px) | `md` (32px, default) |
-`lg` (36px) | `icon` — from the `--spacing-control*` tokens; there is no
+A button. Variants rank emphasis, not meaning: `primary` (default; one per
+screen), `secondary` (bordered, for every other action), `ghost` (toolbars
+and icon buttons) and `link` (inline in text). There is no coloured tone:
+for a dangerous action say the consequence in the label ("Delete
+employee") and confirm it in an AlertDialog. Sizes: `sm` (32px) | `md` (36px, default) |
+`lg` (40px) | `icon` — from the `--spacing-control*` tokens; there is no
 `size="default"`. Pass `render` to style another element, such
 as your router's link, as a button. Client component.
 
 ## Example
 
 ```tsx
-<Button variant="destructive" size="sm">Delete</Button>
+<Button variant="secondary" size="sm">Export</Button>
 
-<Button render={<Link href="/settings" />} variant="outline">
+<Button render={<Link href="/settings" />} variant="ghost">
   Settings
 </Button>
 ```
@@ -472,7 +553,7 @@ as your router's link, as a button. Client component.
 
 | Prop | Options | Default |
 |---|---|---|
-| `variant` | `default` · `secondary` · `destructive` · `success` · `outline` · `ghost` · `link` | `"default"` |
+| `variant` | `primary` · `secondary` · `ghost` · `link` | `"primary"` |
 | `size` | `sm` · `md` · `lg` · `icon` | `"md"` |
 
 ## Parts
@@ -484,7 +565,7 @@ as your router's link, as a button. Client component.
 
 # Calendar
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { Calendar, type DateRange, type CalendarProps } from 'turkishcoffee'
@@ -539,7 +620,7 @@ passing title/footer props.
 
 # Checkbox
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { Checkbox, type CheckboxProps } from 'turkishcoffee'
@@ -567,7 +648,7 @@ mixed state. Renders a native `<button>`, so pair it with a Label via
 
 # Collapsible
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from 'turkishcoffee'
@@ -594,19 +675,69 @@ use Accordion.
 
 ---
 
+# CommandButton
+
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
+
+```tsx
+import { CommandButton, type CommandButtonProps } from 'turkishcoffee'
+```
+
+A borderless command for toolbars and command bars: the icon in the brand
+colour, the text neutral, a grey fill on hover. Put the icon before the text
+as a child. As a menu trigger it adds a chevron by itself, and keeps the
+fill while the menu is open. Pass `render` to make it a link.
+
+## Example
+
+```tsx
+<CommandButton onClick={share}><ShareIcon />Share</CommandButton>
+
+<DropdownMenu>
+  <DropdownMenuTrigger render={<CommandButton />}><PlusIcon />New item</DropdownMenuTrigger>
+  <DropdownMenuContent align="start">
+    <DropdownMenuItem><MailIcon />Email message</DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
+```
+
+## Parts
+
+- `type CommandButtonProps`
+
+---
+
 # DataTable
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 Needs the optional peer `@tanstack/react-table`. It is **not** exported from the root `turkishcoffee` entry.
 
 ```tsx
-import { dataTableFeatures, DataTable, type DataTableColumn, type DataTableProps } from 'turkishcoffee/data-table'
+import { DataTable, dataTableFeatures, defaultDataTableLabels, dataTableLabelsForLocale, type DataTableInitialState, type DataTableProps, type DataTableColumnMeta, type DataTableFilterControlProps, type DataTableFeatures, type DataTableColumn, type DataTableLabels, type DataTablePagination, type DataTableRowSelection, type DataTableColumnSelection, type DataTableState, type DataTableServer, type DataTableExportRows, type DataTableExportColumns, type DataTableExportRequest, type DataTableExportData, type DataTableHandle } from 'turkishcoffee/data-table'
 ```
 
-Table with click-to-sort headers and optional client-side pagination, over
-TanStack Table v9. Import from `turkishcoffee/data-table`. For a static table use
-the root `Table` primitives instead.
+A data grid over TanStack Table v9. Every
+interaction is one boolean away — `sortable`, `resizable` (with Excel's
+double-click-to-fit), `reorderable`, `hideable`, `selectable`,
+`selectableColumns`, `filterable`, `exportable` — and every piece of state
+can be controlled or left to the grid. Client-side by default; `server`
+hands sorting, filtering and paging to a backend. Import from
+`turkishcoffee/data-table`. For a static table use the root `Table`
+primitives instead. Body rows alternate between `--table-row-odd` and
+`--table-row-even`, including virtualized rows; hover and selection override
+the alternating background.
+
+Keyboard: the grid is one tab stop. Arrows, Home/End, Ctrl+Home/End and
+PageUp/PageDown move the active cell; F2 (or Enter on a cell without its own
+action) moves focus into the cell's controls and Escape returns to the grid.
+Enter sorts a header, Alt+↓ opens its menu, Shift+Space selects a row,
+Ctrl+Space a column, Ctrl+A every row. In `dir="rtl"` the arrows follow the
+reading direction.
+
+Not supported: grouped (nested) column headers, footers, cell editing, tree
+rows and variable-height rows. Rows are fixed-height and single-line, and
+`columns` must be leaf columns.
 
 ## Example
 
@@ -617,32 +748,229 @@ const columns: DataTableColumn<Payment>[] = [
     accessorKey: 'amount',
     header: 'Amount',
     cell: (info) => `$${info.getValue<number>().toFixed(2)}`,
+    meta: { align: 'end' },
   },
 ]
 
-<DataTable columns={columns} data={payments} pageSize={10} emptyMessage="No payments." />
+<DataTable aria-label="Payments" columns={columns} data={payments} sortable resizable reorderable hideable pageSize={25} />
+```
+
+## More examples
+
+### Server data with controlled state
+
+```tsx
+const [sorting, setSorting] = useState<SortingState>([])
+const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+const [pagination, setPagination] = useState<DataTablePagination>({ pageIndex: 0, pageSize: 25 })
+const { data, isFetching, error } = useQuery({
+queryKey: ['orders', sorting, columnFilters, pagination],
+queryFn: () => fetchOrders({ sorting, columnFilters, pagination }),
+})
+
+<DataTable
+aria-label="Orders"
+columns={columns}
+data={data?.rows ?? []}
+getRowId={(row) => row.id} // required with server + selectable
+server={{ rowCount: data?.total ?? 0 }}
+loading={isFetching}
+errorMessage={error ? 'Orders could not be loaded.' : undefined}
+sortable filterable selectable
+sorting={sorting} onSortingChange={setSorting}
+columnFilters={columnFilters} onColumnFiltersChange={setColumnFilters}
+pagination={pagination} onPaginationChange={setPagination}
+exportable={{ onServerExport: (request, format) => api.exportOrders(request, format) }}
+onExportError={(error) => toast.error('Export failed')}
+/>
+```
+
+### Restricted selection
+
+```tsx
+// Only open invoices can be selected. On the server, the selection is then
+// always explicit ids (no "select all matching"), kept across pages.
+<DataTable aria-label="Invoices" columns={columns} data={page} getRowId={(row) => row.id}
+server={{ rowCount }} selectable isRowSelectable={(row) => row.status === 'open'} />
+```
+
+### Custom filter control and toolbar
+
+```tsx
+const MinimumAmount = ({ value, onApply, close }: DataTableFilterControlProps) => (
+<form onSubmit={(event) => { event.preventDefault(); onApply(Number(new FormData(event.currentTarget).get('min'))) }}>
+<Input name="min" type="number" defaultValue={typeof value === 'number' ? value : ''} />
+<Button type="submit">Apply</Button> <Button variant="ghost" onClick={close}>Cancel</Button>
+</form>
+)
+const columns: DataTableColumn<Invoice>[] = [{
+accessorKey: 'amount', header: 'Amount',
+filterFn: (row, id, min) => row.getValue<number>(id) >= (min as number),
+meta: { align: 'end', filterControl: MinimumAmount },
+}]
+
+<DataTable aria-label="Invoices" columns={columns} data={invoices} filterable
+toolbar={<Button size="sm" onClick={openNewInvoice}>New invoice</Button>} />
+```
+
+### Imperative export with error handling
+
+```tsx
+const ref = useRef<DataTableHandle<Invoice>>(null)
+try {
+await ref.current?.export('xlsx', { rows: 'loaded' })
+} catch {
+// Already reported to onExportError; the promise rejects as well.
+}
+```
+
+### Turkish locale, right-to-left, printing
+
+```tsx
+// Locale drives sorting, the "contains" filter, numeric labels and exports (default en-US).
+<DataTable aria-label="Çalışanlar" locale="tr-TR" columns={columns} data={rows} />
+<DataTable aria-label="الموظفون" dir="rtl" columns={columns} data={rows} />
+// Every row in normal flow (no virtualization), e.g. for a print view.
+<DataTable aria-label="Report" rowVirtualization={false} columns={columns} data={rows} />
 ```
 
 ## Props
 
 Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
 
+### `DataTableProps`
+
 - `columns: Array<DataTableColumn<TData>>` — TanStack Table v9 column definitions: `DataTableColumn<Row>[]`.
-- `pageSize?: number` — Rows per page. Omit to render every row with no pagination controls.
+- `getRowId?: (row: TData, index: number) => string` — A stable id per row (e.g. `(row) => row.id`). Defaults to the row's index. Needed for selections that outlive a sort, new data or a page change.
+- `sortable?: boolean` — Click a header to sort: ascending → descending → off; Shift+click adds a second sort. Numbers, dates and booleans compare by value, text in the page's language, and blanks always go last. Opt a column out with `enableSorting: false`, or give it its own `sortFn`. With `server`, the server sorts.
+- `resizable?: boolean` — Drag a column's right edge to resize it; double-click the edge to fit the column to its content, as in Excel. Opt out per column with `enableResizing: false`; bound it with `minSize` / `maxSize`.
+- `reorderable?: boolean` — Drag a header to move its column. Keep a column in place with `meta: { reorderable: false }`.
+- `hideable?: boolean` — Adds a "Columns" menu to show and hide columns. Opt a column out with `enableHiding: false`.
+- `selectable?: boolean | 'hover'` — Adds a checkbox column. `true`: boxes always visible. `'hover'`: subtle selection, for dense lists — a row's box shows on hover, every box once anything is selected. The header box works in two steps: this page, then every row matching the filters (on the server too); Shift+click selects a range.
+- `selectionScope?: 'page' | 'crossPage'` — `'crossPage'` (default): a selection survives page changes. `'page'`: changing the page, the sorting or the filters clears it, and the header box selects the page only.
+- `selectableColumns?: boolean` — Excel's column selection, from the thin strip above the headers. The first click covers this page, the second every row, the third clears; Ctrl/⌘ adds a column, Shift a range, Escape clears.
+- `filterable?: boolean` — A "contains" filter per column, behind a funnel that shows on header hover. Case-insensitive in the page's language; dates and numbers match as shown. Opt out per column with `enableColumnFilter: false`, or give one its own `filterFn`. With `server`, the server filters.
+- `exportable?: | boolean | { fileName?: string onServerExport?: (request: DataTableExportRequest, format: TableExportFormat) => void | Promise<void> }` — Adds the toolbar's Export menu (CSV or Excel). It writes the selected columns (else the visible ones) of the selected rows (else the rows the column selection covers, else every filtered row). DataTable only picks the rows and columns — `exportTable` writes the file. For a button of your own, use the ref's `getExportData`. With `server`, rows beyond the loaded page go to `onServerExport`; without it, only loaded rows are written and the menu says so.
+- `height?: number` — Total height in px. Setting it virtualizes the rows with react-window: only the visible ones are in the DOM. Without it, rows render in normal flow — up to 100; past that (a page size of 200 or All) the grid virtualizes on its own, at most 640px of rows tall.
+- `size?: 'sm' | 'md'` — Row density: `sm` 32px, `md` 44px (compact and comfortable).
+- `columnVirtualization?: boolean | 'auto'` — Render only the columns in view (plus some overscan) on each row. `'auto'` (default) turns it on past 30 visible columns, where scrolling would otherwise render every cell of every row that comes into view.
+- `stickyHeader?: boolean | { top: number }` — The header row sticks to the top of the page while the rows scroll by (default). `{ top }` leaves room for a fixed bar above it; `false` turns it off.
+- `pageSize?: TablePageSize` — Rows per page, or `'all'`; turns on the pagination bar. Shorthand for `initialState.pagination.pageSize`. Changing it later (uncontrolled) applies the new size and returns to the first page.
+- `pageSizeOptions?: TablePageSize[]` — Choices in the pagination bar's page-size picker. Defaults to 10, 25, 50, 100, 200 and All.
+- `server?: DataTableServer` — Server-side data: `data` is the current page; sorting, filtering and paging happen on the server through the state callbacks (`onSortingChange`, `onColumnFiltersChange`, `onPaginationChange`). DataTable never sorts or filters a loaded page by itself.
+- `initialState?: DataTableInitialState` — Uncontrolled starting values. Precedence for each piece of state: controlled prop > layout stored under `storageKey` (visibility, order, sizing) > `initialState` > default.
+- `storageKey?: string` — Remembers column widths, order and visibility in `localStorage` under this key, per browser. The server can't read `localStorage`: on a server-rendered page the defaults show until hydration, then the saved layout. To avoid that jump, keep the layout where the server can read it (a cookie) with `savedLayout` + `onLayoutChange` instead.
+- `savedLayout?: Partial<DataTableLayout> | null` — A layout the app saved itself (from `onLayoutChange`), e.g. read from a cookie on the server: the page then renders in it from the first byte. Takes the place of `storageKey`'s `localStorage` copy. Malformed fields and unknown columns are ignored. `null`: nothing saved yet.
+- `onLayoutChange?: (layout: DataTableLayout | null) => void` — The whole layout after edits and content-width measurements; null after "Reset layout".
+- `columnSizing?: ColumnSizingState` — Widths the user set; automatic (fitted) widths are not state.
+- `onSelectionChange?: (rows: TData[]) => void` — 
+- `rowVirtualization?: boolean | 'auto'` — Render only a window of rows. false keeps all rows in normal document flow; auto uses height or the 100-row threshold.
+- `autoSize?: 'initial' | 'data' | false` — Fit once (default), fit after data changes, or use explicit/default widths. User sizes always win.
+- `toolbar?: React.ReactNode` — Custom content beside the built-in toolbar controls.
+- `isRowSelectable?: (row: TData) => boolean` — A row's eligibility for selection. Restricted server selection uses explicit IDs only.
+- `loading?: boolean` — Overrides server.loading when supplied.
+- `loadingMessage?: React.ReactNode` — Initial loading content, outside the grid's data-row count.
+- `errorMessage?: React.ReactNode` — Error content; takes precedence over loading and empty content.
+- `onExportError?: (error: unknown, format: TableExportFormat) => void` — Called for toolbar and imperative export failures. Imperative calls also reject.
+- `'aria-label'?: string` — Accessible name of the grid. Supply this or aria-labelledby.
+- `'aria-labelledby'?: string` — ID of the visible heading naming the grid.
+- `'aria-describedby'?: string` — ID of instructions describing the grid.
+- `dir?: 'ltr' | 'rtl'` — Explicit reading direction; defaults to ltr.
+- `ref?: React.Ref<DataTableHandle<TData>>` — Imperative access: resets, paging, selected rows, export data.
+- `locale?: string` — Locale for sorting, filtering, numeric labels and exports. Defaults to en-US; pass tr-TR in Turkish apps, including SSR.
 - `emptyMessage?: React.ReactNode` — Shown in place of rows when `data` is empty. Defaults to "No results."
-- `className?: string` — Applied to the outer wrapper (table + pagination row).
+- `labels?: Partial<DataTableLabels>` — Translations for the words DataTable renders itself.
+- `onRowClick?: (row: TData) => void` — Makes rows clickable (and focusable, Enter activates). Clicks on buttons and links inside a row are ignored.
+- `className?: string` — Applied to the outer wrapper (toolbar + grid + pagination row).
+
+### `DataTableColumnMeta`
+
+- `headerClassName?: string` — Header classes, merged last.
+- `cellClassName?: string` — Cell classes, merged last. Rows remain fixed-height and single-line.
+- `filterControl?: ComponentType<DataTableFilterControlProps>` — Custom filter editor inside the header filter popover. Values need not be strings.
+- `align?: 'start' | 'end'` — `'end'` right-aligns the header and cells — use it for numbers.
+- `label?: string` — The column's name in the Columns menu and header menu when `header` is a function.
+- `reorderable?: boolean` — `false` keeps the column where it is when `reorderable` is on (an actions column).
+- `exportValue?: (row: TData) => unknown` — The value written to CSV/Excel for a row, when the cell's own value is not what should be exported — e.g. `(row) => row.isActive ? 'Active' : 'Passive'` for a Badge column, or anything for a display column with no accessor. `row` is the column's row type.
+
+### `DataTableLabels`
+
+- `columns: string` — The column chooser button and its menu heading.
+- `resetLayout: string` — Column chooser item that undoes resizing, reordering and hiding.
+- `autofit: string` — Header menu item that fits the column to its content.
+- `columnMenu: (column: string) => string` — Accessible name of a header's menu button.
+- `resizeColumn: (column: string) => string` — Accessible name of a column's resize handle.
+- `filter: (column: string) => string` — Column filter title and trigger name: "Filter Name".
+- `filterContains: string` — Caption above the filter input.
+- `selectAll: string` — Accessible name of the header checkbox.
+- `selectAllRows: (count: number) => string` — The step from "this page" to "everything": the header box's name once the page is selected, and the toolbar's shortcut.
+- `selectColumn: (column: string) => string` — Accessible name of a column's selection strip.
+- `columnScopePage: (rows: number) => string` — A column selection that covers the rows on this page.
+- `columnScopeAll: (rows: number) => string` — A column selection that covers every row.
+- `selectRow: string` — Accessible name of a row checkbox.
+- `rowsHiddenByFilter: (count: number) => string` — Selected rows the current filters hide, shown beside the count.
+- `clearSelection: string` — Accessible name of the ✕ on a selection chip.
+- `exportError: string` — Export failure, displayed as an inline alert.
+- `loading: string` — Initial loading status.
+- `empty: string` — Empty grid status.
+- `sortDescription: (direction: 'asc' | 'desc', priority: number) => string` — Accessible description of secondary sorting.
+- `exportScope: (columns: number, rows: number) => string` — Heading of the export menu: what will be written.
+- `exportLoadedOnly: (columns: number, rows: number) => string` — Export menu heading when the rows live on the server but no server export is set up: only the loaded ones are written.
+
+### `DataTableState`
+
+- `columnSizing: ColumnSizingState` — Widths the user set (dragged, typed or fitted). Automatic widths are not state.
+
+### `DataTableServer`
+
+- `rowCount: number` — Rows matching the current filters on the server.
+- `loading?: boolean` — A request is in flight: rows dim, the grid is `aria-busy`, paging pauses.
+
+### `DataTableExportRequest`
+
+- `columns: string[]` — Column ids, in display order.
+- `selection: DataTableRowSelection | null` — `null`: every row matching `columnFilters`.
+
+### `DataTableExportData`
+
+- `rows: TData[]` — The covered rows DataTable holds, in display order.
+- `request: DataTableExportRequest | null` — Set when the covered rows live on the server (server mode): fetch or export them there.
+
+### `DataTableHandle`
+
+- `fitColumns: (columnIds?: string[]) => void` — Fit rendered content and a sample of up to 50 loaded values. Omit ids to fit visible columns.
+- `resetLayout: () => void` — Column visibility, order and sizing — and the stored copy under `storageKey`.
+- `getSelectedRows: () => TData[]` — The selected rows DataTable holds (under `allMatching`: the loaded matching rows not excluded).
+- `export: (format: TableExportFormat, options?: { rows?: DataTableExportRows; columns?: DataTableExportColumns }) => Promise<void>` — Exports with the built-in writer, as the toolbar's menu does. Rows beyond the loaded data go to `exportable.onServerExport`; without it the promise rejects unless `rows` is `'page'` or `'loaded'`. Failures also reach `onExportError`.
 
 ## Parts
 
-- `dataTableFeatures` — The TanStack Table v9 feature set DataTable runs with (sorting + client pagination). `@tanstack/react-table` is an OPTIONAL peer, so this lives behind its own entry point (`turkishcoffee/data-table`) and never loads for projects that only import the root barrel.
-- `type DataTableColumn` — Column definitions for DataTable — carries the feature set for you. This is TanStack Table v9: type columns as `DataTableColumn<Row>[]`, not v8's `ColumnDef<Row>` or `createColumnHelper`.
-- `type DataTableProps`
+- `type DataTableInitialState` — Starting values for uncontrolled state. A layout stored under `storageKey` wins over them.
+- `type DataTableProps` — Public grid props. Server selection requires a stable row identity.
+- `type DataTableColumnMeta` — What DataTable reads from a column's `meta`. All optional. `TData` is the row type.
+- `type DataTableFilterControlProps` — Props for a custom column filter. onApply commits and closes; close cancels.
+- `dataTableFeatures` — The TanStack Table v9 feature set DataTable runs with: sorting, filtering, row selection, client pagination, column sizing/resizing, ordering and visibility. Every feature is registered; the DataTable props decide which ones the user can reach. `@tanstack/react-table` is an OPTIONAL peer, so this lives behind its own entry point (`turkishcoffee/data-table`) and never loads for projects that only import the root barrel.
+- `type DataTableFeatures`
+- `type DataTableColumn` — Column definitions for DataTable — carries the feature set for you. This is TanStack Table v9: type columns as `DataTableColumn<Row>[]`, not v8's `ColumnDef<Row>` or `createColumnHelper`. Per-column switches are TanStack's own: `enableSorting`, `enableResizing`, `enableHiding`, `enableColumnFilter`, `size`, `minSize`, `maxSize`, `sortFn`, `filterFn`; plus `meta` ({@link DataTableColumnMeta}).
+- `type DataTableLabels` — Every word DataTable renders itself. English by default; pass the ones you need to translate through the `labels` prop. The pagination words are TablePagination's, which DataTable renders.
+- `defaultDataTableLabels`
+- `dataTableLabelsForLocale` — Numeric labels use the same locale as the grid's sorting, filtering and exports.
+- `type DataTablePagination` — Which page is on screen. `pageIndex` is 0-based; `'all'` puts every row on one page.
+- `type DataTableRowSelection` — Which rows are selected. Plain data: store it, or send it to a backend as is. - `ids`: these rows, on any page. - `allMatching`: every row matching the current filters — on the server too — except `excludedIds`. What the header box's second click selects.
+- `type DataTableColumnSelection` — Which columns are selected, and over which rows: the page on screen, or every matching row.
+- `type DataTableState` — Every piece of state DataTable keeps. Each can be controlled (`sorting` + `onSortingChange`, …) or left to DataTable, starting from `initialState`.
+- `type DataTableServer` — Server-side data: `data` is the current page, and sorting, filtering and paging happen on the server (through the state callbacks). DataTable never sorts or filters a loaded page on its own.
+- `type DataTableExportRows` — The rows an export covers. `auto`: selected rows, else the column selection's rows, else every filtered row.
+- `type DataTableExportColumns` — The columns an export covers. `auto`: the selected columns, else the visible ones.
+- `type DataTableExportRequest` — What a backend needs to produce an export of rows it holds (server mode).
+- `type DataTableExportData` — Export-ready data: hand `columns` and `rows` to `exportTable`, or `request` to your backend.
+- `type DataTableHandle` — Imperative access: `<DataTable ref={ref} />`. On a controlled slice, each call goes through its `on…Change`.
 
 ---
 
 # DatePicker
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { DatePicker, DateRangePicker, type DatePickerProps, type DateRangePickerProps } from 'turkishcoffee'
@@ -654,7 +982,12 @@ Controlled single-date picker. Works as a `FormControl` child.
 
 Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
 
+### `ResponsivePickerProps`
+
 - `title: string` — Accessible name for the drawer; the popover is labelled by its trigger.
+
+### `DatePickerProps`
+
 - `formatStr?: string` — date-fns format string for the trigger label.
 - `locale?: Locale` — A date-fns locale (e.g. `tr` from `date-fns/locale`); also localizes the calendar.
 
@@ -668,7 +1001,7 @@ Only props this library adds or changes; everything else forwards to the underly
 
 # Dialog
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { Dialog, DialogTrigger, DialogClose, DialogPortal, DialogOverlay, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from 'turkishcoffee'
@@ -692,7 +1025,7 @@ sliding from an edge use Sheet. DialogTitle is required for accessibility.
     </DialogHeader>
     …
     <DialogFooter>
-      <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>
+      <DialogClose render={<Button variant="secondary" />}>Cancel</DialogClose>
       <Button type="submit">Save</Button>
     </DialogFooter>
   </DialogContent>
@@ -721,7 +1054,7 @@ Only props this library adds or changes; everything else forwards to the underly
 
 # Drawer
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { Drawer, DrawerTrigger, DrawerClose, DrawerPortal, DrawerOverlay, DrawerContent, DrawerHeader, DrawerFooter, DrawerTitle, DrawerDescription } from 'turkishcoffee'
@@ -744,7 +1077,7 @@ screen size. DrawerTitle is required for accessibility.
     </DrawerHeader>
     …
     <DrawerFooter>
-      <DrawerClose render={<Button variant="outline" />}>Close</DrawerClose>
+      <DrawerClose render={<Button variant="secondary" />}>Close</DrawerClose>
     </DrawerFooter>
   </DrawerContent>
 </Drawer>
@@ -766,7 +1099,7 @@ screen size. DrawerTitle is required for accessibility.
 
 # DropdownMenu
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuGroup, DropdownMenuSub, DropdownMenuRadioGroup, DropdownMenuContent, DropdownMenuItem, DropdownMenuCheckboxItem, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuSubTrigger, DropdownMenuSubContent, type DropdownMenuContentProps } from 'turkishcoffee'
@@ -779,12 +1112,12 @@ form value use Select.
 
 ```tsx
 <DropdownMenu>
-  <DropdownMenuTrigger render={<Button variant="outline" />}>Options</DropdownMenuTrigger>
+  <DropdownMenuTrigger render={<Button variant="secondary" />}>Options</DropdownMenuTrigger>
   <DropdownMenuContent align="end">
     <DropdownMenuLabel>Project</DropdownMenuLabel>
     <DropdownMenuItem onClick={rename}>Rename</DropdownMenuItem>
     <DropdownMenuSeparator />
-    <DropdownMenuItem variant="destructive" onClick={remove}>Delete</DropdownMenuItem>
+    <DropdownMenuItem tone="danger" onClick={remove}>Delete</DropdownMenuItem>
   </DropdownMenuContent>
 </DropdownMenu>
 ```
@@ -793,7 +1126,7 @@ form value use Select.
 
 Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
 
-- `variant?: 'default' | 'destructive'` — `destructive` colours the item for dangerous actions like Delete.
+- `tone?: 'neutral' | 'danger'` — `danger` colours the item for dangerous actions like Delete.
 
 ## Parts
 
@@ -802,8 +1135,8 @@ Only props this library adds or changes; everything else forwards to the underly
 - `DropdownMenuSub` — Wraps a DropdownMenuSubTrigger and DropdownMenuSubContent for a nested menu.
 - `DropdownMenuRadioGroup` — Holds DropdownMenuRadioItems; controlled with `value` + `onValueChange`.
 - `type DropdownMenuContentProps`
-- `DropdownMenuContent` — The menu panel; renders its own portal.
-- `DropdownMenuItem` — One action. Run it with `onClick`; the menu closes afterwards. `variant="destructive"` colours it for dangerous actions.
+- `DropdownMenuContent` — The menu panel; renders its own portal. Pass `anchor` (an element or ref) to position it against something other than the trigger.
+- `DropdownMenuItem` — One action. Run it with `onClick`; the menu closes afterwards. `tone="danger"` colours it for dangerous actions.
 - `DropdownMenuCheckboxItem` — A toggleable item; controlled with `checked` + `onCheckedChange`.
 - `DropdownMenuRadioItem` — One option inside a DropdownMenuRadioGroup.
 - `DropdownMenuLabel` — Non-interactive heading inside the menu. A plain element, so it works anywhere in the menu, inside a DropdownMenuGroup or not.
@@ -853,12 +1186,12 @@ Only props this library adds or changes; everything else forwards to the underly
 
 # Form
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 Needs the optional peer `react-hook-form`. It is **not** exported from the root `turkishcoffee` entry.
 
 ```tsx
-import { Form, FormField, useFormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage, FormTabs, FormTabsTrigger, FormTabsContent, FormTabsNext, FormTabsPrevious, useFormTabs } from 'turkishcoffee/form'
+import { Form, FormField, useFormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage, FormErrorSummary, FormTabs, FormTabsList, FormTabsTrigger, FormTabsContent, FormTabsNext, FormTabsPrevious, useFormTabs, type FormStepState } from 'turkishcoffee/form'
 ```
 
 react-hook-form's FormProvider. Imported from `turkishcoffee/form`, not the
@@ -894,27 +1227,47 @@ const form = useForm<Values>({ defaultValues: { email: '' } })
 
 Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
 
-- `linear?: boolean` — Only move forwards once the steps before the target validate.
+### `FormErrorSummary`
+
+- `title?: (count: number) => React.ReactNode` — The heading, from the number of errors.
+
+### `FormTabsContextValue`
+
+- `reached: number` — The furthest step index reached through validation.
+
+### `FormTabs`
+
+- `linear?: boolean` — A stepper: only move forwards once the steps before the target validate.
 
 ## Parts
 
 - `FormField` — Connects one field to the form: a react-hook-form Controller plus the context the Form* parts read.
 - `useFormField` — Ids and error state for the current field. Must be called inside FormField and FormItem.
 - `FormItem` — Wraps one field's label, control, description and message; generates their shared id.
-- `FormLabel` — Label wired to the field's control; turns destructive on error.
+- `FormLabel` — Label wired to the field's control; turns red on error. Pass `info` to put an InfoLabel's info button beside it.
 - `FormControl` — Wraps your input and wires up id + aria-describedby + aria-invalid. Use with any control that forwards props: <FormControl><Input /></FormControl>
 - `FormDescription` — Helper text under the control.
 - `FormMessage` — Renders the field's validation error, or `children` when there is none.
-- `FormTabs` — Splits one react-hook-form form across tabs or steps without losing input. Every step stays mounted while hidden, so values survive switching. Each FormField inside a FormTabsContent belongs to that step: a tab with an error shows a dot, and a failed submit jumps to the first such tab and focuses the field. With `linear`, a step can only be left forwards once its fields (and every earlier step's) validate: a stepper. Steps are ordered as they mount. Must be inside `<Form>`; put it inside the `<form>` so the submit button works.
+- `FormErrorSummary` — A danger Alert that lists every validation error after a failed submit, each a link that focuses its field — opening the FormTabs tab it sits in first. Hidden until the first submit and once every error is fixed. Put it above the fields (or the tabs), where it is seen first; worth it on long or tabbed forms, noise on a short one. Errors set on `root` are listed as text.
+
+  ```tsx
+  <form onSubmit={form.handleSubmit(onSubmit)}>
+    <FormErrorSummary />
+    <FormTabs>…</FormTabs>
+  </form>
+  ```
+
+- `type FormStepState` — Where a step stands in a linear form.
+- `FormTabs` — Splits one react-hook-form form across tabs or steps without losing input. Every step stays mounted while hidden, so values survive switching. Each FormField inside a FormTabsContent belongs to that step: a tab with errors shows an error icon and their count, and a failed submit jumps to the first such tab and focuses the field. Add FormErrorSummary to list every error with a link that opens its tab. With `linear` it is a stepper: FormTabsList draws numbered steps instead of tabs, a step can only be left forwards once its fields (and every earlier step's) validate, done steps show a check and a step left with errors says how many. Steps are ordered as they mount. Must be inside `<Form>`; put it inside the `<form>` so the submit button works.
 
   ```tsx
   <Form {...form}>
     <form onSubmit={form.handleSubmit(onSubmit)}>
       <FormTabs defaultValue="employee" linear>
-        <TabsList>
+        <FormTabsList>
           <FormTabsTrigger value="employee">Employee</FormTabsTrigger>
           <FormTabsTrigger value="personnel">Personnel file</FormTabsTrigger>
-        </TabsList>
+        </FormTabsList>
         <FormTabsContent value="employee">…FormFields…</FormTabsContent>
         <FormTabsContent value="personnel">…FormFields…</FormTabsContent>
         <FormTabsPrevious />
@@ -925,7 +1278,8 @@ Only props this library adds or changes; everything else forwards to the underly
   </Form>
   ```
 
-- `FormTabsTrigger` — A TabsTrigger that marks its step when one of its fields has an error.
+- `FormTabsList` — The row of tabs, or with `linear` the row of steps. Use it in place of TabsList inside FormTabs so a stepper gets its own layout.
+- `FormTabsTrigger` — One tab, or with `linear` one step. A tab with errors shows an error icon and how many fields to fix. A step shows its number, a check once done, or an error icon and "N fields to fix" when left with errors; steps further than the next one can't be picked until the ones before them are done.
 - `FormTabsContent` — One step's panel. Stays mounted while hidden, so its fields keep their values.
 - `FormTabsNext` — Goes to the next step (validating first when `linear`). Renders nothing on the last step.
 - `FormTabsPrevious` — Goes to the previous step. Renders nothing on the first step.
@@ -935,7 +1289,7 @@ Only props this library adds or changes; everything else forwards to the underly
 
 # HoverCard
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { HoverCard, HoverCardTrigger, HoverCardContent, type HoverCardContentProps } from 'turkishcoffee'
@@ -960,6 +1314,41 @@ click-to-open content use Popover.
 - `HoverCardTrigger` — The link that opens the HoverCard on hover; renders an `<a>`, so give it `href`. Pass `render={<Link />}` for your router's link. `delay` and `closeDelay` (ms) live here.
 - `type HoverCardContentProps`
 - `HoverCardContent` — The card panel; renders its own portal.
+
+---
+
+# InfoLabel
+
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
+
+```tsx
+import { InfoLabel, type InfoLabelProps } from 'turkishcoffee'
+```
+
+A Label with an info button beside it that opens a short explanation. The
+explanation opens on click, tap and Enter, so unlike a Tooltip it reaches
+touch and keyboard users and may hold a link. While it is open the button's
+icon fills in primary.
+Every prop except `info` and `infoLabel` goes to the Label. Inside a
+`turkishcoffee/form` field pass `info` to FormLabel instead.
+
+## Example
+
+```tsx
+<InfoLabel htmlFor="iban" info="Salaries are paid into this account.">IBAN</InfoLabel>
+<Input id="iban" />
+```
+
+## Props
+
+Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
+
+- `info: React.ReactNode` — The explanation behind the info button: what the field is for, its format, where the value goes.
+- `infoLabel?: string` — The info button's accessible name; screen readers read it before the label text.
+
+## Parts
+
+- `type InfoLabelProps`
 
 ---
 
@@ -1074,7 +1463,7 @@ inside long forms and inside server components. `size`: `sm` | `md` (default).
 
 Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
 
-- `size?: 'sm' | 'md'` — Height: `sm` (28px) or `md` (32px, default). Replaces the HTML `size` attribute.
+- `size?: 'sm' | 'md'` — Height: `sm` (32px) or `md` (36px, default). Replaces the HTML `size` attribute.
 
 ## Parts
 
@@ -1128,7 +1517,7 @@ Only props this library adds or changes; everything else forwards to the underly
 
 # Popover
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { Popover, PopoverTrigger, PopoverContent, type PopoverContentProps } from 'turkishcoffee'
@@ -1142,7 +1531,7 @@ use DropdownMenu.
 
 ```tsx
 <Popover>
-  <PopoverTrigger render={<Button variant="outline" />}>Filters</PopoverTrigger>
+  <PopoverTrigger render={<Button variant="secondary" />}>Filters</PopoverTrigger>
   <PopoverContent align="start">…</PopoverContent>
 </Popover>
 ```
@@ -1157,7 +1546,7 @@ use DropdownMenu.
 
 # Progress
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { Progress, type ProgressProps } from 'turkishcoffee'
@@ -1186,7 +1575,7 @@ Only props this library adds or changes; everything else forwards to the underly
 
 # RadioGroup
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { RadioGroup, RadioGroupItem } from 'turkishcoffee'
@@ -1216,9 +1605,48 @@ One choice out of a few visible options. Controlled with `value` +
 
 ---
 
+# SearchField
+
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
+
+```tsx
+import { SearchField, type SearchFieldProps } from 'turkishcoffee'
+```
+
+A reusable search field with a label, debounce, clear button and loading
+indicator. Enter bypasses the debounce. External value changes (e.g. browser
+back) replace the draft; acknowledgements of submitted searches preserve
+newer typing. Routing and fetching belong to the consuming application.
+Renders a search form: place it outside other forms.
+
+## Example
+
+```tsx
+<SearchField value={search} onSearch={setSearch} placeholder="Name, email…" />
+```
+
+## Props
+
+Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
+
+- `value: string` — Applied search value, e.g. from a URL. Draft text stays local until submitted.
+- `onSearch: (value: string) => void` — Receives trimmed text after a pause, or immediately on Enter and clear.
+- `debounceMs?: number` — Typing pause in milliseconds. Defaults to 300; 0 searches immediately.
+- `loading?: boolean` — Shows a spinner while results are loading; typing remains available.
+- `label?: React.ReactNode` — Visible input label. Defaults to "Search".
+- `clearLabel?: string` — Clear button text. Defaults to "Clear".
+- `loadingLabel?: string` — Accessible spinner label. Defaults to "Searching".
+- `className?: string` — Classes on the search form; defaults to w-72.
+
+## Parts
+
+- `type SearchFieldProps`
+
+---
+
 # Select
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { Select, SelectGroup, SelectValue, SelectTrigger, SelectContent, SelectItem, SelectLabel, SelectSeparator, type SelectContentProps } from 'turkishcoffee'
@@ -1250,7 +1678,7 @@ const plans = { free: 'Free', pro: 'Pro' }
 
 Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
 
-- `size?: 'sm' | 'md'` — Height: `sm` (28px) or `md` (32px, default) — matches Button, Input and NativeSelect.
+- `size?: 'sm' | 'md'` — Height: `sm` (32px) or `md` (36px, default) — matches Button, Input and NativeSelect.
 
 ## Parts
 
@@ -1291,7 +1719,7 @@ Only props this library adds or changes; everything else forwards to the underly
 
 # Sheet
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { Sheet, SheetTrigger, SheetClose, SheetContent, SheetHeader, SheetFooter, SheetTitle, SheetDescription, type SheetContentProps } from 'turkishcoffee'
@@ -1305,7 +1733,7 @@ accessibility.
 
 ```tsx
 <Sheet>
-  <SheetTrigger render={<Button variant="outline" />}>Filters</SheetTrigger>
+  <SheetTrigger render={<Button variant="secondary" />}>Filters</SheetTrigger>
   <SheetContent side="left">
     <SheetHeader>
       <SheetTitle>Filters</SheetTitle>
@@ -1392,9 +1820,58 @@ Only props this library adds or changes; everything else forwards to the underly
 
 ---
 
+# SplitButton
+
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
+
+```tsx
+import { SplitButton, SplitButtonAction, SplitButtonMenu } from 'turkishcoffee'
+```
+
+A button with a main action and a menu of related ones: the left half runs
+the action, the chevron on the right opens the menu, which opens under the
+whole button from its left edge. Two separate buttons, so
+each is a tab stop with its own name. `variant` and `size` apply to both halves.
+
+## Example
+
+```tsx
+<SplitButton>
+  <SplitButtonAction onClick={save}>Save</SplitButtonAction>
+  <SplitButtonMenu label="More save options">
+    <DropdownMenuItem onClick={saveAsDraft}>Save as draft</DropdownMenuItem>
+    <DropdownMenuItem onClick={saveAndClose}>Save and close</DropdownMenuItem>
+  </SplitButtonMenu>
+</SplitButton>
+```
+
+## Props
+
+Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
+
+- `root: React.RefObject<HTMLDivElement | null> | null` — The whole split button, which the menu lines up with.
+
+### `SplitButton`
+
+- `variant?: Variant` — `primary` (default) or `secondary`, for both halves.
+- `size?: Size` — `sm` · `md` · `lg`, for both halves.
+
+### `SplitButtonMenu`
+
+- `label: string` — Accessible name of the chevron button.
+- `align?: 'start' | 'center' | 'end'` — Where the menu lines up under the whole split button; its left edge by default.
+- `children: React.ReactNode` — The menu's items.
+
+## Parts
+
+- `SplitButtonAction` — The main action, on the left. Disable it alone to leave the menu usable.
+- `SplitButtonMenu` — The chevron on the right and the menu it opens; put DropdownMenuItems inside. `label` names the chevron for screen readers ("More save options").
+
+---
+
 # Switch
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { Switch, type SwitchProps } from 'turkishcoffee'
@@ -1425,7 +1902,7 @@ form, prefer Checkbox.
 **Server-renderable**: no `"use client"`; it adds no client boundary.
 
 ```tsx
-import { Table, TableHeader, TableBody, TableFooter, TableRow, TableHead, TableCell, TableCaption } from 'turkishcoffee'
+import { Table, TableHeader, TableBody, TableFooter, TableRow, TableHead, TableCell, TableCaption, exportTable, toXlsxBlob, toCsv, downloadFile, TableCheckbox, defaultTableColumnFilterLabels, TableColumnFilter, defaultTablePaginationLabels, TablePagination, type TableProps, type TableExportFormat, type TableExportColumn, type TableExportOptions, type TableCheckboxProps, type TableColumnFilterLabels, type TableColumnFilterProps, type TablePageSize, type TablePaginationLabels, type TablePaginationProps } from 'turkishcoffee'
 ```
 
 Plain styled table primitives — no data library, server-renderable; wraps the
@@ -1453,21 +1930,127 @@ column model, use `turkishcoffee/data-table`.
 </Table>
 ```
 
+## Props
+
+Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
+
+### `TableProps`
+
+- `containerProps?: React.ComponentProps<'div'>` — Props and ref for the scrolling wrapper; className and ref on Table still target the native table.
+
+### `TableExportColumn`
+
+- `width?: number` — On-screen width in px; becomes the .xlsx column width.
+
+### `TableExportOptions`
+
+- `fileName?: string` — Without extension. Defaults to "export".
+- `locale?: string` — Formats dates and numbers in CSV and picks its delimiter. Defaults to `<html lang>`.
+
+### `TableCheckboxProps`
+
+- `appearance?: 'always' | 'hover'` — `always` (default): visible on every row. `hover`: subtle selection, for dense lists — hidden until its row (`group/row`) or header (`group/header`) is hovered or focused, and shown for good once it is checked, or anything in the table is: pass `revealed`, or put `data-has-selection` on an ancestor (DataTable does, so no row has to re-render).
+- `revealed?: boolean` — Keeps a `hover` checkbox visible, e.g. while any row is selected.
+- `scope?: 'visible' | 'all'` — For a checked header box: `'all'` (default) — every row is selected, a filled box. `'visible'` — only the rows on screen (this page) are; an outlined box, so it reads differently from "everything". The usual two-step: first click selects the page, the next one everything.
+
+### `TableColumnFilterLabels`
+
+- `filter: (column: string) => string` — Title and trigger name: "Filter Name".
+- `contains: string` — Caption above the input.
+
+### `TableColumnFilterProps`
+
+- `column: string` — The column's name, for the title and the trigger's accessible name.
+- `value: string` — The applied filter text; empty when none.
+- `onApply: (value: string) => void` — Called with the new text, or `''` to clear.
+- `tabIndex?: number` — The funnel's tab order; a grid that manages focus itself passes -1.
+
+### `TablePaginationLabels`
+
+- `range: (from: number, to: number, total: number) => string` — "1–10 of 1374". `from` is 0 when there are no rows.
+
+### `TablePaginationProps`
+
+- `page: number` — The current page, 1-based.
+- `total: number` — Rows across all pages.
+- `pageSizeOptions?: TablePageSize[]` — Choices in the page-size picker. Defaults to 10, 25, 50, 100, 200 and All.
+- `onPageSizeChange?: (pageSize: TablePageSize) => void` — Omit to hide the page-size picker.
+- `disabled?: boolean` — Disables every control, e.g. while the next page is loading.
+
 ## Parts
 
+- `type TableProps`
 - `TableHeader` — The `<thead>`.
 - `TableBody` — The `<tbody>`.
 - `TableFooter` — The `<tfoot>`, e.g. for totals.
-- `TableRow` — A `<tr>`; highlights on hover and when `data-state="selected"`.
+- `TableRow` — A `<tr>`; body rows alternate between `--table-row-odd` and `--table-row-even`. Headers and footers keep their own background. Highlights on hover and when `data-state="selected"`.
 - `TableHead` — A header cell (`<th>`).
 - `TableCell` — A body cell (`<td>`). Does not wrap by default (`whitespace-nowrap`).
 - `TableCaption` — The `<caption>`, rendered below the table.
+- `type TableExportFormat` — What a table export writes.
+- `type TableExportColumn` — One exported column: its heading, how to read a row's value, and optionally its width in px.
+- `type TableExportOptions`
+- `exportTable` — Downloads rows as a CSV or Excel file. Data-agnostic: pass the columns and rows to write, in order — DataTable's `getExportData` hands over exactly that. Values keep their type: numbers, dates and booleans are real Excel numbers, dates and booleans in .xlsx. The .xlsx writer (`write-excel-file`) is imported on first use: pages that never export to Excel never download it.
+
+  ```tsx
+  await exportTable({
+    format: 'xlsx',
+    fileName: 'employees',
+    columns: [
+      { label: 'Name', value: (e) => e.name },
+      { label: 'Start date', value: (e) => e.startDate },
+    ],
+    rows: employees,
+  })
+  ```
+
+- `toXlsxBlob` — The .xlsx workbook for `exportTable`, as a Blob — to upload or attach instead of downloading. A bold, frozen header row; numbers, dates and booleans as real Excel values; dates in the locale's short format. Loads the writer on first use.
+- `toCsv` — The CSV text for `exportTable`: a UTF-8 BOM so Excel reads Turkish letters, and `;` between fields where the locale writes decimals with a comma (Turkish Excel expects that), `,` elsewhere.
+- `downloadFile` — Saves a blob as a file through a temporary link.
+- `type TableCheckboxProps`
+- `TableCheckbox` — The selection checkbox of a table row or header. A header box shows the mixed state with `indeterminate`, and "this page only" with `scope="visible"`. Give every box an `aria-label`.
+
+  ```tsx
+  <TableRow data-state={selected ? 'selected' : undefined} className="group/row">
+    <TableCell>
+      <TableCheckbox appearance="hover" checked={selected} onCheckedChange={setSelected} aria-label="Select row" />
+    </TableCell>
+  </TableRow>
+  ```
+
+- `type TableColumnFilterLabels` — Every word TableColumnFilter renders. English by default.
+- `defaultTableColumnFilterLabels`
+- `type TableColumnFilterProps`
+- `TableColumnFilter` — A column header's "contains" filter: a funnel that opens a small panel with a text field and Apply / Clear / Cancel. Enter applies, Escape cancels. The funnel stays hidden until its header (`group/header`) is hovered or focused, and stays visible — filled — while a filter is applied. Controlled: the caller owns the applied value and does the filtering.
+
+  ```tsx
+  <TableHead className="group/header">
+    Name
+    <TableColumnFilter column="Name" value={nameFilter} onApply={setNameFilter} />
+  </TableHead>
+  ```
+
+- `type TablePageSize` — A page size, or every row on one page.
+- `type TablePaginationLabels` — Every word TablePagination renders. English by default.
+- `defaultTablePaginationLabels`
+- `type TablePaginationProps`
+- `TablePagination` — The bar under a table: rows per page, the visible range, and first/previous/next/last buttons. Controlled and data-agnostic, so it pages a server-driven list as well as DataTable's client rows (which renders it for you).
+
+  ```tsx
+  <TablePagination
+    page={page}
+    pageSize={pageSize}
+    total={1374}
+    onPageChange={setPage}
+    onPageSizeChange={(size) => { setPageSize(size); setPage(1) }}
+  />
+  ```
 
 ---
 
 # Tabs
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { Tabs, TabsList, TabsTrigger, TabsContent } from 'turkishcoffee'
@@ -1522,7 +2105,7 @@ minimum of `min-h-16`. Server-renderable.
 
 # Toast
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { toast, useSonner, Toaster, type ExternalToast, type ToasterProps } from 'turkishcoffee'
@@ -1565,7 +2148,7 @@ toast.success('Saved', { description: 'Your changes are live.' })
 
 # Tooltip
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { TooltipTrigger, Tooltip, TooltipContent, type TooltipContentProps } from 'turkishcoffee'
