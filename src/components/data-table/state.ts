@@ -48,7 +48,7 @@ export type DataTableState = {
 export type DataTableServer = {
   /** Rows matching the current filters on the server. */
   rowCount: number
-  /** A request is in flight: rows dim, the grid is `aria-busy`, paging pauses. */
+  /** A request is in flight: a bar runs under the header, the grid is `aria-busy`, paging pauses. */
   loading?: boolean
 }
 

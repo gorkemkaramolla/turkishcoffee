@@ -1015,11 +1015,7 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
               aria-busy={loading || undefined}
               data-dt={gridId}
               data-has-selection={rowSelection.selectedRowCount > 0 ? '' : undefined}
-              className={cn(
-                'relative overflow-clip outline-none',
-                // Loading dims the body rows, not the header; an error replaces the dimming.
-                loading && errorMessage == null && '[&_[role=row]:not([aria-rowindex="1"])]:opacity-50',
-              )}
+              className="relative overflow-clip outline-none"
             >
               <style data-widths="">{widthCss}</style>
               {/*
@@ -1031,7 +1027,7 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
                 ref={headerScrollRef}
                 role="rowgroup"
                 onScroll={syncBody}
-                className={cn('overflow-hidden bg-background', sticky && 'sticky z-20')}
+                className={cn('overflow-hidden bg-background', sticky ? 'sticky z-20' : 'relative')}
                 style={{
                   // The header sits outside the scrolling body: the body's
                   // scrollbar width keeps the last column aligned.
@@ -1057,6 +1053,16 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
                     lockedEdges={lockedEdges}
                   />
                 </div>
+                {loading && errorMessage == null && (
+                  // Loading marks the header's edge instead of dimming the rows:
+                  // dimmed text falls below WCAG contrast while it stays readable.
+                  // aria-busy tells assistive technology.
+                  <div
+                    aria-hidden="true"
+                    data-loading-bar=""
+                    className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 animate-pulse bg-primary motion-reduce:animate-none"
+                  />
+                )}
               </div>
               {virtual && rows.length && visibleColumns.length ? (
                 <VirtualBody {...bodyProps} height={listHeight} listRef={setListScroller} listApiRef={listApiRef} onScroll={syncHeader} />

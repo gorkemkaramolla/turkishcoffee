@@ -215,7 +215,7 @@ Only props this library adds or changes; everything else forwards to the underly
 ### `DataTableServer`
 
 - `rowCount: number` — Rows matching the current filters on the server.
-- `loading?: boolean` — A request is in flight: rows dim, the grid is `aria-busy`, paging pauses.
+- `loading?: boolean` — A request is in flight: a bar runs under the header, the grid is `aria-busy`, paging pauses.
 
 ### `DataTableExportRequest`
 

@@ -60,6 +60,9 @@ const preview: Preview = {
   parameters: {
     layout: 'fullscreen',
     controls: { expanded: true },
+    // axe runs on every story and reports in the a11y panel; stories whose
+    // components are already clean fail on violations with `test: 'error'`.
+    a11y: { test: 'todo' },
     // Storybook's own backgrounds addon would paint over the token background.
     backgrounds: { disable: true },
     docs: {

@@ -90,6 +90,20 @@ const meta: Meta<DataTableProps<Employee>> = {
     // Show each story's own code. The default writes the args out as JSX, which
     // would print every row: 10,000 of them freeze the docs page's highlighter.
     docs: { source: { type: 'code' } },
+    a11y: {
+      test: 'error',
+      config: {
+        rules: [
+          {
+            // The grid is the tab stop and moves the active cell into view, so
+            // its scrolling body is keyboard-operable. axe can't follow
+            // aria-activedescendant and asks for a second tab stop.
+            id: 'scrollable-region-focusable',
+            selector: ':not([role="grid"] [role="rowgroup"])',
+          },
+        ],
+      },
+    },
   },
 }
 export default meta

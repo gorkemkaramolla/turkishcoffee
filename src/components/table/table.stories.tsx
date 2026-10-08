@@ -9,7 +9,11 @@ import { TableColumnFilter } from './table-column-filter'
 import { TablePagination, type TablePageSize } from './table-pagination'
 import { exportTable, type TableExportColumn } from './export'
 
-const meta = { title: 'Components/Table', component: Table } satisfies Meta<typeof Table>
+const meta = {
+  title: 'Components/Table',
+  component: Table,
+  parameters: { a11y: { test: 'error' } },
+} satisfies Meta<typeof Table>
 export default meta
 type Story = StoryObj<typeof meta>
 

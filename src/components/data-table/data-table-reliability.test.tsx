@@ -157,6 +157,14 @@ describe('public contracts', () => {
     expect(screen.getByRole('alert').textContent).toBe('Request failed')
   })
 
+  it('marks loading with a bar instead of dimming rows below contrast', () => {
+    const { container, rerender } = mount({ loading: true })
+    expect(container.querySelector('[data-loading-bar]')).toBeTruthy()
+    expect(container.querySelector('[class*="opacity-50"]')).toBeNull()
+    rerender(<DataTable aria-label="People" data={data} columns={columns} loading errorMessage="Request failed" />)
+    expect(container.querySelector('[data-loading-bar]')).toBeNull()
+  })
+
   it('exposes the native table and its configurable container separately', () => {
     const table = createRef<HTMLTableElement>()
     const container = createRef<HTMLDivElement>()
