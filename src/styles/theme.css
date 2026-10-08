@@ -25,97 +25,141 @@
     --radius: 0.25rem;
 
     /*
-     * Apple's system palette: apple.com / iOS light, with the accessible
-     * variants wherever white text sits on a fill (every pair here is at least
-     * 4.5:1). Neutrals carry Apple's faint cool tint (hue 286) instead of pure
-     * gray, which is what keeps them from looking dead next to the blue.
+     * Warm greys with a trace of coffee brown, one brand blue and four status
+     * tones. Every text pair is at least 4.5:1, every control edge and focus
+     * ring 3:1, in light and dark.
      */
-    --background: oklch(1 0 0); /* #FFFFFF */
-    --foreground: oklch(0.232 0.004 286.1); /* #1D1D1F */
+    --background: #ffffff;
+    --foreground: #26231f;
 
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.232 0.004 286.1);
+    --card: #ffffff;
+    --card-foreground: #26231f;
 
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.232 0.004 286.1);
+    --popover: #ffffff;
+    --popover-foreground: #26231f;
 
-    --primary: oklch(0.563 0.193 256.2); /* #0071E3 */
-    --primary-foreground: oklch(1 0 0);
+    /*
+     * Each tone has four tokens: a solid fill, the text on that fill, a soft
+     * tinted fill, and -text for the tone as text or icon on the page or on its
+     * soft fill. Fill and -text are kept apart because in dark a fill dark
+     * enough for white text is too dark to read as text.
+     *
+     * Five tones cover every message: neutral (the greys below), info (the
+     * brand blue, --primary), success, warning and danger.
+     */
+    --primary: #1760b0;
+    --primary-foreground: #ffffff;
+    --primary-soft: #eaf2fb;
+    --primary-text: #1760b0;
 
-    --secondary: oklch(0.932 0.007 286.3); /* #E8E8ED */
-    --secondary-foreground: oklch(0.232 0.004 286.1);
+    --secondary: #f5f3f0;
+    --secondary-foreground: #26231f;
 
-    --muted: oklch(0.971 0.003 286.4); /* #F5F5F7 */
-    --muted-foreground: oklch(0.54 0.008 286.1); /* #6E6E73 */
+    --muted: #f5f3f0;
+    --muted-foreground: #65605a;
 
-    --accent: oklch(0.963 0.007 286.3); /* #F2F2F7, systemGray6 */
-    --accent-foreground: oklch(0.232 0.004 286.1);
+    /* Hover on a subtle control (ghost button, skeleton base). */
+    --accent: #f5f3f0;
+    --accent-foreground: #26231f;
 
-    --destructive: oklch(0.553 0.225 27.3); /* #D70015 */
-    --destructive-foreground: oklch(1 0 0);
+    --danger: #c22a33;
+    --danger-foreground: #ffffff;
+    --danger-soft: #fcf1f1;
+    --danger-text: #ad2129;
 
-    --success: oklch(0.54 0.143 147.5); /* #208439 */
-    --success-foreground: oklch(1 0 0);
+    --success: #167a3e;
+    --success-foreground: #ffffff;
+    --success-soft: #eff8f2;
+    --success-text: #127035;
 
-    --warning: oklch(86.5% 0.177 90.4);
-    --warning-foreground: oklch(0.232 0.004 286.1);
+    /* The orange fill is too light for white text, so text on it is dark. */
+    --warning: #e8730c;
+    --warning-foreground: #26231f;
+    --warning-soft: #fef3e8;
+    --warning-text: #9e4806;
 
     /*
      * The strong surface for transient UI that floats over the page: toasts and
      * tooltips. A neutral grey that reads on light and dark pages, so .dark keeps it.
      */
-    --inverse: oklch(0.535 0 0); /* #6D6D6D */
-    --inverse-foreground: oklch(1 0 0);
+    --inverse: #46413b;
+    --inverse-foreground: #ffffff;
 
-    --border: oklch(0.923 0.007 286.3); /* #E5E5EA, systemGray5 */
-    --input: oklch(0.862 0.007 286.3); /* #D1D1D6, systemGray4 */
-    --ring: oklch(0.563 0.193 256.2); /* the primary blue: Apple's focus ring */
+    --border: #e2ded9;
+    /* The edge of a bordered button; it has a label, so it may stay faint. */
+    --input: #d2cdc7;
+    /*
+     * The whole edge of anything you type in or pick (text fields, selects,
+     * checkboxes, radios): one colour all round, at least 3:1 on the page and
+     * on muted surfaces, darker on hover. Focus turns it into a 2px --ring.
+     */
+    --field: #8a847d;
+    --field-hover: #625c55;
+    --ring: var(--primary-text);
 
     /*
      * Neutral grey for highlighted and selected states (highlighted menu item,
-     * selected row, calendar range). Redeclared under .dark so it follows the
-     * dark --accent even when .dark sits below the root.
+     * selected row, calendar range, hovered breadcrumb step).
      */
-    --selection: var(--accent);
+    --selection: #ebe8e4;
+
+    /* Alternating body rows, shared by Table and DataTable. */
+    --table-row-odd: var(--background);
+    --table-row-even: color-mix(in oklab, var(--muted) 50%, var(--background));
 }
 
-/* iOS dark system colors. */
 .dark {
-    --background: oklch(0 0 0); /* #000000 */
-    --foreground: oklch(0.971 0.003 286.4); /* #F5F5F7 */
+    --background: #1c1a18;
+    --foreground: #faf8f5;
 
-    --card: oklch(0.227 0.004 286.1); /* #1C1C1E */
-    --card-foreground: oklch(0.971 0.003 286.4);
+    --card: #272421;
+    --card-foreground: #faf8f5;
 
-    --popover: oklch(0.227 0.004 286.1);
-    --popover-foreground: oklch(0.971 0.003 286.4);
+    --popover: #272421;
+    --popover-foreground: #faf8f5;
 
-    --primary: oklch(0.624 0.206 255.5); /* #0A84FF */
-    --primary-foreground: oklch(1 0 0);
+    --primary: #1a5c9c;
+    --primary-foreground: #ffffff;
+    --primary-soft: #132b44;
+    --primary-text: #5ea7ef;
 
-    --secondary: oklch(0.294 0.004 286.2); /* #2C2C2E */
-    --secondary-foreground: oklch(0.971 0.003 286.4);
+    --secondary: #3c3834;
+    --secondary-foreground: #faf8f5;
 
-    --muted: oklch(0.227 0.004 286.1); /* #1C1C1E */
-    --muted-foreground: oklch(0.681 0.007 286.2); /* #98989D */
+    --muted: #312e2a;
+    --muted-foreground: #b2aca5;
 
-    --accent: oklch(0.294 0.004 286.2); /* #2C2C2E */
-    --accent-foreground: oklch(0.971 0.003 286.4);
+    --accent: #2c2926;
+    --accent-foreground: #faf8f5;
 
-    --destructive: oklch(0.663 0.224 28.3); /* #FF453A */
-    --destructive-foreground: oklch(1 0 0);
+    /*
+     * A fill that carries white text is too dark to read as text on a dark page,
+     * so in dark the status fills are bright with dark text, and double as -text.
+     */
+    --danger: #ee767d;
+    --danger-foreground: #1c1a18;
+    --danger-soft: #3a1b1d;
+    --danger-text: #ee767d;
 
-    --success: oklch(0.756 0.208 147); /* #30D158 */
-    --success-foreground: oklch(0 0 0);
+    --success: #5bb874;
+    --success-foreground: #1c1a18;
+    --success-soft: #183220;
+    --success-text: #5bb874;
 
-    --warning: oklch(0.782 0.171 67.2); /* #FF9F0A */
-    --warning-foreground: oklch(0 0 0);
+    --warning: #f4a266;
+    --warning-foreground: #1c1a18;
+    --warning-soft: #3b2513;
+    --warning-text: #f4a266;
 
-    --border: oklch(0.341 0.003 286.2); /* #38383A */
-    --input: oklch(0.402 0.003 286.3); /* #48484A */
-    --ring: oklch(0.624 0.206 255.5);
+    --border: #3c3834;
+    --input: #68625b;
+    --field: #857f78;
+    --field-hover: #b2aca5;
+    --ring: var(--primary-text);
 
-    --selection: var(--accent);
+    --selection: #3c3834;
+    --table-row-odd: var(--background);
+    --table-row-even: color-mix(in oklab, var(--muted) 50%, var(--background));
 }
 
 @theme inline {
@@ -130,6 +174,8 @@
 
     --color-primary: var(--primary);
     --color-primary-foreground: var(--primary-foreground);
+    --color-primary-soft: var(--primary-soft);
+    --color-primary-text: var(--primary-text);
 
     --color-secondary: var(--secondary);
     --color-secondary-foreground: var(--secondary-foreground);
@@ -140,20 +186,28 @@
     --color-accent: var(--accent);
     --color-accent-foreground: var(--accent-foreground);
 
-    --color-destructive: var(--destructive);
-    --color-destructive-foreground: var(--destructive-foreground);
+    --color-danger: var(--danger);
+    --color-danger-foreground: var(--danger-foreground);
+    --color-danger-soft: var(--danger-soft);
+    --color-danger-text: var(--danger-text);
 
     --color-success: var(--success);
     --color-success-foreground: var(--success-foreground);
+    --color-success-soft: var(--success-soft);
+    --color-success-text: var(--success-text);
 
     --color-warning: var(--warning);
     --color-warning-foreground: var(--warning-foreground);
+    --color-warning-soft: var(--warning-soft);
+    --color-warning-text: var(--warning-text);
 
     --color-inverse: var(--inverse);
     --color-inverse-foreground: var(--inverse-foreground);
 
     --color-border: var(--border);
     --color-input: var(--input);
+    --color-field: var(--field);
+    --color-field-hover: var(--field-hover);
     --color-ring: var(--ring);
     --color-selection: var(--selection);
 
@@ -168,9 +222,9 @@
      * default for data-dense screens; every control in a form row shares them,
      * so they line up. Override these three to change the density everywhere.
      */
-    --spacing-control-sm: 2.25rem;
-    --spacing-control: 2.5rem;
-    --spacing-control-lg: 2.75rem;
+    --spacing-control-sm: 2rem;
+    --spacing-control: 2.25rem;
+    --spacing-control-lg: 2.5rem;
 
     /*
      * The only elevation: floating layers (popovers, menus, dialogs, toasts).
@@ -203,7 +257,7 @@
  */
 @layer base {
     * {
-        @apply border-border outline-ring/50;
+        @apply border-border outline-ring;
     }
     body {
         @apply relative bg-background text-foreground;
