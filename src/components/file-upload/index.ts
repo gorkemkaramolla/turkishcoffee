@@ -1,0 +1,16 @@
+export {
+  FileUpload,
+  type FileUploadProps,
+  FileUploadDropzone,
+  type FileUploadDropzoneProps,
+  FileUploadTrigger,
+  FileUploadList,
+  FileUploadItem,
+  type FileUploadItemProps,
+  defaultFileUploadLabels,
+  fileUploadLabelsForLocale,
+  type FileUploadLabels,
+  type FileRejection,
+  type FileRejectionReason,
+  formatFileSize,
+} from './file-upload'
