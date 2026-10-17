@@ -6,8 +6,10 @@
 import { Skeleton } from 'turkishcoffee'
 ```
 
-Pulsing placeholder in the shape of content that is still loading. Give it
-the size of the real content with `className`.
+Placeholder in the shape of content that is still loading. Give it the size
+of the real content with `className`. A brand-blue glint crosses every
+skeleton on the page at once, corner to corner and back, so a loading page
+reads as one surface; with reduced motion it is a still fill.
 
 ## Example
 
