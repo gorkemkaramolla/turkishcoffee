@@ -14,8 +14,10 @@ export {
   FormTabsList,
   FormTabsTrigger,
   FormTabsContent,
+  FormTabsActions,
   FormTabsNext,
   FormTabsPrevious,
   useFormTabs,
   type FormStepState,
+  type FormTabsLabels,
 } from './form-tabs'

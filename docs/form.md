@@ -5,7 +5,7 @@
 Needs the optional peer `react-hook-form`. It is **not** exported from the root `turkishcoffee` entry.
 
 ```tsx
-import { Form, FormField, useFormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage, FormErrorSummary, FormTabs, FormTabsList, FormTabsTrigger, FormTabsContent, FormTabsNext, FormTabsPrevious, useFormTabs, type FormStepState } from 'turkishcoffee/form'
+import { Form, FormField, useFormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage, FormErrorSummary, FormTabs, FormTabsList, FormTabsTrigger, FormTabsContent, FormTabsActions, FormTabsNext, FormTabsPrevious, useFormTabs, type FormStepState, type FormTabsLabels } from 'turkishcoffee/form'
 ```
 
 react-hook-form's FormProvider. Imported from `turkishcoffee/form`, not the
@@ -47,7 +47,7 @@ Only props this library adds or changes; everything else forwards to the underly
 
 ### `FormTabsContextValue`
 
-- `reached: number` — The furthest step index reached through validation.
+- `reached: number` — Visitation history, independent of validation/completion.
 
 ### `FormTabs`
 
@@ -72,7 +72,8 @@ Only props this library adds or changes; everything else forwards to the underly
   ```
 
 - `type FormStepState` — Where a step stands in a linear form.
-- `FormTabs` — Splits one react-hook-form form across tabs or steps without losing input. Every step stays mounted while hidden, so values survive switching. Each FormField inside a FormTabsContent belongs to that step: a tab with errors shows an error icon and their count, and a failed submit jumps to the first such tab and focuses the field. Add FormErrorSummary to list every error with a link that opens its tab. With `linear` it is a stepper: FormTabsList draws numbered steps instead of tabs, a step can only be left forwards once its fields (and every earlier step's) validate, done steps show a check and a step left with errors says how many. Steps are ordered as they mount. Must be inside `<Form>`; put it inside the `<form>` so the submit button works.
+- `type FormTabsLabels` — Localizable navigation and status text. Button children override their label.
+- `FormTabs` — Splits one react-hook-form form across tabs or steps without losing input. Every step stays mounted while hidden, so values survive switching. Each FormField inside a FormTabsContent belongs to that step: a tab with errors shows an error icon and their count, and a failed submit jumps to the first such tab and focuses the field. Add FormErrorSummary to list every error with a link that opens its tab. With `linear` it is a stepper: FormTabsList draws numbered steps instead of tabs, a step can only be left forwards once its fields (and every earlier step's) validate, validated steps show a check, and errors remain visible on every step. Editing a field clears completion for its step and subsequent steps. Navigation is locked during async validation. Use labels to translate all navigation/status text, and FormTabsActions to align Back and Next/Save. Steps are ordered as they mount. Must be inside `<Form>` and `<form>`. An unknown/removed selection falls back to the first mounted step. Controlled consumers must apply onValueChange before error focus is moved.
 
   ```tsx
   <Form {...form}>
@@ -84,8 +85,10 @@ Only props this library adds or changes; everything else forwards to the underly
         </FormTabsList>
         <FormTabsContent value="employee">…FormFields…</FormTabsContent>
         <FormTabsContent value="personnel">…FormFields…</FormTabsContent>
-        <FormTabsPrevious />
-        <FormTabsNext />
+        <FormTabsActions>
+          <FormTabsPrevious />
+          <FormTabsNext />
+        </FormTabsActions>
       </FormTabs>
       <Button type="submit">Save</Button>
     </form>
@@ -93,8 +96,18 @@ Only props this library adds or changes; everything else forwards to the underly
   ```
 
 - `FormTabsList` — The row of tabs, or with `linear` the row of steps. Use it in place of TabsList inside FormTabs so a stepper gets its own layout.
-- `FormTabsTrigger` — One tab, or with `linear` one step. A tab with errors shows an error icon and how many fields to fix. A step shows its number, a check once done, or an error icon and "N fields to fix" when left with errors; steps further than the next one can't be picked until the ones before them are done.
+- `FormTabsTrigger` — A section tab or numbered step. Errors stay visible on the current step. Completed steps have passed validation; editing a field clears completion for that step and every later one. Arrow keys move focus; Enter/Space selects.
 - `FormTabsContent` — One step's panel. Stays mounted while hidden, so its fields keep their values.
-- `FormTabsNext` — Goes to the next step (validating first when `linear`). Renders nothing on the last step.
-- `FormTabsPrevious` — Goes to the previous step. Renders nothing on the first step.
-- `useFormTabs` — The current step and navigation, for custom controls (e.g. show the submit button only when `isLast`). Must be called inside FormTabs.
+- `FormTabsActions` — Optional action row with a hairline divider. Previous sits left; remaining actions sit right. Supply the submit button yourself; no saving is performed.
+
+  ```tsx
+  <FormTabsActions>
+    <FormTabsPrevious />
+    <FormTabsNext />
+    {isLast && <Button type="submit">Save</Button>}
+  </FormTabsActions>
+  ```
+
+- `FormTabsNext` — Goes forwards, validating in linear mode. Busy navigation cannot be overridden by disabled={false}.
+- `FormTabsPrevious` — Goes backwards without validation. Renders nothing on the first step.
+- `useFormTabs` — The current step and navigation, for custom controls (e.g. show the submit button only when `isLast`). isNavigating locks custom controls during validation. getStepState reports current/invalid/complete/upcoming; use hasError separately for the active step. goTo returns false for unknown targets or cancelled/blocked navigation. Must be called inside FormTabs.
