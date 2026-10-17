@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from 'react'
 import type { Decorator, Preview } from '@storybook/react-vite'
 import '../src/styles/storybook.css'
+import { LocaleProvider } from '../src/components/locale-provider'
 
 /**
  * The `dark` class goes on <html>, not on a wrapper div — otherwise html/body
@@ -9,15 +10,20 @@ import '../src/styles/storybook.css'
 function ThemeCanvas({
   isDark,
   inDocs,
+  fullBleed,
   children,
 }: {
   isDark: boolean
   inDocs: boolean
+  fullBleed: boolean
   children: ReactNode
 }) {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark)
   }, [isDark])
+
+  // A whole screen (parameters.fullBleed) fills the canvas edge to edge.
+  if (fullBleed) return <div className="bg-background text-foreground">{children}</div>
 
   return (
     // On a Docs page every story renders inline, so a full-height canvas would
@@ -31,17 +37,39 @@ function ThemeCanvas({
 }
 
 const withTheme: Decorator = (Story, context) => (
-  <ThemeCanvas isDark={context.globals.theme === 'dark'} inDocs={context.viewMode === 'docs'}>
+  <ThemeCanvas
+    isDark={context.globals.theme === 'dark'}
+    inDocs={context.viewMode === 'docs'}
+    fullBleed={context.parameters.fullBleed === true}
+  >
     <Story />
   </ThemeCanvas>
 )
 
+/**
+ * Every story in the toolbar's language. `<html lang>` follows too, as it would
+ * on a real page, so components read it the same way with or without a provider.
+ */
+function LocaleCanvas({ locale, children }: { locale: string; children: ReactNode }) {
+  useEffect(() => {
+    document.documentElement.lang = locale
+  }, [locale])
+  return <LocaleProvider locale={locale}>{children}</LocaleProvider>
+}
+
+const withLocale: Decorator = (Story, context) => (
+  <LocaleCanvas locale={context.globals.locale as string}>
+    <Story />
+  </LocaleCanvas>
+)
+
 const preview: Preview = {
-  decorators: [withTheme],
+  decorators: [withLocale, withTheme],
   // A Docs page per component: its JSDoc, a props table and every story with its code.
   tags: ['autodocs'],
   initialGlobals: {
     theme: 'light',
+    locale: 'en-US',
   },
   globalTypes: {
     theme: {
@@ -52,6 +80,18 @@ const preview: Preview = {
         items: [
           { value: 'light', title: 'Light', icon: 'sun' },
           { value: 'dark', title: 'Dark', icon: 'moon' },
+        ],
+        dynamicTitle: true,
+      },
+    },
+    locale: {
+      description: 'Language of the words components render themselves',
+      toolbar: {
+        title: 'Language',
+        icon: 'globe',
+        items: [
+          { value: 'en-US', title: 'English' },
+          { value: 'tr-TR', title: 'Türkçe' },
         ],
         dynamicTitle: true,
       },

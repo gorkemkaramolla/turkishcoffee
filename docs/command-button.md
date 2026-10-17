@@ -6,10 +6,11 @@
 import { CommandButton, type CommandButtonProps } from 'turkishcoffee'
 ```
 
-A borderless command for toolbars and command bars: the icon in the brand
-colour, the text neutral, a grey fill on hover. Put the icon before the text
-as a child. As a menu trigger it adds a chevron by itself, and keeps the
-fill while the menu is open. Pass `render` to make it a link.
+A borderless command for toolbars and command bars: text and icon neutral
+at rest; on hover a grey fill and the icon in the brand colour, as on a
+Button. Put the icon before the text as a child. As a menu trigger it adds
+a chevron by itself, and while the menu is open keeps a pressed fill and
+the brand-coloured icon. Pass `render` to make it a link.
 
 ## Example
 

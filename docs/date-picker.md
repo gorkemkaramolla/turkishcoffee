@@ -19,7 +19,7 @@ Only props this library adds or changes; everything else forwards to the underly
 ### `DatePickerProps`
 
 - `formatStr?: string` — date-fns format string for the trigger label.
-- `locale?: Locale` — A date-fns locale (e.g. `tr` from `date-fns/locale`); also localizes the calendar.
+- `locale?: Locale` — A date-fns locale (e.g. `tr` from `react-day-picker/locale`) for the label and the calendar. Defaults to LocaleProvider's language, else `<html lang>`.
 
 ## Parts
 
