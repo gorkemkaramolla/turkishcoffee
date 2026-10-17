@@ -1,6 +1,6 @@
 {
   "name": "turkishcoffee",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "Personal React UI component library — Tailwind v4, Base UI primitives, RSC-aware.",
   "license": "MIT",
   "packageManager": "pnpm@12.11.2",
