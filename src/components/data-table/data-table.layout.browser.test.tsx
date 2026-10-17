@@ -168,8 +168,9 @@ describe('layout (Chromium)', () => {
     cell = activeCell()
     expect(cell?.closest('[role="row"]')?.getAttribute('aria-rowindex')).toBe('1001')
     expect(cell?.getAttribute('aria-colindex')).toBe('80')
-    // A jump across 1,000 rows and 80 columns lands once both virtualizers have rendered
-    // after their scroll, which WebKit takes more frames to do than an arrow key's step.
+    // A jump across 1,000 rows and 80 columns settles over several frames: the last rows
+    // render after the scroll, then autofit widens columns for their longer numbers.
+    // On a slow machine that outlasts the frames waited above; the cell must end in view.
     await expect.poll(() => within(body.getBoundingClientRect(), activeCell()!.getBoundingClientRect())).toBe(true)
     expect(document.activeElement).toBe(grid)
   })

@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef, useState, type RefObject } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
 
 /** A cell by its ARIA position: `row` 1 is the header row; `col` counts visible columns from 1. */
 export type CellPosition = { row: number; col: number }
@@ -83,7 +83,10 @@ export function useGridNavigation(options: {
     [firstRow, revealRow, revealColumn, selectPosition],
   )
 
-  // Once the active cell is rendered, bring it fully into view.
+  // Once the active cell is rendered, bring it fully into view, and keep it there
+  // while the grid settles: a long jump renders rows a frame or more after its
+  // scroll, and autofit then widens columns to fit them, pushing the cell out
+  // again. 'nearest' leaves a cell already in view where it is.
   useLayoutEffect(() => {
     if (!scrollPending.current) return
     const reveal = () => {
@@ -92,11 +95,21 @@ export function useGridNavigation(options: {
     }
     reveal()
     // A newly visible column can be measured in this commit. Correct the scroll
-    // after its final width has reached layout, without following manual scrolls.
-    if (typeof requestAnimationFrame === 'undefined') { scrollPending.current = false; return }
-    const frame = requestAnimationFrame(() => { reveal(); scrollPending.current = false })
+    // after its final width has reached layout.
+    if (typeof requestAnimationFrame === 'undefined') return
+    const frame = requestAnimationFrame(reveal)
     return () => cancelAnimationFrame(frame)
   })
+
+  // Scrolling by hand ends that, so the grid never pulls the view back to the active cell.
+  useEffect(() => {
+    const frame = frameRef.current
+    if (!frame) return
+    const release = () => { scrollPending.current = false }
+    const events = ['wheel', 'touchstart', 'pointerdown'] as const
+    for (const type of events) frame.addEventListener(type, release, { capture: true, passive: true })
+    return () => { for (const type of events) frame.removeEventListener(type, release, { capture: true }) }
+  }, [frameRef])
 
   const enterCell = useCallback(
     (at: CellPosition) => {
