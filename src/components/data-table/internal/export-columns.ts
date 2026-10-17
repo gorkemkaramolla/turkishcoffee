@@ -7,7 +7,6 @@ import type {
   DataTableExportData,
   DataTableExportRows,
   DataTableExportRequest,
-  DataTablePagination,
   DataTableRowSelection,
 } from '../state'
 import { columnLabel } from './columns'
@@ -37,7 +36,11 @@ function orderedLeafColumns<TData extends RowData>(table: GridTable<TData>) {
   return [...all].sort((a, b) => ranks.get(a.id)! - ranks.get(b.id)!)
 }
 
-/** Export columns: label, how to read a row, width. Reads `meta.exportValue` first. */
+/**
+ * Export columns: label, how to read a row, width. Reads `meta.exportValue`
+ * first. A row the grid does not hold, such as one fetched for a server
+ * export, is read through the column's accessor; it has no index in `data`.
+ */
 function toExportColumns<TData extends RowData>(
   columns: ReturnType<typeof dataColumns<TData>>,
   coreRows: Array<GridRow<TData>>,
@@ -48,7 +51,11 @@ function toExportColumns<TData extends RowData>(
     return {
       label: columnLabel(column),
       width: column.getSize(),
-      value: (row: TData) => exportValue ? exportValue(row) : models.get(row)?.getValue(column.id),
+      value: (row: TData) => {
+        if (exportValue) return exportValue(row)
+        const model = models.get(row)
+        return model ? model.getValue(column.id) : column.accessorFn?.(row, -1)
+      },
     }
   })
 }
@@ -69,9 +76,12 @@ export type ExportContext<TData extends RowData> = {
   pageRows: Array<GridRow<TData>>
   selection: DataTableRowSelection
   columnSelection: DataTableColumnSelection
-  pagination: DataTablePagination
-  /** Server mode: the loaded rows are one page of `rowCount`. */
-  server: boolean
+  /** The selection's `scopeKey`, carried to a request for every matching row. */
+  scopeKey: string | undefined
+  /** Server mode: `server.rowCount`, of which the loaded rows are one page. Null on the client. */
+  serverRowCount: number | null
+  /** Server mode: selected rows' data kept from when they were loaded (`useHeldRows`). */
+  heldRows?: ReadonlyMap<string, TData>
 }
 
 /**
@@ -88,13 +98,14 @@ export type ExportContext<TData extends RowData> = {
  * too), `auto`: selected, else visible.
  *
  * In server mode, whenever the scope reaches past the loaded page, `request`
- * describes it for the app's backend; `rows` still holds the loaded part.
+ * describes it for the app's backend; `rows` still holds the loaded part. A
+ * page that holds all `rowCount` rows reaches nothing past it.
  */
 export function getExportData<TData extends RowData>(
   context: ExportContext<TData>,
   options: { rows?: DataTableExportRows; columns?: DataTableExportColumns } = {},
 ): DataTableExportData<TData> {
-  const { table, pageRows, selection, columnSelection, pagination, server } = context
+  const { table, pageRows, selection, columnSelection, scopeKey, serverRowCount, heldRows } = context
 
   // Columns.
   const visible = dataColumns(table, 'visible')
@@ -109,6 +120,7 @@ export function getExportData<TData extends RowData>(
 
   // Rows.
   const filtered = table.getRowModel().rows // manual pagination: every filtered, sorted row
+  const partial = serverRowCount !== null && filtered.length < serverRowCount
   const selectedRows = selectedLoadedRows(table, selection)
   const hasSelection = selection.type === 'allMatching' || selection.ids.length > 0
   let mode = options.rows ?? 'auto'
@@ -117,14 +129,19 @@ export function getExportData<TData extends RowData>(
   }
 
   let rows: Array<GridRow<TData>>
+  // Selected rows from other pages or searches, kept from when they were loaded.
+  let held: TData[] = []
   let reachesServer = false
   switch (mode) {
-    case 'selected':
+    case 'selected': {
       rows = selectedRows
-      // Selected rows the page doesn't hold: an allMatching selection, or ids from other pages.
-      reachesServer =
-        selection.type === 'allMatching' || selection.ids.some((id) => !table.getCoreRowModel().rowsById[id])
+      const loaded = table.getCoreRowModel().rowsById
+      const offPage = selection.type === 'ids' ? selection.ids.filter((id) => !loaded[id]) : []
+      held = offPage.flatMap((id) => (heldRows?.has(id) ? [heldRows.get(id)!] : []))
+      // The page and the held rows don't cover it: an allMatching selection, or ids never loaded here.
+      reachesServer = (selection.type === 'allMatching' && partial) || held.length < offPage.length
       break
+    }
     case 'page':
       rows = pageRows
       break
@@ -134,21 +151,34 @@ export function getExportData<TData extends RowData>(
     case 'filtered':
     case 'allMatching':
       rows = filtered
-      reachesServer = true
+      reachesServer = partial
       break
   }
 
   const columns = toExportColumns(chosenColumns, table.getCoreRowModel().rows)
+  // Rows picked one by one are asked for by id: the current filters may hide
+  // some of them, and the export must not lose them.
   const request: DataTableExportRequest | null =
-    server && reachesServer
+    serverRowCount !== null && reachesServer
       ? {
           columns: chosenColumns.map((column) => column.id),
-          selection: mode === 'selected' ? selection : null,
           sorting: table.state.sorting,
-          columnFilters: table.state.columnFilters,
-          pagination,
+          rows:
+            mode === 'selected' && selection.type === 'ids'
+              ? { type: 'ids', ids: selection.ids }
+              : {
+                  type: 'matching',
+                  columnFilters: table.state.columnFilters,
+                  ...(scopeKey !== undefined ? { scopeKey } : {}),
+                  excludedIds: mode === 'selected' && selection.type === 'allMatching' ? selection.excludedIds : [],
+                },
         }
       : null
 
-  return { columns, rows: rows.map((row) => row.original), request }
+  return {
+    columns,
+    rows: [...rows.map((row) => row.original), ...held],
+    scope: mode === 'allMatching' ? 'filtered' : mode,
+    request,
+  }
 }

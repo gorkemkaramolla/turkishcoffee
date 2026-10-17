@@ -9,13 +9,14 @@ import { functionalUpdate, type Updater } from '@tanstack/react-table'
  * `onChange` with the resolved value.
  *
  * Successive updates in one event chain off each other, not off the
- * last render — two quick TanStack updates both land.
+ * last render — two quick TanStack updates both land. Extra arguments to
+ * `set` reach `onChange` after the value (what the change was).
  */
-export function useControllableState<T>(
+export function useControllableState<T, A extends unknown[] = []>(
   value: T | undefined,
   initial: T | (() => T),
-  onChange?: (next: T) => void,
-): [T, (updater: Updater<T>) => void] {
+  onChange?: (next: T, ...args: A) => void,
+): [T, (updater: Updater<T>, ...args: A) => void] {
   const [internal, setInternal] = useState(initial)
   const controlled = value !== undefined
   const current = controlled ? value : internal
@@ -28,12 +29,12 @@ export function useControllableState<T>(
   })
 
   const set = useCallback(
-    (updater: Updater<T>) => {
+    (updater: Updater<T>, ...args: A) => {
       const next = functionalUpdate(updater, latest.current)
       if (Object.is(next, latest.current)) return
       latest.current = next
       if (!controlled) setInternal(next)
-      onChangeRef.current?.(next)
+      onChangeRef.current?.(next, ...args)
     },
     [controlled],
   )

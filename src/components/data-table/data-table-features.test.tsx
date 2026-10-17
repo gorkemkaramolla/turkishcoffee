@@ -20,7 +20,7 @@ const columns: Array<DataTableColumn<Person>> = [
 ]
 
 function Table(props: Partial<DataTableProps<Person>>) {
-  return <DataTable aria-label="Records" columns={columns} data={people} getRowId={(row) => row.id} locale="tr" {...props} />
+  return <DataTable aria-label="Records" columns={columns} data={people} getRowId={(row) => row.id} {...(props as object)} />
 }
 
 function bodyRows() {
@@ -48,14 +48,41 @@ afterEach(() => {
 })
 
 describe('row selection', () => {
+  it('counts a selection beside Export without moving it, and clears rows and columns from the count', () => {
+    const { container } = render(
+      <Table selectable selectableColumns hideable exportable toolbar={<input aria-label="Search records" />} />,
+    )
+    const search = screen.getByRole('textbox', { name: 'Search records' })
+    const exportButton = screen.getByRole('button', { name: 'Export' })
+    fireEvent.change(search, { target: { value: 'draft search' } })
+    act(() => screen.getAllByRole('checkbox', { name: 'Select row' })[0]!.click())
+    act(() => screen.getByRole('button', { name: 'Select column Name', hidden: true }).click())
+
+    const bar = container.querySelector('[data-slot="data-table-selection"]') as HTMLElement
+    expect(within(bar).getByRole('status').textContent).toContain('1 row selected')
+    // The count joins the controls row; Export is the same button, where it was.
+    expect(bar.closest('[data-slot="data-table-controls"]')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Export' })).toBe(exportButton)
+    const clear = within(bar).getByRole('button', { name: 'Clear selection' })
+    expect(screen.getByRole('textbox', { name: 'Search records' })).toBe(search)
+    expect((search as HTMLInputElement).value).toBe('draft search')
+
+    act(() => clear.click())
+    expect(container.querySelector('[data-slot="data-table-selection"]')).toBeNull()
+    expect(bodyRows().every((row) => row.getAttribute('aria-selected') !== 'true')).toBe(true)
+    expect(screen.getByRole('button', { name: 'Select column Name', hidden: true }).getAttribute('aria-pressed')).toBe('false')
+    expect(screen.getByRole('button', { name: 'Export' })).toBe(exportButton)
+    expect(screen.getByRole('textbox', { name: 'Search records' })).toBe(search)
+  })
+
   it('header box: none → all, some → all, all → none', () => {
-    const onSelectionChange = vi.fn()
-    render(<Table selectable onSelectionChange={onSelectionChange} />)
+    const onChange = vi.fn()
+    render(<Table selectable={{ onChange }} />)
     const all = screen.getByRole('checkbox', { name: 'Select all rows' })
 
     act(() => all.click())
     expect(bodyRows().every((row) => row.getAttribute('aria-selected') === 'true')).toBe(true)
-    expect(onSelectionChange).toHaveBeenLastCalledWith(people)
+    expect(onChange).toHaveBeenLastCalledWith({ type: 'ids', ids: people.map((person) => person.id) })
 
     // Deselect one: the header box goes mixed; clicking it selects all again.
     act(() => screen.getAllByRole('checkbox', { name: 'Select row' })[0]!.click())
@@ -146,20 +173,36 @@ describe('select all in two steps', () => {
 })
 
 describe('column filter', () => {
-  it('matches Turkish letters case-insensitively and resets to page 1', async () => {
-    render(<Table filterable pageSize={2} />)
-    act(() => screen.getByRole('button', { name: 'Next page' }).click())
-    expect(screen.getByText('3–4 of 4')).toBeTruthy()
+  it('matches Turkish letters case-insensitively and resets to page 1, in Turkish', async () => {
+    render(<Table filterable pageSize={2} locale="tr-TR" />)
+    act(() => screen.getByRole('button', { name: 'Sonraki sayfa' }).click())
+    expect(screen.getByText('3–4 / 4')).toBeTruthy()
 
-    act(() => screen.getByRole('button', { name: 'Filter Name' }).click())
+    act(() => screen.getByRole('button', { name: 'Name filtrele' }).click())
     const input = await screen.findByRole('textbox')
     act(() => {
       fireEvent.change(input, { target: { value: 'i' } })
     })
-    act(() => screen.getByRole('button', { name: 'Apply' }).click())
+    act(() => screen.getByRole('button', { name: 'Uygula' }).click())
     // "i" finds İlker but not Irmak (I is dotless ı in Turkish).
     expect(names()).toEqual(['İlker'])
-    expect(screen.getByText('1–1 of 1')).toBeTruthy()
+    expect(screen.getByText('1–1 / 1')).toBeTruthy()
+  })
+
+  it('clears every filter from the toolbar, shown only while one is set', () => {
+    render(
+      <Table
+        filterable
+        pageSize={2}
+        defaultQuery={{ columnFilters: [{ id: 'name', value: 'i' }, { id: 'city', value: 'stan' }] }}
+      />,
+    )
+    expect(names()).toEqual(['İlker'])
+
+    act(() => screen.getByRole('button', { name: 'Clear filters' }).click())
+    expect(names()).toEqual(['İlker', 'Irmak'])
+    expect(screen.getByText('1–2 of 4')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Clear filters' })).toBeNull()
   })
 })
 
@@ -176,7 +219,7 @@ describe('pagination', () => {
   it('virtualizes on its own past 100 rows', () => {
     const many = Array.from({ length: 5000 }, (_, i) => ({ id: String(i), name: `P${i}`, city: null, age: i }))
     render(<Table data={many} pageSize="all" />)
-    expect(screen.getByText('1–5.000 of 5.000')).toBeTruthy()
+    expect(screen.getByText('1–5,000 of 5,000')).toBeTruthy()
     expect(bodyRows().length).toBeLessThan(60)
   })
 })
@@ -237,8 +280,8 @@ describe('export', () => {
     act(() => screen.getByRole('button', { name: 'Next page' }).click())
     act(() => screen.getAllByRole('checkbox', { name: 'Select row' })[1]!.click())
 
-    const [csv] = await readDownloads(() => exportCsv('2 columns · 2 rows'))
-    expect(csv).toEqual(['Name;Age', 'Irmak;9', 'Şule;45'])
+    const [csv] = await readDownloads(() => exportCsv('2 columns · 2 selected rows'))
+    expect(csv).toEqual(['Name,Age', 'Irmak,9', 'Şule,45'])
   })
 
   it('a column selection exports this page, or every row once widened', async () => {
@@ -246,7 +289,7 @@ describe('export', () => {
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Select column Name', hidden: true }))
     })
-    const [page] = await readDownloads(() => exportCsv('1 column · 2 rows'))
+    const [page] = await readDownloads(() => exportCsv('1 column · 2 rows on this page'))
     expect(page).toEqual(['Name', 'İlker', 'Irmak'])
 
     vi.restoreAllMocks()

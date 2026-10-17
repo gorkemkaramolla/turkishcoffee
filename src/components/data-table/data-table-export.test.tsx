@@ -4,7 +4,12 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import { DataTable, type DataTableProps } from './data-table'
 import type { DataTableColumn } from './features'
 import type { DataTableHandle } from './state'
-import { toCsv } from '../table/export'
+import { exportTable, toCsv } from '../table/export'
+
+vi.mock('../table/export', async (original) => ({
+  ...(await original<typeof import('../table/export')>()),
+  exportTable: vi.fn(async () => {}),
+}))
 
 type Person = { id: string; name: string; city: string; age: number; active: boolean }
 
@@ -26,7 +31,7 @@ const columns: Array<DataTableColumn<Person>> = [
 
 function setup(props: Partial<DataTableProps<Person>> = {}) {
   const ref = createRef<DataTableHandle<Person>>()
-  render(<DataTable aria-label="Records" ref={ref} columns={columns} data={people} getRowId={(row) => row.id} pageSize={2} {...props} />)
+  render(<DataTable aria-label="Records" ref={ref} columns={columns} data={people} getRowId={(row) => row.id} pageSize={2} {...(props as object)} />)
   return ref
 }
 
@@ -52,7 +57,7 @@ describe('getExportData: rows', () => {
   })
 
   it('page, loaded, filtered and selected', async () => {
-    const ref = setup({ selectable: true, filterable: true, sortable: true, initialState: { sorting: [{ id: 'age', desc: true }] } })
+    const ref = setup({ selectable: true, filterable: true, sortable: true, defaultQuery: { sorting: [{ id: 'age', desc: true }] } })
     expect(names(ref, { rows: 'page' })).toEqual(['P5', 'P4'])
     act(() => screen.getAllByRole('checkbox', { name: 'Select row' })[1]!.click())
     expect(names(ref)).toEqual(['P4'])
@@ -91,6 +96,28 @@ describe('getExportData: rows', () => {
   })
 })
 
+describe('getExportData: scope', () => {
+  it('names the rows it covers once auto is resolved', () => {
+    const ref = setup({ selectable: true })
+    expect(ref.current!.getExportData().scope).toBe('filtered')
+    expect(ref.current!.getExportData({ rows: 'page' }).scope).toBe('page')
+    expect(ref.current!.getExportData({ rows: 'loaded' }).scope).toBe('loaded')
+    expect(ref.current!.getExportData({ rows: 'allMatching' }).scope).toBe('filtered')
+    act(() => screen.getAllByRole('checkbox', { name: 'Select row' })[1]!.click())
+    expect(ref.current!.getExportData().scope).toBe('selected')
+  })
+
+  it('the export menu says which rows go out', async () => {
+    setup({ selectable: true, exportable: true })
+    act(() => screen.getByRole('button', { name: 'Export' }).click())
+    expect(await screen.findByText('4 columns · 6 rows')).toBeTruthy()
+    act(() => screen.getByRole('button', { name: 'Export' }).click())
+    act(() => screen.getAllByRole('checkbox', { name: 'Select row' })[0]!.click())
+    act(() => screen.getByRole('button', { name: 'Export' }).click())
+    expect(await screen.findByText('4 columns · 1 selected row')).toBeTruthy()
+  })
+})
+
 describe('getExportData: columns', () => {
   it('visible data columns in display order; display columns without exportValue are skipped', () => {
     const ref = setup({ reorderable: true, hideable: true, selectable: true })
@@ -119,12 +146,11 @@ describe('server mode', () => {
   const serverProps = (extra: Partial<DataTableProps<Person>> = {}): Partial<DataTableProps<Person>> => ({
     data: people.slice(0, 2),
     server: { rowCount: 50 },
-    pagination: { pageIndex: 0, pageSize: 2 },
-    onPaginationChange: () => {},
-    columnFilters: [{ id: 'city', value: 'Ank' }],
-    onColumnFiltersChange: () => {},
-    sorting: [{ id: 'age', desc: true }],
-    onSortingChange: () => {},
+    query: {
+      sorting: [{ id: 'age', desc: true }],
+      columnFilters: [{ id: 'city', value: 'Ank' }],
+      pagination: { pageIndex: 0, pageSize: 2 },
+    },
     ...extra,
   })
 
@@ -134,16 +160,47 @@ describe('server mode', () => {
     expect(all.rows.map((row) => row.name)).toEqual(['P0', 'P1'])
     expect(all.request).toEqual({
       columns: ['name', 'city', 'age', 'active'],
-      selection: null,
       sorting: [{ id: 'age', desc: true }],
-      columnFilters: [{ id: 'city', value: 'Ank' }],
-      pagination: { pageIndex: 0, pageSize: 2 },
+      rows: { type: 'matching', columnFilters: [{ id: 'city', value: 'Ank' }], excludedIds: [] },
     })
     expect(ref.current!.getExportData({ rows: 'page' }).request).toBeNull()
 
     act(() => screen.getAllByRole('checkbox')[0]!.click())
     act(() => screen.getAllByRole('checkbox')[0]!.click())
-    expect(ref.current!.getExportData().request?.selection).toEqual({ type: 'allMatching', excludedIds: [] })
+    act(() => screen.getAllByRole('checkbox', { name: 'Select row' })[0]!.click())
+    expect(ref.current!.getExportData().request?.rows).toEqual({
+      type: 'matching',
+      columnFilters: [{ id: 'city', value: 'Ank' }],
+      excludedIds: ['0'],
+    })
+  })
+
+  it('rows picked one by one are asked for by id, whatever the filters', () => {
+    const ref = setup({ ...serverProps(), selectable: { value: { type: 'ids', ids: ['0', '40'] }, scopeKey: 'search=P' } })
+    expect(ref.current!.getExportData().request?.rows).toEqual({ type: 'ids', ids: ['0', '40'] })
+  })
+
+  it('fetchRows: the app fetches what the request covers, the grid writes the file', async () => {
+    const fetched: Person = { id: '40', name: 'P40', city: 'Ankara', age: 60, active: false }
+    const fetchRows = vi.fn(async () => [fetched])
+    setup({ ...serverProps(), selectable: { scopeKey: 'search=P' }, exportable: { fileName: 'people', fetchRows } })
+    act(() => screen.getByRole('button', { name: 'Export' }).click())
+    expect(await screen.findByText('4 columns · 50 rows')).toBeTruthy()
+    await act(async () => screen.getByRole('menuitem', { name: 'CSV (.csv)' }).click())
+    expect(fetchRows).toHaveBeenCalledWith(expect.objectContaining({ rows: expect.objectContaining({ type: 'matching', scopeKey: 'search=P' }) }))
+    const written = vi.mocked(exportTable).mock.lastCall![0] as Parameters<typeof exportTable<Person>>[0]
+    expect(written).toMatchObject({ format: 'csv', rows: [fetched], fileName: 'people' })
+    expect(written.columns.map((column) => column.value(fetched))).toEqual(['P40', 'Ankara', 60, 'Passive'])
+  })
+
+  it('a failed fetch reaches onError and the menu says the export failed', async () => {
+    const failure = new Error('offline')
+    const onError = vi.fn()
+    setup({ ...serverProps(), exportable: { fetchRows: async () => Promise.reject(failure), onError } })
+    act(() => screen.getByRole('button', { name: 'Export' }).click())
+    await act(async () => (await screen.findByRole('menuitem', { name: 'Excel (.xlsx)' })).click())
+    expect(onError).toHaveBeenCalledWith(failure, 'xlsx')
+    expect(screen.getByRole('alert').textContent).toBe('Export failed. Please try again.')
   })
 
   it("the toolbar hands a server-wide export to onServerExport; without it, it says only loaded rows go out", async () => {
@@ -152,13 +209,27 @@ describe('server mode', () => {
     act(() => screen.getByRole('button', { name: 'Export' }).click())
     expect(await screen.findByText('4 columns · 50 rows')).toBeTruthy()
     await act(async () => screen.getByRole('menuitem', { name: 'Excel (.xlsx)' }).click())
-    expect(onServerExport).toHaveBeenCalledWith(expect.objectContaining({ selection: null }), 'xlsx')
+    expect(onServerExport).toHaveBeenCalledWith(expect.objectContaining({ rows: expect.objectContaining({ type: 'matching' }) }), 'xlsx')
+  })
+
+  it('its columns read rows the grid does not hold, so rows fetched for the request can be written with them', () => {
+    const ref = setup(serverProps())
+    const fetched: Person = { id: '40', name: 'P40', city: 'Ankara', age: 60, active: false }
+    const { columns } = ref.current!.getExportData()
+    expect(columns.map((column) => column.value(fetched))).toEqual(['P40', 'Ankara', 60, 'Passive'])
   })
 
   it('without onServerExport the menu is honest about what it writes', async () => {
     setup({ ...serverProps(), exportable: true })
     act(() => screen.getByRole('button', { name: 'Export' }).click())
     expect(await screen.findByText('4 columns · 2 loaded rows only')).toBeTruthy()
+  })
+
+  it('a page that holds every matching row is the whole export: no request, nothing left out', async () => {
+    const ref = setup({ ...serverProps({ server: { rowCount: 2 } }), exportable: true })
+    expect(ref.current!.getExportData().request).toBeNull()
+    act(() => screen.getByRole('button', { name: 'Export' }).click())
+    expect(await screen.findByText('4 columns · 2 rows')).toBeTruthy()
   })
 })
 

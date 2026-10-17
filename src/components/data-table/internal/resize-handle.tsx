@@ -57,10 +57,12 @@ export function ResizeHandle<TData extends RowData>({
       <span
         aria-hidden="true"
         className={cn(
-          'h-1/2 w-px self-center rounded-full bg-border transition-[height,background-color]',
-          'group-hover/resize:h-full group-hover/resize:w-0.5 group-hover/resize:bg-primary',
-          'group-focus-visible/resize:h-full group-focus-visible/resize:w-0.5 group-focus-visible/resize:bg-primary',
-          'group-data-resizing/resize:h-full group-data-resizing/resize:w-0.5 group-data-resizing/resize:bg-primary',
+          // Revealed by hovering the header row. A touch screen has no hover, so it stays visible there.
+          'h-1/2 w-px self-center rounded-full bg-border opacity-0 transition-[height,background-color,opacity]',
+          'group-hover/headers:opacity-100 [@media(hover:none)]:opacity-100',
+          'group-hover/resize:h-full group-hover/resize:w-0.5 group-hover/resize:bg-primary group-hover/resize:opacity-100',
+          'group-focus-visible/resize:h-full group-focus-visible/resize:w-0.5 group-focus-visible/resize:bg-primary group-focus-visible/resize:opacity-100',
+          'group-data-resizing/resize:h-full group-data-resizing/resize:w-0.5 group-data-resizing/resize:bg-primary group-data-resizing/resize:opacity-100',
         )}
       />
     </div>

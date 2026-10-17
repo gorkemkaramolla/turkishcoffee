@@ -54,7 +54,7 @@ describe('public contracts (types)', () => {
       expectTypeOf(props.onApply).parameter(0).toBeUnknown()
       return null
     }
-    const column: DataTableColumn<Employee> = { accessorKey: 'active', meta: { filterControl: Control } }
+    const column: DataTableColumn<Employee> = { accessorKey: 'active', meta: { filter: { control: Control } } }
     void column
   })
 
@@ -65,11 +65,11 @@ describe('public contracts (types)', () => {
       rowVirtualization: false,
       autoSize: 'data',
       toolbar: null,
-      isRowSelectable: (row) => row.active,
+      selectable: { isRowSelectable: (row) => row.active, checkboxes: 'hover', scope: 'page' },
       loading: true,
       loadingMessage: 'Loading',
       errorMessage: 'Failed',
-      onExportError: (_error, format) => expectTypeOf(format).toEqualTypeOf<'csv' | 'xlsx'>(),
+      exportable: { onError: (_error, format) => expectTypeOf(format).toEqualTypeOf<'csv' | 'xlsx'>() },
       'aria-labelledby': 'heading',
       dir: 'rtl',
       locale: 'tr-TR',
@@ -77,5 +77,16 @@ describe('public contracts (types)', () => {
     // @ts-expect-error -- autoSize takes 'initial' | 'data' | false
     const wrong: DataTableProps<Employee> = { columns, data: [], autoSize: true }
     void [props, wrong]
+  })
+
+  it('keeps each choice of two ways exclusive', () => {
+    const fetchRows = async () => [] as Employee[]
+    // @ts-expect-error -- the grid writes fetched rows, or the backend writes the file: not both
+    const both: DataTableProps<Employee> = { columns, data: [], exportable: { fetchRows, onServerExport: () => {} } }
+    // @ts-expect-error -- the layout lives in this browser or with the app: not both
+    const twice: DataTableProps<Employee> = { columns, data: [], layout: { storageKey: 'k', saved: null } }
+    // @ts-expect-error -- server selection needs getRowId
+    const unkeyed: DataTableProps<Employee> = { columns, data: [], server: { rowCount: 0 }, selectable: true }
+    void [both, twice, unkeyed]
   })
 })

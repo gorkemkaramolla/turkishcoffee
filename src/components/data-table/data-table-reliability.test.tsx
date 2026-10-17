@@ -19,7 +19,7 @@ const getRowId = (row: Person) => row.id
 
 function mount(props: Partial<DataTableProps<Person>> = {}) {
   const ref = createRef<DataTableHandle<Person>>()
-  const view = render(<DataTable aria-label="People" ref={ref} columns={columns} data={data} getRowId={getRowId} {...props} />)
+  const view = render(<DataTable aria-label="People" ref={ref} columns={columns} data={data} getRowId={getRowId} {...(props as object)} />)
   return { ...view, ref }
 }
 const active = () => document.getElementById(screen.getByRole('grid').getAttribute('aria-activedescendant')!)
@@ -33,10 +33,14 @@ describe('review regressions', () => {
     expect(active()?.textContent).toBe('P0')
     act(() => ref.current!.setPageIndex(1))
     expect(active()?.textContent).toBe('P2')
-    rerender(<DataTable aria-label="People" columns={columns} data={data} getRowId={getRowId} sortable sorting={[{ id: 'name', desc: true }]} />)
+    rerender(<DataTable aria-label="People" columns={columns} data={data} getRowId={getRowId} sortable query={{ sorting: [{ id: 'name', desc: true }], columnFilters: [] }} />)
     expect(active()?.textContent).toBe('P2')
-    rerender(<DataTable aria-label="People" columns={columns} data={data} columnVisibility={{ name: false }} />)
-    expect(screen.getByRole('grid').hasAttribute('aria-activedescendant')).toBe(false)
+    const two: DataTableColumn<Person>[] = [...columns, { id: 'code', accessorFn: (row) => `#${row.id}`, header: 'Code' }]
+    rerender(<DataTable aria-label="People" columns={two} data={data} getRowId={getRowId} hideable />)
+    act(() => screen.getByRole('button', { name: 'Name column options' }).click())
+    act(() => screen.getByRole('menuitem', { name: 'Hide column' }).click())
+    // The active cell's column is gone: the active cell moves to one that exists.
+    expect(active()?.getAttribute('data-col')).toBe('code')
   })
 
   it('names the grid and page size control', () => {
@@ -46,7 +50,7 @@ describe('review regressions', () => {
   })
 
   it('preserves original accessor indices when exporting sorted rows', () => {
-    const { ref } = mount({ sortable: true, columns: [{ id: 'index', header: 'Index', accessorFn: (_, index) => index + 1 }], sorting: [{ id: 'index', desc: true }] })
+    const { ref } = mount({ sortable: true, columns: [{ id: 'index', header: 'Index', accessorFn: (_, index) => index + 1 }], defaultQuery: { sorting: [{ id: 'index', desc: true }] } })
     const prepared = ref.current!.getExportData()
     expect(prepared.rows.map(prepared.columns[0]!.value)).toEqual([6, 5, 4, 3, 2, 1])
   })
@@ -55,21 +59,29 @@ describe('review regressions', () => {
     const onServerExport = vi.fn()
     const { ref } = mount({ server: { rowCount: 100 }, pageSize: 6, exportable: { onServerExport } })
     await ref.current!.export('csv')
-    expect(onServerExport).toHaveBeenCalledWith(expect.objectContaining({ selection: null }), 'csv')
+    expect(onServerExport).toHaveBeenCalledWith(expect.objectContaining({ rows: expect.objectContaining({ type: 'matching' }) }), 'csv')
     expect(exportTable).not.toHaveBeenCalled()
   })
 
   it('rejects an incomplete imperative export and permits an explicit loaded export', async () => {
     const onExportError = vi.fn()
-    const { ref } = mount({ server: { rowCount: 100 }, pageSize: 6, onExportError })
-    await expect(ref.current!.export('csv')).rejects.toThrow('onServerExport')
+    const { ref } = mount({ server: { rowCount: 100 }, pageSize: 6, exportable: { onError: onExportError } })
+    await expect(ref.current!.export('csv')).rejects.toThrow('fetchRows or onServerExport')
     expect(onExportError).toHaveBeenCalledOnce()
     await ref.current!.export('csv', { rows: 'loaded' })
     expect(exportTable).toHaveBeenCalledWith(expect.objectContaining({ rows: data }))
   })
 
+  it('writes a server page that holds every matching row itself', async () => {
+    const onServerExport = vi.fn()
+    const { ref } = mount({ server: { rowCount: 6 }, pageSize: 6, exportable: { onServerExport } })
+    await ref.current!.export('csv')
+    expect(onServerExport).not.toHaveBeenCalled()
+    expect(exportTable).toHaveBeenCalledWith(expect.objectContaining({ rows: data }))
+  })
+
   it('returns explicit selected hidden rows after filtered rows', () => {
-    const { ref } = mount({ selectable: true, filterable: true, initialState: { rowSelection: { type: 'ids', ids: ['0', '1'] }, columnFilters: [{ id: 'name', value: 'P1' }] } })
+    const { ref } = mount({ selectable: { defaultValue: { type: 'ids', ids: ['0', '1'] } }, filterable: true, defaultQuery: { columnFilters: [{ id: 'name', value: 'P1' }] } })
     expect(ref.current!.getSelectedRows().map(getRowId)).toEqual(['1', '0'])
     expect(ref.current!.getExportData({ rows: 'selected' }).rows.map(getRowId)).toEqual(['1', '0'])
   })
@@ -108,7 +120,7 @@ describe('public contracts', () => {
   })
 
   it('restricts every client selection path and its counts', () => {
-    const { ref } = mount({ selectable: true, isRowSelectable: row => row.eligible, pageSize: 2 })
+    const { ref } = mount({ selectable: { isRowSelectable: (row) => row.eligible }, pageSize: 2 })
     expect(screen.getAllByRole('checkbox', { name: 'Select row' })[1]!.hasAttribute('disabled')).toBe(true)
     fireEvent.keyDown(screen.getByRole('grid'), { key: 'a', ctrlKey: true })
     expect(ref.current!.getSelectedRows().map(getRowId)).toEqual(['0', '2', '4'])
@@ -117,17 +129,29 @@ describe('public contracts', () => {
 
   it('restricted server selection uses loaded eligible IDs only', () => {
     const onRowSelectionChange = vi.fn()
-    mount({ server: { rowCount: 100 }, selectable: true, isRowSelectable: row => row.eligible, onRowSelectionChange })
+    mount({ server: { rowCount: 100 }, selectable: { isRowSelectable: (row) => row.eligible, onChange: onRowSelectionChange } })
     fireEvent.keyDown(screen.getByRole('grid'), { key: 'a', ctrlKey: true })
     expect(onRowSelectionChange).toHaveBeenLastCalledWith({ type: 'ids', ids: ['0', '2', '4'] })
     expect(screen.queryByText('Select all 100 rows')).toBeNull()
+  })
+
+  it('restricted server selection reaches every matching row once the backend counts the eligible ones', () => {
+    const onChange = vi.fn()
+    mount({ server: { rowCount: 100 }, selectable: { isRowSelectable: (row) => row.eligible, selectableRowCount: 50, onChange } })
+    fireEvent.keyDown(screen.getByRole('grid'), { key: 'a', ctrlKey: true })
+    expect(onChange).toHaveBeenLastCalledWith({ type: 'allMatching', excludedIds: [] })
+    expect(screen.getByText('50 rows selected')).toBeTruthy()
+    // Ineligible loaded rows stay unticked.
+    expect(screen.getAllByRole('checkbox', { name: 'Select row' }).map((box) => box.getAttribute('aria-checked'))).toEqual([
+      'true', 'false', 'true', 'false', 'true', 'false',
+    ])
   })
 
   it('supports non-string filters and controls without serializing values', () => {
     const value = { minimum: 3n, self: {} as unknown }
     value.self = value
     const custom: DataTableColumn<Person>[] = [{ accessorKey: 'name', header: 'Name', filterFn: (row, _, filter) => Number(row.original.id) >= Number(filter.minimum), meta: {
-      filterControl: ({ onApply }) => <button onClick={() => onApply(value)}>Apply minimum</button>,
+      filter: { control: ({ onApply }) => <button onClick={() => onApply(value)}>Apply minimum</button> },
     } }]
     const { ref } = mount({ columns: custom, filterable: true })
     fireEvent.click(screen.getByRole('button', { name: 'Filter Name' }))
@@ -176,7 +200,7 @@ describe('public contracts', () => {
   it('debounces layout persistence and cancels pending edits on reset', () => {
     vi.useFakeTimers()
     const onLayoutChange = vi.fn()
-    const { ref } = mount({ resizable: true, storageKey: 'audit', onLayoutChange })
+    const { ref } = mount({ resizable: true, layout: { storageKey: 'audit', onChange: onLayoutChange } })
     const handle = screen.getByRole('separator', { name: 'Resize Name' })
     for (let i = 0; i < 8; i++) fireEvent.keyDown(handle, { key: 'ArrowRight' })
     expect(onLayoutChange).not.toHaveBeenCalled()
@@ -195,7 +219,7 @@ describe('plan follow-ups', () => {
     const failure = new Error('disk full')
     vi.mocked(exportTable).mockRejectedValueOnce(failure)
     const onExportError = vi.fn()
-    mount({ exportable: true, onExportError })
+    mount({ exportable: { onError: onExportError } })
     act(() => screen.getByRole('button', { name: 'Export' }).click())
     await act(async () => screen.getByRole('menuitem', { name: 'CSV (.csv)' }).click())
     expect(onExportError).toHaveBeenCalledWith(failure, 'csv')
@@ -207,34 +231,44 @@ describe('plan follow-ups', () => {
     const failure = new Error('denied')
     vi.mocked(exportTable).mockRejectedValueOnce(failure)
     const onExportError = vi.fn()
-    const { ref } = mount({ onExportError })
+    const { ref } = mount({ exportable: { onError: onExportError } })
     await expect(ref.current!.export('xlsx')).rejects.toBe(failure)
     expect(onExportError).toHaveBeenCalledWith(failure, 'xlsx')
   })
 
   it('clears a server allMatching selection when the filters change', () => {
     const onRowSelectionChange = vi.fn()
-    const props = { server: { rowCount: 100 }, selectable: true as const, getRowId, onRowSelectionChange, rowSelection: { type: 'allMatching' as const, excludedIds: ['1'] } }
-    const { rerender } = render(<DataTable aria-label="People" columns={columns} data={data} {...props} columnFilters={[]} />)
+    const selectable = { onChange: onRowSelectionChange, value: { type: 'allMatching' as const, excludedIds: ['1'] } }
+    const table = (value: string) => (
+      <DataTable aria-label="People" columns={columns} data={data} server={{ rowCount: 100 }} getRowId={getRowId} selectable={selectable}
+        query={{ sorting: [], columnFilters: value ? [{ id: 'name', value }] : [] }} />
+    )
+    const { rerender } = render(table(''))
     expect(onRowSelectionChange).not.toHaveBeenCalled()
-    rerender(<DataTable aria-label="People" columns={columns} data={data} {...props} columnFilters={[{ id: 'name', value: 'P' }]} />)
+    rerender(table('P'))
     expect(onRowSelectionChange).toHaveBeenLastCalledWith({ type: 'ids', ids: [] })
   })
 
   it('restricted server Ctrl+A adds this page to ids selected on other pages', () => {
     const onRowSelectionChange = vi.fn()
-    mount({ server: { rowCount: 100 }, selectable: true, isRowSelectable: row => row.eligible, onRowSelectionChange, initialState: { rowSelection: { type: 'ids', ids: ['remote-7'] } } })
+    mount({
+      server: { rowCount: 100 },
+      selectable: { isRowSelectable: (row) => row.eligible, onChange: onRowSelectionChange, defaultValue: { type: 'ids', ids: ['remote-7'] } },
+    })
     fireEvent.keyDown(screen.getByRole('grid'), { key: 'a', ctrlKey: true })
     expect(onRowSelectionChange).toHaveBeenLastCalledWith({ type: 'ids', ids: ['remote-7', '0', '2', '4'] })
   })
 
   it('rejects an allMatching selection under restricted server selection', () => {
-    expect(() => mount({ server: { rowCount: 100 }, selectable: true, isRowSelectable: row => row.eligible, rowSelection: { type: 'allMatching', excludedIds: [] } })).toThrow('explicit IDs')
+    expect(() => mount({
+      server: { rowCount: 100 },
+      selectable: { isRowSelectable: (row) => row.eligible, value: { type: 'allMatching', excludedIds: [] } },
+    })).toThrow('explicit IDs')
   })
 
   it('validates pagination inputs', () => {
     expect(() => mount({ pageSize: 0 })).toThrow('pageSize')
-    expect(() => mount({ pagination: { pageIndex: -1, pageSize: 10 } })).toThrow('pageIndex')
+    expect(() => mount({ query: { sorting: [], columnFilters: [], pagination: { pageIndex: -1, pageSize: 10 } } })).toThrow('pageIndex')
     expect(() => mount({ server: { rowCount: Number.NaN } })).toThrow('rowCount')
   })
 

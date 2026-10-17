@@ -1,7 +1,7 @@
 'use client'
 
 import type { ReactTable, RowData } from '@tanstack/react-table'
-import { Button } from '../../button/button'
+import { CommandButton } from '../../command-button/command-button'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -43,7 +43,7 @@ export function ColumnsMenu<TData extends RowData>({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="secondary" size="sm" />}>
+      <DropdownMenuTrigger render={<CommandButton />}>
         <ColumnsIcon />
         {labels.columns}
       </DropdownMenuTrigger>

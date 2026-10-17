@@ -1,6 +1,7 @@
 import '../../styles/storybook.css'
 import { afterEach, describe, expect, it } from 'vitest'
 import { act, cleanup, render } from '@testing-library/react'
+import { page } from 'vitest/browser'
 import { DataTable } from './data-table'
 import type { DataTableColumn } from './features'
 
@@ -101,6 +102,39 @@ describe('layout (Chromium)', () => {
     }
   })
 
+  // Mirroring the strip from the body's scroll event trails the body by a
+  // frame (it scrolls on the compositor first), which reads as the header
+  // shaking. Where the browser has scroll-driven animations it moves the
+  // header row itself, in the same frame; the strip never scrolls.
+  it('the header is moved by the browser, not by the scroll event, where it can (LTR and RTL)', async () => {
+    const native = CSS.supports('animation-timeline: scroll()')
+    for (const dir of ['ltr', 'rtl'] as const) {
+      for (const height of [undefined, 400]) {
+        const { container } = render(
+          <div style={{ width: 600 }} dir={dir}>
+            <DataTable aria-label="Records" columns={columns} data={rows} getRowId={(row) => row.id} height={height} dir={dir} />
+          </div>,
+        )
+        await frame()
+        const [strip, body] = container.querySelectorAll<HTMLElement>('[role="grid"] > [role="rowgroup"]')
+        const headerRow = strip!.querySelector<HTMLElement>('[data-dt-header-row]')!
+        body!.scrollLeft = dir === 'rtl' ? -700 : 700
+        await frame()
+        await frame()
+        if (native) {
+          expect(strip!.scrollLeft, `${dir} ${height}`).toBe(0)
+          expect(headerRow.getAnimations().some((a) => a.timeline?.constructor.name === 'ScrollTimeline')).toBe(true)
+        } else {
+          expect(strip!.scrollLeft).toBe(body!.scrollLeft)
+        }
+        const header = container.querySelector<HTMLElement>('[role="columnheader"][data-col="c10"]')!
+        const cell = container.querySelector<HTMLElement>('[role="row"][aria-rowindex="2"] [data-col="c10"]')!
+        expect(Math.round(header.getBoundingClientRect().left), `${dir} ${height}`).toBe(Math.round(cell.getBoundingClientRect().left))
+        cleanup()
+      }
+    }
+  })
+
   it('keyboard navigation reaches rows and columns that virtualization had not rendered', async () => {
     const wide: Array<DataTableColumn<Row>> = Array.from({ length: 80 }, (_, c) => ({
       id: `w${c}`,
@@ -143,7 +177,7 @@ describe('layout (Chromium)', () => {
     for (const display of ['grid', 'flex']) {
       const { container } = render(
         <div style={{ width: 600, display, flexDirection: 'column' }}>
-          <DataTable aria-label="Records" columns={columns} data={rows} getRowId={(row) => row.id} resizable initialState={{ columnSizing: wide }} />
+          <DataTable aria-label="Records" columns={columns} data={rows} getRowId={(row) => row.id} resizable layout={{ defaults: { columnSizing: wide } }} />
         </div>,
       )
       await frame()
@@ -154,6 +188,25 @@ describe('layout (Chromium)', () => {
       expect(body.scrollWidth, display).toBeGreaterThan(5000)
       cleanup()
     }
+  })
+
+  it('a cell taller than its row (a 36px button in a 32px sm row) scrolls neither way', async () => {
+    const fitting: Array<DataTableColumn<Row>> = [
+      ...columns.slice(0, 4),
+      { id: 'tall', header: 'Tall', size: 56, cell: () => <div style={{ width: 36, height: 36 }} /> },
+    ]
+    const { container } = render(
+      <div style={{ width: 900 }}>
+        <DataTable aria-label="Records" size="sm" columns={fitting} data={rows.slice(0, 5)} getRowId={(row) => row.id} />
+      </div>,
+    )
+    await frame()
+    const body = container.querySelectorAll<HTMLElement>('[role="grid"] > [role="rowgroup"]')[1]!
+    // The rows flow at their own height: there is nothing below the last one to
+    // scroll to, so no vertical scrollbar to take width and push the columns sideways.
+    expect(body.scrollHeight > body.clientHeight).toBe(true)
+    if (classicScrollbars()) expect(body.offsetWidth - body.clientWidth).toBe(0)
+    expect(body.scrollWidth).toBeLessThanOrEqual(body.clientWidth)
   })
 
   describe('resizing while the columns fit: the table keeps the frame width', () => {
@@ -231,6 +284,70 @@ describe('layout (Chromium)', () => {
       await frame()
       expect(email()).toBeLessThan(before)
       expect(rowWidth()).toBe(body.clientWidth)
+    })
+
+    it('fitting columns one after another does not pile the room into the last one', async () => {
+      const { body, rowWidth, handle, headers } = await setup()
+      const status = () => headers().find((header) => header.dataset.col === 'status')!.getBoundingClientRect().width
+      const before = status()
+      for (const id of ['name', 'email', 'phone']) {
+        act(() => {
+          handle(id)!.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
+        })
+        await frame()
+      }
+      expect(rowWidth()).toBe(body.clientWidth)
+      // Handing each fit's room to the right neighbour left status at nearly three times its width.
+      expect(status()).toBeLessThan(before * 1.5)
+    })
+  })
+
+  describe('quiet chrome', () => {
+    type Person = { id: string; name: string; role: string }
+    const people: Person[] = [
+      { id: '1', name: 'Ada', role: 'Engineer' },
+      { id: '2', name: 'Linus', role: 'Maintainer' },
+    ]
+    const personColumns: Array<DataTableColumn<Person>> = [
+      { accessorKey: 'name', header: 'Name' },
+      { accessorKey: 'role', header: 'Role' },
+    ]
+    const setup = async () => {
+      const { container } = render(
+        <div style={{ width: 600 }}>
+          <h1>Outside</h1>
+          <DataTable aria-label="People" columns={personColumns} data={people} getRowId={(row) => row.id} resizable selectable />
+        </div>,
+      )
+      await frame()
+      return container
+    }
+
+    it('resize lines stay hidden until the pointer is over the header row', async () => {
+      const container = await setup()
+      const line = container.querySelector<HTMLElement>('[role="separator"] > span')!
+      expect(getComputedStyle(line).opacity).toBe('0')
+      await page.elementLocator(container.querySelector('[role="columnheader"][data-col="role"]')!).hover()
+      await new Promise((resolve) => setTimeout(resolve, 200))
+      expect(getComputedStyle(line).opacity).toBe('1')
+      await page.getByRole('heading', { name: 'Outside' }).hover()
+    })
+
+    it('a selection checkbox takes a 32px target around its 16px box', async () => {
+      const container = await setup()
+      for (const checkbox of [
+        container.querySelector<HTMLElement>('[role="columnheader"] [role="checkbox"]')!,
+        container.querySelector<HTMLElement>('[role="gridcell"] [role="checkbox"]')!,
+      ]) {
+        checkbox.scrollIntoView({ block: 'center', inline: 'center' })
+        const box = checkbox.getBoundingClientRect()
+        expect(box.width).toBe(16)
+        const middle = { x: box.left + box.width / 2, y: box.top + box.height / 2 }
+        for (const [x, y] of [[box.left - 7, middle.y], [box.right + 7, middle.y], [middle.x, box.top - 7], [middle.x, box.bottom + 7]] as const) {
+          const hit = document.elementFromPoint(x, y)
+          expect(hit !== null && checkbox.contains(hit), `${x},${y}`).toBe(true)
+        }
+      }
     })
   })
 

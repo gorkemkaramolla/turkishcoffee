@@ -28,7 +28,7 @@ export const SelectionHeaderContext = createContext<{
  * outlined check), the next one every row matching the filters — on the
  * server too (`allMatching`) — (a filled check); then it clears. A mixed box
  * (some rows) also starts with the page. Without pagination, or with
- * `selectionScope: 'page'`, the page is everything: one step. A row box
+ * `selectable.scope: 'page'`, the page is everything: one step. A row box
  * Shift+clicked selects the range from the last one clicked, in display order
  * (TanStack's range selection).
  */

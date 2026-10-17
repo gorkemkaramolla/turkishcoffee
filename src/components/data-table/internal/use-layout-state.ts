@@ -1,93 +1,47 @@
 import { useMemo } from 'react'
-import {
-  functionalUpdate,
-  type ColumnOrderState,
-  type ColumnSizingState,
-  type ColumnVisibilityState,
-  type Updater,
-} from '@tanstack/react-table'
+import { functionalUpdate, type Updater } from '@tanstack/react-table'
 import { columnDefIds } from './columns'
 import { SELECT_COLUMN_ID } from './selection'
 import { usePersistedLayout, type DataTableLayout } from './use-persisted-layout'
-import type { DataTableState } from '../state'
+import type { DataTableLayoutOptions } from '../state'
 
 type LayoutKey = 'columnSizing' | 'columnOrder' | 'columnVisibility'
-type Slice<K extends LayoutKey> = [DataTableState[K], (updater: Updater<DataTableState[K]>) => void]
+type Slice<K extends LayoutKey> = [DataTableLayout[K], (updater: Updater<DataTableLayout[K]>) => void]
 
 export type LayoutStateOptions = {
   columns: ReadonlyArray<Parameters<typeof columnDefIds>[0][number]>
   /** The checkbox column is part of the layout too. */
   selectable: boolean
-  initialState: Partial<DataTableState> | undefined
-  storageKey: string | undefined
-  savedLayout: Partial<DataTableLayout> | null | undefined
-  onLayoutChange: ((layout: DataTableLayout | null) => void) | undefined
-  /** Which slices the user can change; a stored slice applies only when its feature is on. */
+  layout: DataTableLayoutOptions | undefined
+  /** Which slices the user can change; a saved slice applies only when its feature is on. */
   resizable: boolean
   reorderable: boolean
   hideable: boolean
-  columnSizing?: ColumnSizingState
-  onColumnSizingChange?: (next: ColumnSizingState) => void
-  columnOrder?: ColumnOrderState
-  onColumnOrderChange?: (next: ColumnOrderState) => void
-  columnVisibility?: ColumnVisibilityState
-  onColumnVisibilityChange?: (next: ColumnVisibilityState) => void
 }
 
 /**
- * The user-shaped layout — widths set by hand, column order, visibility — with
- * one precedence per slice: controlled prop > the layout stored under
- * `storageKey` / `savedLayout` (when the slice's feature is on) > `initialState`.
- * Uncontrolled edits go to the persisted layout; every edit is reported.
+ * The user-shaped layout — widths set by hand, column order, visibility. Per
+ * slice: the saved layout (`layout.storageKey` / `layout.saved`, when the
+ * slice's feature is on) > `layout.defaults` > the column definitions. The
+ * layout is the grid's own state; the app keeps a copy through `onChange`.
  */
 export function useLayoutState(options: LayoutStateOptions) {
-  const { columns, selectable } = options
-  // Every leaf column id, the checkbox column included, for reconciling stored layouts.
+  const { columns, selectable, layout } = options
+  // Every leaf column id, the checkbox column included, for reconciling saved layouts.
   const columnIds = useMemo(
     () => [...(selectable ? [SELECT_COLUMN_ID] : []), ...columnDefIds(columns)],
     [selectable, columns],
   )
-  const persisted = usePersistedLayout(
-    options.storageKey,
-    options.initialState,
-    columnIds,
-    options.savedLayout,
-    options.onLayoutChange,
-  )
+  const persisted = usePersistedLayout(layout?.storageKey, layout?.defaults, columnIds, layout?.saved, layout?.onChange)
 
-  const slice = <K extends LayoutKey>(
-    key: K,
-    enabled: boolean,
-    value: DataTableState[K] | undefined,
-    onChange: ((next: DataTableState[K]) => void) | undefined,
-  ): Slice<K> => {
-    const current = value ?? ((enabled ? persisted.layout[key] : persisted.defaults[key]) as DataTableState[K])
-    return [
-      current,
-      (updater) => {
-        const next = functionalUpdate(updater, current)
-        if (value === undefined) persisted.update(key, () => next as never)
-        onChange?.(next)
-      },
-    ]
+  const slice = <K extends LayoutKey>(key: K, enabled: boolean): Slice<K> => {
+    const current = (enabled ? persisted.layout[key] : persisted.defaults[key]) as DataTableLayout[K]
+    return [current, (updater) => persisted.update(key, () => functionalUpdate(updater, current) as never)]
   }
 
-  const [userSizing, setUserSizing] = slice('columnSizing', options.resizable, options.columnSizing, options.onColumnSizingChange)
-  const [columnOrder, setColumnOrder] = slice('columnOrder', options.reorderable, options.columnOrder, options.onColumnOrderChange)
-  const [columnVisibility, setColumnVisibility] = slice(
-    'columnVisibility',
-    options.hideable,
-    options.columnVisibility,
-    options.onColumnVisibilityChange,
-  )
-
-  /** Back to the starting layout, and the stored copy removed. */
-  const resetLayout = () => {
-    setColumnVisibility(persisted.defaults.columnVisibility)
-    setColumnOrder(persisted.defaults.columnOrder)
-    setUserSizing(persisted.defaults.columnSizing)
-    persisted.reset()
-  }
+  const [userSizing, setUserSizing] = slice('columnSizing', options.resizable)
+  const [columnOrder, setColumnOrder] = slice('columnOrder', options.reorderable)
+  const [columnVisibility, setColumnVisibility] = slice('columnVisibility', options.hideable)
 
   return {
     persisted,
@@ -97,8 +51,9 @@ export function useLayoutState(options: LayoutStateOptions) {
     setColumnOrder,
     columnVisibility,
     setColumnVisibility,
-    resetLayout,
+    /** Back to `layout.defaults`, the stored copy removed, `null` reported. */
+    resetLayout: persisted.reset,
     /** Content widths are cached for the next server render only when the layout is kept somewhere. */
-    persistent: Boolean(options.storageKey || options.savedLayout !== undefined),
+    persistent: Boolean(layout?.storageKey || layout?.saved !== undefined),
   }
 }

@@ -74,8 +74,8 @@ describe('saved content widths (Chromium)', () => {
       document.body.append(container)
       const element = (layout: DataTableLayout | null) => (
         <DataTable aria-label="Records" columns={columns} data={people} getRowId={(row) => row.id}
-          selectable resizable hideable reorderable savedLayout={layout}
-          onLayoutChange={(layout) => { saved = layout }} />
+          selectable resizable hideable reorderable
+          layout={{ saved: layout, onChange: (next) => { saved = next } }} />
       )
       const firstRoot = createRoot(container)
       await act(async () => { firstRoot.render(element(null)) })

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import { flushSync } from 'react-dom'
 import { cssAttributeValue } from '../../../lib/css'
-import { inlineScroll, setInlineScroll } from './scroll'
+import { inlineScroll, mirrorHeader, setInlineScroll } from './scroll'
 
 /** A header drag in progress. Only which column: the motion never goes through React. */
 export type ColumnDrag = { columnId: string }
@@ -85,9 +85,12 @@ export function useColumnDrag({
   const startDrag = useCallback(
     (event: React.PointerEvent<HTMLElement>, columnId: string) => {
       if (event.button !== 0 || event.pointerType === 'touch') return
-      if ((event.target as Element).closest('[data-no-drag]')) return
-
       const header = event.currentTarget
+      const target = event.target as Element
+      // React bubbles events out of portals (a filter or menu popup), so a press
+      // inside one reaches this header without being in its DOM. Ignore those too.
+      if (!header.contains(target) || target.closest('[data-no-drag]')) return
+
       const row = header.parentElement
       const scroller = scrollerRef.current
       const frame = frameRef.current
@@ -153,7 +156,7 @@ export function useColumnDrag({
         if (!scroller) return
         setInlineScroll(scroller, left, dir)
         // Read back: the browser clamps to the scrollable range.
-        if (headerScrollRef.current) headerScrollRef.current.scrollLeft = scroller.scrollLeft
+        mirrorHeader(headerScrollRef.current, scroller)
       }
 
       /**

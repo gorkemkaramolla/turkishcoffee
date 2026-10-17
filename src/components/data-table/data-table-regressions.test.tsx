@@ -1,6 +1,9 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest'
-import { act, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { createRef } from 'react'
 import { DataTable } from './data-table'
+import { DataTableSkeleton } from './data-table-skeleton'
+import type { DataTableHandle, DataTableRowSelection } from './state'
 import type { DataTableColumn } from './features'
 
 // Bugs found in the architecture review. Each test failed before its fix.
@@ -65,11 +68,9 @@ describe('regressions', () => {
         columns={columns}
         data={people(pageIndex * 2, 2)}
         getRowId={(row) => row.id}
-        selectable
+        selectable={{ onChange: onRowSelectionChange }}
         server={{ rowCount: 4 }}
-        pagination={{ pageIndex, pageSize: 2 }}
-        onPaginationChange={() => {}}
-        onRowSelectionChange={onRowSelectionChange}
+        query={{ sorting: [], columnFilters: [], pagination: { pageIndex, pageSize: 2 } }}
       />
     )
     const { rerender } = render(page(0))
@@ -79,8 +80,93 @@ describe('regressions', () => {
     rerender(page(1))
     // Nothing on page 2 is selected: the header box is empty, not "mixed".
     expect(screen.getByRole('checkbox', { name: 'Select all rows' }).getAttribute('aria-checked')).toBe('false')
-    // Cross-page selection (the default) keeps the row from page 1, and says so.
-    expect(screen.getByText('1 row selected')).toBeTruthy()
+    // Cross-page selection (the default) keeps the row from page 1, and says it is elsewhere.
+    expect(screen.getByText('1 row selected · 1 not on this page')).toBeTruthy()
+  })
+
+  it('loading its first page, it draws placeholder rows under the real headers and announces it', () => {
+    const { container, rerender } = render(<DataTable aria-label="Records" columns={columns} data={[]} selectable loading />)
+    expect(screen.getByRole('columnheader', { name: /^Name/ })).toBeTruthy()
+    const skeletonRows = container.querySelectorAll('[data-slot="data-table-skeleton-row"]')
+    expect(skeletonRows.length).toBe(8)
+    // One placeholder per column, the checkbox one a square.
+    expect(skeletonRows[0]!.querySelectorAll('[data-slot="skeleton"]').length).toBe(2)
+    expect(screen.getByRole('status').textContent).toBe('Loading…')
+    // Not rows of the grid: nothing to count, select or move through.
+    expect(screen.queryAllByRole('row').length).toBe(1)
+
+    // The app's own loading content wins over the placeholders.
+    rerender(<DataTable aria-label="Records" columns={columns} data={[]} loading loadingMessage="Fetching…" />)
+    expect(container.querySelector('[data-slot="data-table-skeleton-row"]')).toBeNull()
+    expect(screen.getByRole('status').textContent).toBe('Fetching…')
+  })
+
+  it('DataTableSkeleton: the frame, real headers when given, rows of bars, one status', () => {
+    const { container } = render(<DataTableSkeleton columns={['Name', 'Email']} rows={3} selectable label="Yükleniyor…" />)
+    expect(screen.getByRole('status').textContent).toBe('Yükleniyor…')
+    expect(screen.getByText('Email')).toBeTruthy()
+    expect(container.querySelectorAll('[data-slot="data-table-skeleton-row"]').length).toBe(3)
+  })
+
+  it('a movable column sorts from its arrow, not from a click on the label it is dragged by', () => {
+    render(<DataTable aria-label="Records" columns={columns} data={people(0, 3)} sortable reorderable />)
+    const header = screen.getByRole('columnheader', { name: /^Name/ })
+    const label = header.querySelector('[data-cell-content]')!
+    // A real pointer click (detail 1) on the label: that is where a drag starts.
+    act(() => fireEvent.click(label, { detail: 1 }))
+    expect(header.getAttribute('aria-sort')).toBeNull()
+    act(() => fireEvent.click(header.querySelector('[data-sort-arrow]')!, { detail: 1 }))
+    expect(header.getAttribute('aria-sort')).toBe('ascending')
+    // Keyboard and screen readers press the button itself (detail 0): that still sorts.
+    act(() => within(header).getAllByRole('button')[0]!.click())
+    expect(header.getAttribute('aria-sort')).toBe('descending')
+  })
+
+  it('server rows picked on another page or search stay selected and go into the export', () => {
+    const ref = createRef<DataTableHandle<Person>>()
+    const table = (data: Person[], scopeKey: string) => (
+      <DataTable aria-label="Records" ref={ref}
+        columns={columns}
+        data={data}
+        getRowId={(row) => row.id}
+        selectable={{ scopeKey }}
+        exportable
+        server={{ rowCount: data.length }}
+      />
+    )
+    const { rerender } = render(table(people(0, 2), ''))
+    act(() => screen.getAllByRole('checkbox', { name: 'Select row' })[0]!.click())
+
+    // A new search: the row is gone from the page, not from the selection.
+    rerender(table(people(5, 2), 'search=5'))
+    act(() => screen.getAllByRole('checkbox', { name: 'Select row' })[0]!.click())
+    expect(screen.getByText('2 rows selected · 1 not on this page')).toBeTruthy()
+
+    // Both rows export from what was loaded; nothing has to be asked of the server.
+    const data = ref.current!.getExportData()
+    expect(data.rows.map((row) => row.id).sort()).toEqual(['0', '5'])
+    expect(data.request).toBeNull()
+  })
+
+  it('the selection\'s scopeKey resets an "every matching row" selection, not rows picked one by one', () => {
+    const onRowSelectionChange = vi.fn<(selection: DataTableRowSelection) => void>()
+    const table = (scopeKey: string, rowSelection: DataTableRowSelection) => (
+      <DataTable aria-label="Records"
+        columns={columns}
+        data={people(0, 2)}
+        getRowId={(row) => row.id}
+        selectable={{ scopeKey, value: rowSelection, onChange: onRowSelectionChange }}
+        server={{ rowCount: 10 }}
+      />
+    )
+    const { rerender } = render(table('a', { type: 'allMatching', excludedIds: [] }))
+    rerender(table('b', { type: 'allMatching', excludedIds: [] }))
+    expect(onRowSelectionChange).toHaveBeenLastCalledWith({ type: 'ids', ids: [] })
+
+    onRowSelectionChange.mockClear()
+    rerender(table('b', { type: 'ids', ids: ['1'] }))
+    rerender(table('c', { type: 'ids', ids: ['1'] }))
+    expect(onRowSelectionChange).not.toHaveBeenCalled()
   })
 
   it('server page holding every matching row: selecting it is selecting all, no "Select all" offer', () => {
@@ -91,8 +177,7 @@ describe('regressions', () => {
         getRowId={(row) => row.id}
         selectable
         server={{ rowCount: 6 }}
-        pagination={{ pageIndex: 0, pageSize: 10 }}
-        onPaginationChange={() => {}}
+        pageSize={10}
       />,
     )
     const header = () => screen.getAllByRole('checkbox')[0]!

@@ -12,6 +12,7 @@ export {
 export {
   TablePagination,
   defaultTablePaginationLabels,
+  tablePaginationLabelsForLocale,
   type TablePageSize,
   type TablePaginationLabels,
   type TablePaginationProps,
@@ -19,9 +20,19 @@ export {
 export { TableCheckbox, type TableCheckboxProps } from './table-checkbox'
 export {
   TableColumnFilter,
+  TableColumnOptionsFilter,
+  TableColumnNumberFilter,
+  TableColumnDateFilter,
   defaultTableColumnFilterLabels,
+  tableColumnFilterLabelsForLocale,
   type TableColumnFilterLabels,
+  type TableColumnFilterOption,
   type TableColumnFilterProps,
+  type TableColumnOptionsFilterProps,
+  type TableColumnNumberFilterProps,
+  type TableColumnDateFilterProps,
+  type TableColumnNumberRange,
+  type TableColumnDateRange,
 } from './table-column-filter'
 export {
   exportTable,

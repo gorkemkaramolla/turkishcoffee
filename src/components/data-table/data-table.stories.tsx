@@ -1,11 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import type { ColumnFiltersState, SortingState } from '@tanstack/react-table'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { actionsColumn } from './actions-column'
 import { DataTable, type DataTableProps } from './data-table'
+import { DataTableSkeleton } from './data-table-skeleton'
 import type { DataTableColumn, DataTableFilterControlProps } from './features'
-import type { DataTableHandle, DataTablePagination, DataTableRowSelection } from './state'
-import { exportTable } from '../table/export'
+import type { DataTableLayout } from './internal/use-persisted-layout'
+import type {
+  DataTableExportOptions,
+  DataTableExportRequest,
+  DataTableHandle,
+  DataTableQuery,
+  DataTableQueryChange,
+  DataTableRowSelection,
+} from './state'
+import { exportTable, toCsv } from '../table/export'
 import { Badge } from '../badge/badge'
 import { Button } from '../button/button'
 import { Input } from '../input/input'
@@ -46,7 +55,8 @@ const day = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium' })
 
 const columns: Array<DataTableColumn<Employee>> = [
   { accessorKey: 'name', header: 'Name' },
-  { accessorKey: 'department', header: 'Department' },
+  // A few repeated values: filter from a checklist of them, not a text field.
+  { accessorKey: 'department', header: 'Department', meta: { filter: { variant: 'options' } } },
   { accessorKey: 'email', header: 'Email', cell: (info) => info.getValue<string | null>() ?? '—' },
   {
     accessorKey: 'salary',
@@ -60,22 +70,20 @@ const columns: Array<DataTableColumn<Employee>> = [
     header: 'Status',
     cell: (info) =>
       info.getValue<boolean>() ? <Badge tone="success">Active</Badge> : <Badge>Passive</Badge>,
-    meta: { exportValue: (row: Employee) => (row.active ? 'Active' : 'Passive') },
+    meta: {
+      // Display, filter and export each say it their own way.
+      exportValue: (row: Employee) => (row.active ? 'Active' : 'Passive'),
+      filter: { options: [{ value: true, label: 'Active' }, { value: false, label: 'Passive' }] },
+    },
   },
-  {
-    id: 'actions',
-    header: () => <span className="sr-only">Actions</span>,
-    cell: () => (
-      <Button variant="ghost" size="icon" aria-label="Actions">
+  actionsColumn<Employee>({
+    label: 'Actions',
+    cell: ({ row }) => (
+      <Button variant="ghost" size="icon" aria-label={`Actions for ${row.original.name}`}>
         <EllipsisIcon />
       </Button>
     ),
-    size: 56,
-    enableSorting: false,
-    enableResizing: false,
-    enableHiding: false,
-    meta: { label: 'Actions', reorderable: false },
-  },
+  }),
 ]
 
 const twenty = makeEmployees(20)
@@ -181,6 +189,25 @@ export const Selection: Story = {
 /** Subtle selection, for dense lists: a row's box shows on hover, and all of them once anything is selected. */
 export const SelectionHover: Story = { args: { selectable: 'hover', pageSize: 10, data: makeEmployees(57) } }
 
+/** Selected rows are grey by default; `selectable={{ color: 'primary' }}` tints them with the brand. */
+export const SelectionPrimary: Story = {
+  args: {
+    selectable: { color: 'primary', defaultValue: { type: 'ids', ids: ['emp_1', 'emp_2'] } },
+    pageSize: 10,
+    data: makeEmployees(57),
+  },
+}
+
+/** `striped` alternates the body rows; hover and selection still win over the stripe. */
+export const Striped: Story = {
+  args: {
+    striped: true,
+    selectable: { defaultValue: { type: 'ids', ids: ['emp_2'] } },
+    pageSize: 10,
+    data: makeEmployees(57),
+  },
+}
+
 /**
  * Excel's column selection, from the thin strip above the headers (a click on
  * a name still sorts). The first click covers this page, the second every row,
@@ -207,15 +234,65 @@ export const ColumnSelectionExport: Story = {
   },
 }
 
-/** A "contains" filter per column, behind the funnel that shows on header hover. */
+const optionEmployees = makeEmployees(300)
+/**
+ * Department filters from its known values, `meta.filter.options`, each with its
+ * count: tick the ones to show. From six options a search field sits above them.
+ */
+export const OptionsFilter: Story = {
+  args: {
+    filterable: true,
+    sortable: true,
+    pageSize: 10,
+    data: optionEmployees,
+    columns: columns.map((column) =>
+      'accessorKey' in column && column.accessorKey === 'department'
+        ? {
+            ...column,
+            meta: {
+              filter: {
+                options: departments.map((department) => ({
+                  value: department,
+                  label: department,
+                  count: optionEmployees.filter((employee) => employee.department === department).length,
+                })),
+              },
+            },
+          }
+        : column,
+    ),
+  },
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Filter Department' }))
+    const body = within(document.body)
+    await userEvent.click(await body.findByRole('checkbox', { name: 'Engineering' }))
+    await userEvent.click(body.getByRole('button', { name: 'Apply' }))
+    await waitFor(() => expect(canvas.getByText('1–10 of 50')).toBeInTheDocument())
+  },
+}
+
+/**
+ * Each column filters the way its values call for: text by "contains", the
+ * department (`filter.variant: 'options'`) and the status (`filter.options`)
+ * from a checklist, the salary between Min and Max, the start date on a calendar.
+ */
 export const Filterable: Story = {
   args: { filterable: true, sortable: true, pageSize: 10, data: makeEmployees(300) },
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement)
+    const body = within(document.body)
     await userEvent.click(canvas.getByRole('button', { name: 'Filter Department' }))
-    const input = await within(document.body).findByRole('textbox')
-    await userEvent.type(input, 'eng{Enter}')
+    await userEvent.type(await body.findByRole('searchbox'), 'eng')
+    await userEvent.click(body.getByRole('checkbox', { name: 'Engineering' }))
+    await userEvent.click(body.getByRole('button', { name: 'Apply' }))
     await waitFor(() => expect(canvas.getByText('1–10 of 50')).toBeInTheDocument())
+    await userEvent.click(canvas.getByRole('button', { name: 'Clear filters' }))
+    await waitFor(() => expect(canvas.getByText('1–10 of 300')).toBeInTheDocument())
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Filter Salary' }))
+    await userEvent.type(await body.findByRole('spinbutton', { name: 'Min' }), '100000{Enter}')
+    await waitFor(() => expect(canvas.queryByText('1–10 of 300')).not.toBeInTheDocument())
   },
 }
 
@@ -230,10 +307,12 @@ export const TenThousandRows: Story = {
     await expect(canvas.getByText('1–10,000 of 10,000')).toBeInTheDocument()
     expect(rowsInDom()).toBeLessThan(60)
     // Sort, filter and select everything while virtualized.
-    await userEvent.click(within(canvas.getByRole('columnheader', { name: /^Salary/ })).getAllByRole('button', { hidden: true })[0]!)
+    // The columns move, so a click sorts from the arrow, not the label.
+    await userEvent.click(canvas.getByRole('columnheader', { name: /^Salary/ }).querySelector<HTMLElement>('[data-sort-arrow]')!)
     await expect(canvas.getByRole('columnheader', { name: /^Salary/ })).toHaveAttribute('aria-sort', 'ascending')
     await userEvent.click(canvas.getByRole('button', { name: 'Filter Department', hidden: true }))
-    await userEvent.type(await within(document.body).findByRole('textbox'), 'sales{Enter}')
+    await userEvent.click(await within(document.body).findByRole('checkbox', { name: 'Sales' }))
+    await userEvent.click(within(document.body).getByRole('button', { name: 'Apply' }))
     await waitFor(() => expect(canvas.getByText(/of 1,667$/)).toBeInTheDocument())
     await userEvent.click(canvas.getAllByRole('checkbox', { hidden: true })[0]!)
     await expect(canvas.getByText('1,667 rows selected')).toBeInTheDocument()
@@ -255,9 +334,9 @@ export const TenThousandRows: Story = {
 
 export const Empty: Story = { args: { data: [], sortable: true, emptyMessage: 'No employees yet.' } }
 
-/** Widths, order and visibility survive a reload (`storageKey`). */
+/** Widths, order and visibility survive a reload (`layout.storageKey`). */
 export const Persisted: Story = {
-  args: { storageKey: 'storybook-employees', sortable: true, resizable: true, reorderable: true, hideable: true },
+  args: { layout: { storageKey: 'storybook-employees' }, sortable: true, resizable: true, reorderable: true, hideable: true },
 }
 
 // ── A 100-column personnel file ─────────────────────────────────────────────
@@ -437,7 +516,11 @@ const personnelColumns: Array<DataTableColumn<PersonnelRecord>> = personnelField
     id: key,
     accessorFn: (row) => row[key],
     header: f.label,
-    meta: { align: f.kind === 'number' || f.kind === 'money' ? 'end' : 'start' },
+    meta: {
+      align: f.kind === 'number' || f.kind === 'money' ? 'end' : 'start',
+      // A short list of repeated values filters from a checklist; names and addresses stay text.
+      filter: { variant: f.pool && new Set(f.pool).size <= 8 && !/name|address/i.test(f.label) ? 'options' : undefined },
+    },
     cell: (info) => {
       const value = info.getValue<PersonnelRecord[string]>()
       if (value === null) return '—'
@@ -470,6 +553,7 @@ export const HundredColumns: Story = {
       getRowId={(row) => row.id}
       height={560}
       sortable
+      filterable
       resizable
       reorderable
       hideable
@@ -503,94 +587,191 @@ export const Keyboard: Story = {
   },
 }
 
-type Query = { sorting: SortingState; columnFilters: ColumnFiltersState; pagination: DataTablePagination }
+// ── Server data: one query, one request ─────────────────────────────────────
 
-/** A pretend backend: filters (contains), sorts and pages 2,000 employees. */
-function serverQuery(all: Employee[], { sorting, columnFilters, pagination }: Query) {
-  let rows = all.filter((row) =>
-    columnFilters.every(({ id, value }) =>
-      String(row[id as keyof Employee] ?? '').toLocaleLowerCase('tr').includes(String(value).toLocaleLowerCase('tr')),
-    ),
-  )
-  const [sort] = sorting
-  if (sort) {
-    const key = sort.id as keyof Employee
-    rows = [...rows].sort((a, b) => {
-      const order = String(a[key] ?? '').localeCompare(String(b[key] ?? ''), 'tr', { numeric: true })
-      return sort.desc ? -order : order
-    })
+/** One column filter on the pretend backend, by the value's shape. */
+function matches(cell: unknown, value: unknown): boolean {
+  if (Array.isArray(value)) return value.includes(cell)
+  if (value && typeof value === 'object' && ('from' in value || 'to' in value)) {
+    const { from, to } = value as { from?: Date; to?: Date }
+    const time = (cell as Date).getTime()
+    const end = to && new Date(to.getFullYear(), to.getMonth(), to.getDate() + 1)
+    return (!from || time >= from.getTime()) && (!end || time < end.getTime())
   }
-  const size = pagination.pageSize === 'all' ? rows.length : pagination.pageSize
-  const start = pagination.pageIndex * size
-  return { rows: rows.slice(start, start + size), total: rows.length, all: rows }
+  if (value && typeof value === 'object') {
+    const { min, max } = value as { min?: number; max?: number }
+    return (min === undefined || (cell as number) >= min) && (max === undefined || (cell as number) <= max)
+  }
+  return String(cell ?? '').toLocaleLowerCase('tr').includes(String(value).toLocaleLowerCase('tr'))
 }
 
-function ServerSideDemo() {
-  const everyone = useMemo(() => makeEmployees(2_000), [])
-  const [query, setQuery] = useState<Query>({ sorting: [], columnFilters: [], pagination: { pageIndex: 0, pageSize: 25 } })
-  const [result, setResult] = useState<{ key: string; rows: Employee[]; total: number }>({ key: '', rows: [], total: 0 })
-  const ref = useRef<DataTableHandle<Employee>>(null)
-  const key = JSON.stringify(query)
+const blank = (value: unknown) => value === null || value === undefined || value === ''
 
-  // Each change is a request; the grid shows `loading` until its answer arrives.
+/** Two cells as a database orders them: numbers, dates and booleans by value, text in Turkish. */
+function compare(a: unknown, b: unknown): number {
+  if (a instanceof Date && b instanceof Date) return a.getTime() - b.getTime()
+  if (typeof a === 'number' && typeof b === 'number') return a - b
+  if (typeof a === 'boolean' && typeof b === 'boolean') return Number(b) - Number(a)
+  return String(a).localeCompare(String(b), 'tr', { numeric: true })
+}
+
+/**
+ * A pretend backend over 2,000 employees: every filter, every sort key in
+ * order (Shift+click adds one), blanks last both ways, then one page. `search`
+ * is the app's own filter outside the grid.
+ */
+function queryEmployees(all: Employee[], { sorting, columnFilters, pagination }: DataTableQuery, search = '') {
+  const needle = search.toLocaleLowerCase('tr')
+  let rows = all.filter(
+    (row) =>
+      row.name.toLocaleLowerCase('tr').includes(needle) &&
+      columnFilters.every(({ id, value }) => matches(row[id as keyof Employee], value)),
+  )
+  if (sorting.length) {
+    rows = [...rows].sort((a, b) => {
+      for (const { id, desc } of sorting) {
+        const x = a[id as keyof Employee]
+        const y = b[id as keyof Employee]
+        if (blank(x) || blank(y)) {
+          if (blank(x) !== blank(y)) return blank(x) ? 1 : -1
+          continue
+        }
+        const order = compare(x, y)
+        if (order) return desc ? -order : order
+      }
+      return 0
+    })
+  }
+  const page = pagination ?? { pageIndex: 0, pageSize: 'all' as const }
+  const size = page.pageSize === 'all' ? rows.length : page.pageSize
+  return { rows: rows.slice(page.pageIndex * size, page.pageIndex * size + size), total: rows.length, all: rows }
+}
+
+/** The rows an export request covers, as the backend reads it. */
+function exportRows(all: Employee[], request: DataTableExportRequest, search: string) {
+  if (request.rows.type === 'ids') {
+    // Exactly these, whatever the filters: picked one by one, on any page or search.
+    const ids = new Set(request.rows.ids)
+    return queryEmployees(all, { sorting: request.sorting, columnFilters: [] }).all.filter((row) => ids.has(row.id))
+  }
+  const excluded = new Set(request.rows.excludedIds)
+  return queryEmployees(all, { sorting: request.sorting, columnFilters: request.rows.columnFilters }, search).all.filter(
+    (row) => !excluded.has(row.id),
+  )
+}
+
+// On the server a checklist needs its options: a page holds only some of the values.
+const serverColumns = columns.map((column) =>
+  'accessorKey' in column && column.accessorKey === 'department'
+    ? { ...column, meta: { filter: { options: departments.map((department) => ({ value: department, label: department })) } } }
+    : column,
+)
+
+const everyone = makeEmployees(2_000)
+const firstServerQuery: DataTableQuery = { sorting: [], columnFilters: [], pagination: { pageIndex: 0, pageSize: 25 } }
+
+/**
+ * The app's side of a server table: the query is state (in a real app, the
+ * URL), each change is one request, and the answer arrives 300 ms later.
+ */
+function useEmployees(query: DataTableQuery, search = '') {
+  const key = JSON.stringify([query, search])
+  const [result, setResult] = useState<{ key: string; rows: Employee[]; total: number }>({ key: '', rows: [], total: 0 })
   useEffect(() => {
     const timer = setTimeout(() => {
-      const { rows, total } = serverQuery(everyone, query)
+      const { rows, total } = queryEmployees(everyone, query, search)
       setResult({ key, rows, total })
     }, 300)
     return () => clearTimeout(timer)
-  }, [everyone, query, key])
+  }, [query, search, key])
+  return { ...result, loading: result.key !== key }
+}
 
+/** The pretend backend answered: the grid is no longer busy. */
+const settled = (canvasElement: HTMLElement) =>
+  waitFor(() => expect(within(canvasElement).getAllByRole('grid')[0]).not.toHaveAttribute('aria-busy'))
+
+const describeQuery = (query: DataTableQuery, change: DataTableQueryChange) =>
+  [
+    change,
+    `page ${(query.pagination?.pageIndex ?? 0) + 1}`,
+    query.sorting.map((sort) => `${sort.id} ${sort.desc ? '↓' : '↑'}`).join(', ') || 'unsorted',
+    `${query.columnFilters.length} filter${query.columnFilters.length === 1 ? '' : 's'}`,
+  ].join(' · ')
+
+function ServerSideDemo() {
+  const [query, setQuery] = useState(firstServerQuery)
+  const [requests, setRequests] = useState<string[]>([])
+  const result = useEmployees(query)
   return (
-    <DataTable aria-label="Records"
-      ref={ref}
-      className="w-4xl max-w-full"
-      columns={columns}
-      data={result.rows}
-      getRowId={(row) => row.id}
-      server={{ rowCount: result.total, loading: result.key !== key }}
-      sorting={query.sorting}
-      onSortingChange={(sorting) => setQuery((current) => ({ ...current, sorting }))}
-      columnFilters={query.columnFilters}
-      onColumnFiltersChange={(columnFilters) => setQuery((current) => ({ ...current, columnFilters }))}
-      pagination={query.pagination}
-      onPaginationChange={(pagination) => setQuery((current) => ({ ...current, pagination }))}
-      pageSizeOptions={[10, 25, 50, 100]}
-      sortable
-      filterable
-      selectable="hover"
-      exportable={{
-        fileName: 'employees',
-        // The app's backend would build the file; here the pretend one hands back the rows.
-        onServerExport: async (request, format) => {
-          const { all } = serverQuery(everyone, { ...request, pagination: { pageIndex: 0, pageSize: 'all' } })
-          const rows =
-            request.selection?.type === 'ids'
-              ? all.filter((row) => request.selection?.type === 'ids' && request.selection.ids.includes(row.id))
-              : request.selection?.type === 'allMatching'
-                ? all.filter((row) => request.selection?.type === 'allMatching' && !request.selection.excludedIds.includes(row.id))
-                : all
-          const { columns: exportColumns } = ref.current!.getExportData()
-          await exportTable({ format, columns: exportColumns, rows, fileName: 'employees' })
-        },
-      }}
-    />
+    <div className="grid w-4xl max-w-full gap-3">
+      <DataTable
+        aria-label="Records"
+        columns={serverColumns}
+        data={result.rows}
+        getRowId={(row) => row.id}
+        server={{ rowCount: result.total }}
+        loading={result.loading}
+        // One change, one request: a sort on page 3 arrives here once, already on page 1.
+        query={query}
+        onQueryChange={(next, change) => {
+          setQuery(next)
+          setRequests((log) => [...log, describeQuery(next, change)])
+        }}
+        sortable
+        filterable
+        selectable="hover"
+        exportable={{ fileName: 'employees', fetchRows: async (request) => exportRows(everyone, request, '') }}
+      />
+      <ol aria-label="Requests" className="grid gap-1 rounded-md bg-muted p-3 font-mono text-xs">
+        {requests.map((request, index) => (
+          <li key={index}>{request}</li>
+        ))}
+      </ol>
+    </div>
   )
 }
 
 /**
- * Server-side data: the pretend backend sorts, filters and pages 2,000 rows
- * (300 ms per request, rows dim while loading). Select a page, then "Select all
- * 2000": the selection becomes `allMatching`, and Export asks the backend
- * through `onServerExport`.
+ * Server-side data: the pretend backend sorts (by every key, Shift+click adds
+ * one), filters and pages 2,000 rows; 300 ms per request, a hairline under the
+ * header meanwhile. The app keeps one value, the query, and hears one change
+ * per user action: the log below lists each request. A sort or a filter on page
+ * 3 is one request for page 1. Select a page, then "Select all 2,000": the
+ * selection becomes `allMatching`, and Export fetches the rows through
+ * `fetchRows` and writes them.
  */
 export const ServerSide: Story = {
   render: () => <ServerSideDemo />,
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement)
-    await waitFor(() => expect(canvas.getByText('1–25 of 2,000')).toBeInTheDocument())
+    const requests = () => within(canvas.getByRole('list', { name: 'Requests' })).queryAllByRole('listitem')
+    await settled(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Next page' }))
-    await waitFor(() => expect(canvas.getByText('26–50 of 2,000')).toBeInTheDocument())
+    await settled(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Next page' }))
+    await settled(canvasElement)
+    await expect(canvas.getByText('51–75 of 2,000')).toBeInTheDocument()
+    await expect(requests()).toHaveLength(2)
+
+    // A sort on page 3: one request, for page 1.
+    await userEvent.click(canvas.getByRole('columnheader', { name: /^Department/ }).querySelector<HTMLElement>('[data-sort-arrow]')!)
+    await expect(requests()).toHaveLength(3)
+    await expect(requests()[2]).toHaveTextContent('sorting · page 1 · department ↑ · 0 filters')
+    // A second key with Shift: the backend orders by both.
+    const user = userEvent.setup()
+    await user.keyboard('{Shift>}')
+    await user.click(canvas.getByRole('columnheader', { name: /^Name/ }).querySelector<HTMLElement>('[data-sort-arrow]')!)
+    await user.keyboard('{/Shift}')
+    await expect(requests()).toHaveLength(4)
+    await expect(requests()[3]).toHaveTextContent('sorting · page 1 · department ↑, name ↑ · 0 filters')
+    await settled(canvasElement)
+    const cells = (id: string) =>
+      [...canvasElement.querySelectorAll<HTMLElement>(`[role="gridcell"][data-col="${id}"]`)].map((cell) => cell.textContent ?? '')
+    await waitFor(() => expect(cells('department').slice(0, 2)).toEqual(['Engineering', 'Engineering']))
+    const names = cells('name').slice(0, 5)
+    await expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b, 'tr')))
+
     await userEvent.click(canvas.getAllByRole('checkbox')[0]!)
     await userEvent.click(canvas.getByRole('button', { name: 'Select all 2,000 rows' }))
     await expect(canvas.getByText('2,000 rows selected')).toBeInTheDocument()
@@ -598,52 +779,351 @@ export const ServerSide: Story = {
 }
 
 function ControlledDemo() {
-  const ref = useRef<DataTableHandle<Employee>>(null)
-  const [sorting, setSorting] = useState<SortingState>([{ id: 'salary', desc: true }])
+  const controlledRef = useRef<DataTableHandle<Employee>>(null)
+  const uncontrolledRef = useRef<DataTableHandle<Employee>>(null)
+  const firstQuery: DataTableQuery = { sorting: [{ id: 'salary', desc: true }], columnFilters: [], pagination: { pageIndex: 0, pageSize: 5 } }
+  const [query, setQuery] = useState(firstQuery)
   const [selection, setSelection] = useState<DataTableRowSelection>({ type: 'ids', ids: [] })
+  const data = useMemo(() => makeEmployees(40), [])
   return (
-    <div className="grid w-4xl max-w-full gap-3">
-      <DataTable aria-label="Records"
-        ref={ref}
-        columns={columns}
-        data={makeEmployees(40)}
-        getRowId={(row) => row.id}
-        pageSize={10}
-        sortable
-        resizable
-        reorderable
-        hideable
-        selectable
-        sorting={sorting}
-        onSortingChange={setSorting}
-        rowSelection={selection}
-        onRowSelectionChange={setSelection}
-      />
-      <div className="flex gap-2">
-        <Button variant="secondary" size="sm" onClick={() => setSorting([])}>
-          Clear sorting (state)
-        </Button>
-        <Button variant="secondary" size="sm" onClick={() => ref.current?.resetRowSelection()}>
-          Clear selection (ref)
-        </Button>
-        <Button variant="secondary" size="sm" onClick={() => ref.current?.resetLayout()}>
-          Reset layout (ref)
-        </Button>
-      </div>
-      <pre className="rounded-md bg-muted p-3 text-xs">{JSON.stringify({ sorting, selection }, null, 2)}</pre>
+    <div className="grid w-4xl max-w-full gap-6">
+      <section aria-label="Controlled" className="grid gap-3">
+        <DataTable
+          aria-label="Controlled"
+          ref={controlledRef}
+          columns={columns}
+          data={data}
+          getRowId={(row) => row.id}
+          pageSize={5}
+          sortable
+          filterable
+          hideable
+          // The parent owns the query and the selection: the grid shows them and asks for changes.
+          query={query}
+          onQueryChange={setQuery}
+          selectable={{ value: selection, onChange: setSelection }}
+        />
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" size="sm" onClick={() => setQuery(firstQuery)}>
+            Reset query (state)
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => setSelection({ type: 'ids', ids: [] })}>
+            Clear selection (state)
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => controlledRef.current?.resetLayout()}>
+            Reset layout (ref)
+          </Button>
+        </div>
+        <pre aria-label="Controlled state" className="rounded-md bg-muted p-3 text-xs">
+          {JSON.stringify({ query, selection })}
+        </pre>
+      </section>
+      <section aria-label="Uncontrolled" className="grid gap-3">
+        <DataTable
+          aria-label="Uncontrolled"
+          ref={uncontrolledRef}
+          columns={columns}
+          data={data}
+          getRowId={(row) => row.id}
+          pageSize={5}
+          sortable
+          selectable
+          // The grid owns the query, from here; resets go through the ref.
+          defaultQuery={{ sorting: [{ id: 'name', desc: false }] }}
+        />
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" size="sm" onClick={() => uncontrolledRef.current?.resetQuery()}>
+            Reset query (ref)
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => uncontrolledRef.current?.resetRowSelection()}>
+            Clear selection (ref)
+          </Button>
+        </div>
+      </section>
     </div>
   )
 }
 
-/** Controlled state: sorting and selection live in the parent; resets go through state or the ref. */
-export const Controlled: Story = {
+/**
+ * Controlled (top): the query and the selection live in the parent, and the
+ * parent resets them by setting its state. Uncontrolled (bottom): the grid
+ * keeps them from `defaultQuery`, and the ref resets them — `resetQuery()` is
+ * one change back to `defaultQuery`, on page 1.
+ */
+export const ControlledAndUncontrolled: Story = {
   render: () => <ControlledDemo />,
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getAllByRole('checkbox', { name: 'Select row' })[0]!)
-    await expect(canvasElement.querySelector('pre')).toHaveTextContent('"type": "ids"')
-    await userEvent.click(canvas.getByRole('button', { name: 'Clear selection (ref)' }))
-    await expect(canvas.queryByText(/row selected/)).not.toBeInTheDocument()
+    const controlled = within(canvas.getByRole('region', { name: 'Controlled' }))
+    const state = () => controlled.getByLabelText('Controlled state').textContent ?? ''
+    await userEvent.click(controlled.getByRole('button', { name: 'Next page' }))
+    await userEvent.click(controlled.getAllByRole('checkbox', { name: 'Select row' })[0]!)
+    await waitFor(() => expect(state()).toContain('"pageIndex":1'))
+    await expect(state()).toContain('"ids":["emp_')
+    await userEvent.click(controlled.getByRole('button', { name: 'Reset query (state)' }))
+    await userEvent.click(controlled.getByRole('button', { name: 'Clear selection (state)' }))
+    await waitFor(() => expect(state()).toContain('"pageIndex":0'))
+    await expect(controlled.getByText('1–5 of 40')).toBeInTheDocument()
+    await expect(controlled.queryByText(/row selected/)).not.toBeInTheDocument()
+
+    const uncontrolled = within(canvas.getByRole('region', { name: 'Uncontrolled' }))
+    const nameHeader = () => uncontrolled.getByRole('columnheader', { name: /^Name/ })
+    await userEvent.click(nameHeader().querySelector<HTMLElement>('[data-sort-arrow]')!)
+    await expect(nameHeader()).toHaveAttribute('aria-sort', 'descending')
+    await userEvent.click(uncontrolled.getByRole('button', { name: 'Next page' }))
+    await userEvent.click(uncontrolled.getByRole('button', { name: 'Reset query (ref)' }))
+    await expect(nameHeader()).toHaveAttribute('aria-sort', 'ascending')
+    await expect(uncontrolled.getByText('1–5 of 40')).toBeInTheDocument()
+  },
+}
+
+function SelectionScopeDemo() {
+  const [query, setQuery] = useState(firstServerQuery)
+  const [search, setSearch] = useState('')
+  const [selection, setSelection] = useState<DataTableRowSelection>({ type: 'ids', ids: [] })
+  const result = useEmployees(query, search)
+  return (
+    <div className="grid w-4xl max-w-full gap-3">
+      <DataTable
+        aria-label="Records"
+        columns={serverColumns}
+        data={result.rows}
+        getRowId={(row) => row.id}
+        server={{ rowCount: result.total }}
+        loading={result.loading}
+        query={query}
+        onQueryChange={setQuery}
+        filterable
+        // The search is part of what "every matching row" means: it is the selection's scopeKey.
+        selectable={{ value: selection, onChange: setSelection, scopeKey: search }}
+        toolbar={
+          <Input
+            type="search"
+            aria-label="Search by name"
+            placeholder="Search by name"
+            className="w-56"
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value)
+              setQuery((current) => ({ ...current, pagination: { pageIndex: 0, pageSize: current.pagination?.pageSize ?? 25 } }))
+            }}
+          />
+        }
+      />
+      <pre aria-label="Selection" className="rounded-md bg-muted p-3 text-xs">
+        {JSON.stringify(selection)}
+      </pre>
+    </div>
+  )
+}
+
+/**
+ * What a selection survives. Rows picked one by one (`ids`) stay picked across
+ * pages, filters and searches; they count as "not on this page" when out of
+ * view. "Every matching row" (`allMatching`) is one result: paging keeps it,
+ * a new filter or search (`scopeKey`) clears it.
+ */
+export const SelectionScope: Story = {
+  render: () => <SelectionScopeDemo />,
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+    const state = () => canvas.getByLabelText('Selection').textContent ?? ''
+    const box = () => canvas.getAllByRole('checkbox', { name: 'Select row' })[0]!
+    await settled(canvasElement)
+    await userEvent.click(box())
+    await userEvent.click(canvas.getByRole('button', { name: 'Next page' }))
+    await settled(canvasElement)
+    await userEvent.click(box())
+    await expect(canvas.getByText('2 rows selected · 1 not on this page')).toBeInTheDocument()
+
+    // A search: the rows picked stay picked.
+    await userEvent.type(canvas.getByRole('searchbox', { name: 'Search by name' }), 'Zeynep')
+    await settled(canvasElement)
+    await expect(canvas.getByText(/of 167$/)).toBeInTheDocument()
+    await expect(canvas.getByText(/^2 rows selected/)).toBeInTheDocument()
+
+    // Every matching row: kept across pages, cleared by a new search.
+    await userEvent.click(canvas.getByRole('button', { name: 'Clear selection' }))
+    await userEvent.click(canvas.getAllByRole('checkbox')[0]!)
+    await userEvent.click(canvas.getByRole('button', { name: 'Select all 167 rows' }))
+    await expect(state()).toContain('"allMatching"')
+    await userEvent.click(canvas.getByRole('button', { name: 'Next page' }))
+    await settled(canvasElement)
+    await expect(canvas.getByText('167 rows selected')).toBeInTheDocument()
+    await userEvent.type(canvas.getByRole('searchbox', { name: 'Search by name' }), ' K')
+    await waitFor(() => expect(state()).toBe('{"type":"ids","ids":[]}'))
+  },
+}
+
+/** A file the backend wrote, downloaded by the app. */
+function download(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob)
+  const link = Object.assign(document.createElement('a'), { href: url, download: fileName })
+  link.click()
+  setTimeout(() => URL.revokeObjectURL(url))
+}
+
+type ExportMode = 'fetchRows' | 'backend file' | 'failing backend'
+
+function ServerExportDemo() {
+  const [mode, setMode] = useState<ExportMode>('fetchRows')
+  const [query, setQuery] = useState(firstServerQuery)
+  const [log, setLog] = useState<string[]>([])
+  const result = useEmployees(query)
+  const note = (line: string) => setLog((current) => [...current, line])
+  const covers = (request: DataTableExportRequest) =>
+    request.rows.type === 'ids' ? `${request.rows.ids.length} rows by id` : `every matching row but ${request.rows.excludedIds.length}`
+
+  const exportable: DataTableExportOptions<Employee> =
+    mode === 'fetchRows'
+      ? {
+          fileName: 'employees',
+          // The app fetches the rows; the grid writes the file with its own columns.
+          fetchRows: async (request) => {
+            const rows = exportRows(everyone, request, '')
+            note(`fetchRows: ${covers(request)} → ${rows.length} rows, written by the grid`)
+            return rows
+          },
+        }
+      : {
+          fileName: 'employees',
+          // The backend writes the file; the app downloads it.
+          onServerExport: async (request, format) => {
+            if (mode === 'failing backend') throw new Error('The export service is unavailable.')
+            const rows = exportRows(everyone, request, '')
+            const csv = toCsv(
+              request.columns.map((id) => ({ label: id, value: (row: Employee) => row[id as keyof Employee] })),
+              rows,
+              'en-US',
+            )
+            download(new Blob([csv], { type: 'text/csv' }), `employees.${format === 'csv' ? 'csv' : 'xlsx'}`)
+            note(`backend file: ${covers(request)} → ${rows.length} rows as ${format}`)
+          },
+          onError: (error) => note(`error: ${error instanceof Error ? error.message : String(error)}`),
+        }
+
+  return (
+    <div className="grid w-4xl max-w-full gap-3">
+      <div role="radiogroup" aria-label="Export through" className="flex gap-2">
+        {(['fetchRows', 'backend file', 'failing backend'] as const).map((option) => (
+          <Button
+            key={option}
+            role="radio"
+            aria-checked={mode === option}
+            variant={mode === option ? 'primary' : 'secondary'}
+            size="sm"
+            onClick={() => setMode(option)}
+          >
+            {option}
+          </Button>
+        ))}
+      </div>
+      <DataTable
+        aria-label="Records"
+        columns={serverColumns}
+        data={result.rows}
+        getRowId={(row) => row.id}
+        server={{ rowCount: result.total }}
+        loading={result.loading}
+        query={query}
+        onQueryChange={setQuery}
+        filterable
+        selectable="hover"
+        exportable={exportable}
+      />
+      <ol aria-label="Export log" className="grid gap-1 rounded-md bg-muted p-3 font-mono text-xs">
+        {log.map((line, index) => (
+          <li key={index}>{line}</li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
+/**
+ * Exporting rows only the server holds, the two ways: `fetchRows` — the app
+ * fetches what the request covers and the grid writes the file — or
+ * `onServerExport` — the backend writes the file and the app downloads it.
+ * The request carries the row scope (ids, or every matching row with its
+ * filters and exclusions), the columns and the sorting. A failure reaches
+ * `onError`, and the menu says so.
+ */
+export const ServerExport: Story = {
+  render: () => <ServerExportDemo />,
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+    const body = within(document.body)
+    const log = () => within(canvas.getByRole('list', { name: 'Export log' })).queryAllByRole('listitem')
+    const exportCsv = async () => {
+      await userEvent.click(canvas.getByRole('button', { name: 'Export' }))
+      await expect(await body.findByText('6 columns · 2,000 rows')).toBeInTheDocument()
+      await userEvent.click(body.getByRole('menuitem', { name: 'CSV (.csv)' }))
+    }
+    await settled(canvasElement)
+
+    await exportCsv()
+    await waitFor(() => expect(log()[0]).toHaveTextContent('fetchRows: every matching row but 0 → 2000 rows, written by the grid'))
+
+    await userEvent.click(canvas.getByRole('radio', { name: 'backend file' }))
+    await exportCsv()
+    await waitFor(() => expect(log()[1]).toHaveTextContent('backend file: every matching row but 0 → 2000 rows as csv'))
+
+    await userEvent.click(canvas.getByRole('radio', { name: 'failing backend' }))
+    await exportCsv()
+    await waitFor(() => expect(log()[2]).toHaveTextContent('error: The export service is unavailable.'))
+    await expect(canvas.getByRole('alert')).toHaveTextContent('Export failed. Please try again.')
+  },
+}
+
+/** A layout saved by an older release: Phone has since gone, Start date is new. */
+const olderLayout: Partial<DataTableLayout> = {
+  columnOrder: ['salary', 'name', 'phone', 'department', 'email', 'active', 'actions'],
+  columnVisibility: { email: false, phone: false },
+  columnSizing: { name: 240 },
+}
+
+function SavedLayoutDemo() {
+  const [reported, setReported] = useState<string>('—')
+  return (
+    <div className="grid w-4xl max-w-full gap-3">
+      <DataTable
+        aria-label="Records"
+        columns={columns}
+        data={twenty}
+        getRowId={(row) => row.id}
+        resizable
+        reorderable
+        hideable
+        // The app keeps the layout (a cookie, a backend); the grid fits it to today's columns.
+        layout={{
+          saved: olderLayout,
+          defaults: { columnVisibility: { email: false } },
+          onChange: (layout) => setReported(layout ? layout.columnOrder.join(', ') : 'null'),
+        }}
+      />
+      <p aria-label="Reported layout" className="text-sm text-muted-foreground">
+        {reported}
+      </p>
+    </div>
+  )
+}
+
+/**
+ * A saved layout meets columns that changed since: the removed Phone is
+ * dropped, the new Start date takes its place beside Salary, its neighbour in
+ * the definitions, and the saved widths and hidden columns still apply.
+ * "Reset layout" returns to `layout.defaults` and reports `null`.
+ */
+export const SavedLayout: Story = {
+  render: () => <SavedLayoutDemo />,
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+    const order = () => [...canvasElement.querySelectorAll<HTMLElement>('[role="columnheader"]')].map((header) => header.dataset.col)
+    await expect(order()).toEqual(['salary', 'startDate', 'name', 'department', 'active', 'actions'])
+    await userEvent.click(canvas.getByRole('button', { name: 'Columns' }))
+    await userEvent.click(await within(document.body).findByRole('menuitem', { name: 'Reset layout' }))
+    await waitFor(() => expect(order()).toEqual(['name', 'department', 'salary', 'startDate', 'active', 'actions']))
+    await expect(canvas.getByLabelText('Reported layout')).toHaveTextContent('null')
   },
 }
 
@@ -684,8 +1164,17 @@ function CustomExportDemo() {
  */
 export const CustomExportButtons: Story = { render: () => <CustomExportDemo /> }
 
-/** `loading` dims the rows; with no rows yet, `loadingMessage` (or "Loading…") shows below the header. */
-export const Loading: Story = { args: { data: [], loading: true, loadingMessage: 'Fetching employees…' } }
+/** `loading` runs a hairline under the header; with no rows yet, `loadingMessage` (or "Loading…") shows below it. */
+/** The first page on its way: placeholder rows under the real headers, sharing Skeleton's glint. */
+export const Loading: Story = { args: { data: [], loading: true } }
+
+/** `loadingMessage` replaces the placeholder rows with the app's own content. */
+export const LoadingMessage: Story = { args: { data: [], loading: true, loadingMessage: 'Fetching employees…' } }
+
+/** DataTableSkeleton: the same table, before DataTable itself can render, as in a Suspense fallback. */
+export const Skeleton: Story = {
+  render: () => <DataTableSkeleton columns={['Name', 'Department', 'Email', 'Salary']} selectable />,
+}
 
 /** `errorMessage` wins over loading and empty content, as an alert below the header. */
 export const ErrorState: Story = {
@@ -695,7 +1184,7 @@ export const ErrorState: Story = {
 
 /** `isRowSelectable`: only active employees can be selected — checkboxes, ranges, Ctrl+A and the counts agree. */
 export const RestrictedSelection: Story = {
-  args: { selectable: true, pageSize: 10, data: makeEmployees(40), isRowSelectable: (row) => row.active },
+  args: { selectable: { isRowSelectable: (row) => row.active }, pageSize: 10, data: makeEmployees(40) },
 }
 
 const minimumSalary = ({ value, onApply, close }: DataTableFilterControlProps) => (
@@ -715,13 +1204,13 @@ const minimumSalary = ({ value, onApply, close }: DataTableFilterControlProps) =
   </form>
 )
 
-/** `meta.filterControl` replaces the "contains" box for one column (a number here); `toolbar` adds your own controls. */
+/** `meta.filter.control` replaces the built-in filter for one column; `toolbar` adds your own controls. */
 export const CustomFilterAndToolbar: Story = {
   args: {
     filterable: true,
     columns: columns.map((column) =>
       'accessorKey' in column && column.accessorKey === 'salary'
-        ? { ...column, filterFn: (row, id, min) => row.getValue<number>(id) >= (min as number), meta: { ...column.meta, filterControl: minimumSalary } }
+        ? { ...column, filterFn: (row, id, min) => row.getValue<number>(id) >= (min as number), meta: { ...column.meta, filter: { control: minimumSalary } } }
         : column,
     ),
     toolbar: <Button size="sm">New employee</Button>,

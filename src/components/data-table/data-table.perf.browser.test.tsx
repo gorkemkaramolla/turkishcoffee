@@ -38,7 +38,7 @@ function mount(props: Partial<DataTableProps<Row>>) {
   const view = render(
     <div style={{ width: 1200 }}>
       <Profiler id="grid" onRender={onRender}>
-        <DataTable aria-label="Records" columns={columns} data={rows1k} getRowId={(row) => row.id} height={560} {...props} />
+        <DataTable aria-label="Records" columns={columns} data={rows1k} getRowId={(row) => row.id} height={560} {...(props as object)} />
       </Profiler>
     </div>,
   )

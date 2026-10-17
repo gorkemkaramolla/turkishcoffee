@@ -6,6 +6,7 @@ import { Profiler, useImperativeHandle, useState, type Ref } from 'react'
 import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
 import type { ColumnFiltersState, SortingState } from '@tanstack/react-table'
+import type { DataTableQuery } from '../src/components/data-table'
 import './bench.css'
 import { DataTable } from '../src/components/data-table/data-table'
 import type { DataTableColumn } from '../src/components/data-table/features'
@@ -64,8 +65,9 @@ const scenario = new URLSearchParams(location.search).get('s') ?? 'client10k'
 
 function Harness({ api }: { api: Ref<Api> }) {
   const [data, setData] = useState(() => rows(scenario === 'small' ? 50 : 10_000))
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [columnFilters, setFilters] = useState<ColumnFiltersState>([])
+  const [query, setQuery] = useState<DataTableQuery>({ sorting: [], columnFilters: [] })
+  const setSorting = (sorting: SortingState) => setQuery((current) => ({ ...current, sorting }))
+  const setFilters = (columnFilters: ColumnFiltersState) => setQuery((current) => ({ ...current, columnFilters }))
   useImperativeHandle(api, () => ({
     setSorting,
     setFilters,
@@ -91,10 +93,8 @@ function Harness({ api }: { api: Ref<Api> }) {
       filterable
       selectable
       exportable
-      sorting={sorting}
-      onSortingChange={setSorting}
-      columnFilters={columnFilters}
-      onColumnFiltersChange={setFilters}
+      query={query}
+      onQueryChange={setQuery}
       height={scenario === 'small' ? undefined : 600}
     />
   )

@@ -1,10 +1,9 @@
 import { createRef, useState } from 'react'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
-import type { SortingState } from '@tanstack/react-table'
 import { DataTable, type DataTableProps } from './data-table'
 import type { DataTableColumn } from './features'
-import type { DataTableHandle, DataTablePagination, DataTableRowSelection } from './state'
+import type { DataTableHandle, DataTableQuery, DataTableRowSelection } from './state'
 
 type Person = { id: string; name: string; age: number }
 
@@ -17,7 +16,7 @@ const people = (count: number, from = 0): Person[] =>
   Array.from({ length: count }, (_, i) => ({ id: String(from + i), name: `P${String(from + i).padStart(2, '0')}`, age: (from + i) * 7 % 50 }))
 
 function Table(props: Partial<DataTableProps<Person>>) {
-  return <DataTable aria-label="Records" columns={columns} data={people(6)} getRowId={(row) => row.id} {...props} />
+  return <DataTable aria-label="Records" columns={columns} data={people(6)} getRowId={(row) => row.id} {...(props as object)} />
 }
 
 function names(): string[] {
@@ -43,26 +42,29 @@ beforeAll(() => {
   )
 })
 
-describe('controlled and uncontrolled state', () => {
-  it('sorting: uncontrolled reports changes; controlled follows only the parent', () => {
-    const onSortingChange = vi.fn()
-    const { rerender } = render(<Table sortable onSortingChange={onSortingChange} />)
-    sortName()
-    expect(onSortingChange).toHaveBeenLastCalledWith([{ id: 'name', desc: false }])
+describe('the query: sorting, filters and page as one value', () => {
+  const query = (over: Partial<DataTableQuery> = {}): DataTableQuery => ({ sorting: [], columnFilters: [], ...over })
 
-    // Controlled and the parent ignores the change: nothing moves.
+  it('uncontrolled: the grid keeps it and reports every change', () => {
+    const onQueryChange = vi.fn()
+    render(<Table sortable onQueryChange={onQueryChange} />)
+    sortName()
+    expect(onQueryChange).toHaveBeenLastCalledWith(query({ sorting: [{ id: 'name', desc: false }] }), 'sorting')
+  })
+
+  it('controlled: the grid shows only what the parent passes', () => {
     const ignored = vi.fn()
-    rerender(<Table sortable sorting={[{ id: 'name', desc: true }]} onSortingChange={ignored} />)
+    render(<Table sortable query={query({ sorting: [{ id: 'name', desc: true }] })} onQueryChange={ignored} />)
     expect(names()[0]).toBe('P05')
     sortName()
     expect(ignored).toHaveBeenCalled()
     expect(names()[0]).toBe('P05')
   })
 
-  it('controlled sorting driven by a parent', () => {
+  it('controlled by a parent', () => {
     function Parent() {
-      const [sorting, setSorting] = useState<SortingState>([])
-      return <Table sortable sorting={sorting} onSortingChange={setSorting} />
+      const [value, setValue] = useState(query())
+      return <Table sortable query={value} onQueryChange={setValue} />
     }
     render(<Parent />)
     sortName()
@@ -70,16 +72,43 @@ describe('controlled and uncontrolled state', () => {
     expect(names()[0]).toBe('P05')
   })
 
-  it('initialState seeds every slice', () => {
+  it('a sort on a later page is one change, already on the first page', () => {
+    const onQueryChange = vi.fn()
+    render(<Table sortable pageSize={2} onQueryChange={onQueryChange} />)
+    act(() => screen.getByRole('button', { name: 'Next page' }).click())
+    act(() => screen.getByRole('button', { name: 'Next page' }).click())
+    expect(onQueryChange).toHaveBeenLastCalledWith(query({ pagination: { pageIndex: 2, pageSize: 2 } }), 'pagination')
+    onQueryChange.mockClear()
+    sortName()
+    expect(onQueryChange).toHaveBeenCalledTimes(1)
+    expect(onQueryChange).toHaveBeenCalledWith(
+      query({ sorting: [{ id: 'name', desc: false }], pagination: { pageIndex: 0, pageSize: 2 } }),
+      'sorting',
+    )
+  })
+
+  it('a filter on a later page is one change too', async () => {
+    const onQueryChange = vi.fn()
+    render(<Table filterable pageSize={2} defaultQuery={{ pagination: { pageIndex: 1, pageSize: 2 } }} onQueryChange={onQueryChange} />)
+    act(() => screen.getByRole('button', { name: 'Filter Name' }).click())
+    act(() => {
+      fireEvent.change(screen.getByRole('textbox'), { target: { value: 'P0' } })
+    })
+    act(() => screen.getByRole('button', { name: 'Apply' }).click())
+    expect(onQueryChange).toHaveBeenCalledTimes(1)
+    expect(onQueryChange).toHaveBeenCalledWith(
+      query({ columnFilters: [{ id: 'name', value: 'P0' }], pagination: { pageIndex: 0, pageSize: 2 } }),
+      'columnFilters',
+    )
+  })
+
+  it('defaultQuery seeds the query; layout.defaults the layout', () => {
     render(
       <Table
         sortable
         hideable
-        initialState={{
-          sorting: [{ id: 'age', desc: true }],
-          pagination: { pageIndex: 1, pageSize: 2 },
-          columnVisibility: { age: false },
-        }}
+        defaultQuery={{ sorting: [{ id: 'age', desc: true }], pagination: { pageIndex: 1, pageSize: 2 } }}
+        layout={{ defaults: { columnVisibility: { age: false } } }}
       />,
     )
     expect(screen.queryByRole('columnheader', { name: /^Age/ })).toBeNull()
@@ -87,18 +116,42 @@ describe('controlled and uncontrolled state', () => {
     expect(names()).toEqual(['P03', 'P02'])
   })
 
-  it('precedence: controlled > stored layout > initialState', () => {
+  it('the stored layout wins over layout.defaults', () => {
     localStorage.setItem('turkishcoffee:data-table:people', JSON.stringify({ columnVisibility: { name: false } }))
-    const { unmount } = render(<Table hideable storageKey="people" initialState={{ columnVisibility: { age: false } }} />)
-    // Stored wins over initialState.
+    render(<Table hideable layout={{ storageKey: 'people', defaults: { columnVisibility: { age: false } } }} />)
     expect(screen.queryByRole('columnheader', { name: /^Name/ })).toBeNull()
     expect(screen.getByRole('columnheader', { name: /^Age/ })).toBeTruthy()
-    unmount()
-
-    // Controlled wins over stored.
-    render(<Table hideable storageKey="people" columnVisibility={{}} onColumnVisibilityChange={() => {}} />)
-    expect(screen.getByRole('columnheader', { name: /^Name/ })).toBeTruthy()
     localStorage.clear()
+  })
+
+  it('resetQuery returns to defaultQuery in one change, controlled or not', () => {
+    const ref = createRef<DataTableHandle<Person>>()
+    const onQueryChange = vi.fn()
+    const defaults = { sorting: [{ id: 'age', desc: true }] }
+    const { rerender } = render(<Table ref={ref} sortable pageSize={2} defaultQuery={defaults} onQueryChange={onQueryChange} />)
+    sortName()
+    act(() => screen.getByRole('button', { name: 'Next page' }).click())
+    onQueryChange.mockClear()
+    act(() => ref.current!.resetQuery())
+    expect(onQueryChange).toHaveBeenCalledTimes(1)
+    expect(onQueryChange).toHaveBeenCalledWith(query({ ...defaults, pagination: { pageIndex: 0, pageSize: 2 } }), 'reset')
+    expect(names()).toEqual(['P05', 'P04'])
+
+    // Controlled: the reset is a request; the parent decides.
+    onQueryChange.mockClear()
+    rerender(
+      <Table
+        ref={ref}
+        sortable
+        pageSize={2}
+        defaultQuery={defaults}
+        query={query({ sorting: [{ id: 'name', desc: false }], pagination: { pageIndex: 2, pageSize: 2 } })}
+        onQueryChange={onQueryChange}
+      />,
+    )
+    act(() => ref.current!.resetQuery())
+    expect(onQueryChange).toHaveBeenCalledWith(query({ ...defaults, pagination: { pageIndex: 0, pageSize: 2 } }), 'reset')
+    expect(names()).toEqual(['P04', 'P05'])
   })
 
   it('the ref handle resets state, pages and reads the selection', () => {
@@ -114,23 +167,12 @@ describe('controlled and uncontrolled state', () => {
     act(() => ref.current!.resetRowSelection())
     expect(ref.current!.getSelectedRows()).toEqual([])
   })
-})
 
-describe('pagination', () => {
-  it('a new sort, filter or page size returns to the first page', () => {
-    const onPaginationChange = vi.fn()
-    render(<Table sortable pageSize={2} onPaginationChange={onPaginationChange} />)
-    act(() => screen.getByRole('button', { name: 'Next page' }).click())
-    expect(onPaginationChange).toHaveBeenLastCalledWith({ pageIndex: 1, pageSize: 2 })
-    sortName()
-    expect(onPaginationChange).toHaveBeenLastCalledWith({ pageIndex: 0, pageSize: 2 })
-  })
-
-  it('controlled pagination clamps and reports an out-of-range page', () => {
-    const onPaginationChange = vi.fn()
-    render(<Table pagination={{ pageIndex: 9, pageSize: 2 }} onPaginationChange={onPaginationChange} />)
+  it('a controlled page out of range is clamped and reported', () => {
+    const onQueryChange = vi.fn()
+    render(<Table query={query({ pagination: { pageIndex: 9, pageSize: 2 } })} onQueryChange={onQueryChange} />)
     expect(names()).toEqual(['P04', 'P05'])
-    expect(onPaginationChange).toHaveBeenCalledWith({ pageIndex: 2, pageSize: 2 })
+    expect(onQueryChange).toHaveBeenCalledWith(query({ pagination: { pageIndex: 2, pageSize: 2 } }), 'pagination')
   })
 })
 
@@ -144,20 +186,18 @@ describe('server mode', () => {
         data={[...people(2, page * 2)].reverse()}
         getRowId={(row) => row.id}
         server={{ rowCount: 6 }}
-        pagination={{ pageIndex: page, pageSize: 2 }}
-        onPaginationChange={() => {}}
-        {...props}
+        query={{ sorting: [], columnFilters: [], pagination: { pageIndex: page, pageSize: 2 } }}
+        {...(props as object)}
       />
     )
   }
 
   it('never sorts or filters the loaded page; asks the server instead', async () => {
-    const onSortingChange = vi.fn()
-    const onColumnFiltersChange = vi.fn()
-    render(<Server sortable filterable onSortingChange={onSortingChange} onColumnFiltersChange={onColumnFiltersChange} />)
+    const onQueryChange = vi.fn<(query: DataTableQuery) => void>()
+    render(<Server sortable filterable onQueryChange={onQueryChange} />)
     expect(names()).toEqual(['P01', 'P00'])
     sortName()
-    expect(onSortingChange).toHaveBeenLastCalledWith([{ id: 'name', desc: false }])
+    expect(onQueryChange.mock.lastCall![0].sorting).toEqual([{ id: 'name', desc: false }])
     expect(names()).toEqual(['P01', 'P00'])
 
     act(() => screen.getByRole('button', { name: 'Filter Name' }).click())
@@ -166,7 +206,7 @@ describe('server mode', () => {
       fireEvent.change(input, { target: { value: 'zzz' } })
     })
     act(() => screen.getByRole('button', { name: 'Apply' }).click())
-    expect(onColumnFiltersChange).toHaveBeenLastCalledWith([{ id: 'name', value: 'zzz' }])
+    expect(onQueryChange.mock.lastCall![0].columnFilters).toEqual([{ id: 'name', value: 'zzz' }])
     expect(names()).toEqual(['P01', 'P00'])
   })
 
@@ -174,7 +214,7 @@ describe('server mode', () => {
     const { rerender } = render(<Server />)
     expect(screen.getByText('1–2 of 6')).toBeTruthy()
     expect(screen.getByRole('grid').getAttribute('aria-rowcount')).toBe('7')
-    rerender(<Server server={{ rowCount: 6, loading: true }} />)
+    rerender(<Server loading />)
     expect(screen.getByRole('grid').getAttribute('aria-busy')).toBe('true')
     expect(screen.getByRole('button', { name: 'Next page' }).hasAttribute('disabled')).toBe(true)
   })
@@ -188,11 +228,12 @@ describe('server mode', () => {
         <>
           <Server
             page={page}
-            selectable
-            rowSelection={selection}
-            onRowSelectionChange={(next) => {
-              onRowSelectionChange(next)
-              setSelection(next)
+            selectable={{
+              value: selection,
+              onChange: (next) => {
+                onRowSelectionChange(next)
+                setSelection(next)
+              },
             }}
           />
           <button onClick={() => setPage(1)}>go</button>
@@ -217,23 +258,28 @@ describe('server mode', () => {
 })
 
 describe('selection model (client)', () => {
-  it('select all matching follows the filters; excluded rows stay out', async () => {
-    const onRowSelectionChange = vi.fn()
-    render(<Table selectable filterable pageSize={2} onRowSelectionChange={onRowSelectionChange} />)
+  it('every matching row: exclusions tracked, and a new filter clears it, as on the server', async () => {
+    const onChange = vi.fn()
+    render(<Table selectable={{ onChange }} filterable sortable pageSize={2} />)
     act(() => headerBox().click())
     act(() => headerBox().click())
     expect(screen.getByText('6 rows selected')).toBeTruthy()
     act(() => rowBoxes()[1]!.click())
-    expect(onRowSelectionChange).toHaveBeenLastCalledWith({ type: 'allMatching', excludedIds: ['1'] })
+    expect(onChange).toHaveBeenLastCalledWith({ type: 'allMatching', excludedIds: ['1'] })
 
-    // Filter to P00..P01 only: one of the two is excluded.
+    // Paging and sorting keep it: it is still the same result.
+    act(() => screen.getByRole('button', { name: 'Next page' }).click())
+    sortName()
+    expect(screen.getByText('5 rows selected')).toBeTruthy()
+
     act(() => screen.getByRole('button', { name: 'Filter Name' }).click())
     const input = await screen.findByRole('textbox')
     act(() => {
       fireEvent.change(input, { target: { value: 'P0' } })
     })
     act(() => screen.getByRole('button', { name: 'Apply' }).click())
-    expect(screen.getByText('5 rows selected')).toBeTruthy()
+    expect(onChange).toHaveBeenLastCalledWith({ type: 'ids', ids: [] })
+    expect(screen.queryByText(/selected/)).toBeNull()
   })
 
   it('ids hidden by a filter stay selected and are counted as hidden', async () => {
@@ -250,16 +296,17 @@ describe('selection model (client)', () => {
 
   it('rows that leave the data stop being selected', () => {
     const onRowSelectionChange = vi.fn()
-    const { rerender } = render(<Table selectable onRowSelectionChange={onRowSelectionChange} />)
+    const selectable = { onChange: onRowSelectionChange }
+    const { rerender } = render(<Table selectable={selectable} />)
     act(() => rowBoxes()[0]!.click())
     act(() => rowBoxes()[5]!.click())
-    rerender(<Table data={people(3)} selectable onRowSelectionChange={onRowSelectionChange} />)
+    rerender(<Table data={people(3)} selectable={selectable} />)
     expect(onRowSelectionChange).toHaveBeenLastCalledWith({ type: 'ids', ids: ['0'] })
     expect(screen.getByText('1 row selected')).toBeTruthy()
   })
 
-  it("selectionScope 'page': one step, and a new page clears the selection", () => {
-    render(<Table selectable selectionScope="page" pageSize={2} />)
+  it("scope 'page': one step, and a new page clears the selection", () => {
+    render(<Table selectable={{ scope: 'page' }} pageSize={2} />)
     act(() => headerBox().click())
     expect(headerBox().getAttribute('aria-checked')).toBe('true')
     expect(headerBox().className).not.toContain('data-checked:bg-background')
@@ -269,7 +316,7 @@ describe('selection model (client)', () => {
 
   it('controlled row selection drives the checkboxes', () => {
     const selection: DataTableRowSelection = { type: 'ids', ids: ['1', '2'] }
-    render(<Table selectable rowSelection={selection} onRowSelectionChange={() => {}} />)
+    render(<Table selectable={{ value: selection, onChange: () => {} }} />)
     expect(rowBoxes().map((box) => box.getAttribute('aria-checked'))).toEqual(['false', 'true', 'true', 'false', 'false', 'false'])
   })
 
@@ -278,10 +325,8 @@ describe('selection model (client)', () => {
     render(
       <Table
         ref={ref}
-        selectableColumns
+        selectableColumns={{ value: { ids: ['age'], scope: 'page' }, onChange: () => {} }}
         pageSize={2}
-        columnSelection={{ ids: ['age'], scope: 'page' }}
-        onColumnSelectionChange={() => {}}
       />,
     )
     expect(screen.getByRole('button', { name: 'Select column Age', hidden: true }).getAttribute('aria-pressed')).toBe('true')
@@ -293,8 +338,7 @@ describe('selection model (client)', () => {
 
 describe('pagination edge cases', () => {
   it("pageSize 'all' paginates nothing and pageIndex stays 0", () => {
-    const onPaginationChange = vi.fn<(next: DataTablePagination) => void>()
-    render(<Table pageSize="all" onPaginationChange={onPaginationChange} />)
+    render(<Table pageSize="all" />)
     expect(names()).toHaveLength(6)
     expect(screen.getByText('1–6 of 6')).toBeTruthy()
   })

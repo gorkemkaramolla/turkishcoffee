@@ -1,7 +1,10 @@
+import { createRef } from 'react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { actionsColumn } from './actions-column'
 import { DataTable, type DataTableProps } from './data-table'
 import type { DataTableColumn } from './features'
+import type { DataTableHandle } from './state'
 import { distributeWidths } from './internal/autofit'
 import { moveColumn, orderedColumnIds } from './internal/columns'
 import { compareValues } from './internal/sort'
@@ -23,7 +26,7 @@ const columns: Array<DataTableColumn<Person>> = [
 ]
 
 function Table(props: Partial<DataTableProps<Person>>) {
-  return <DataTable aria-label="Records" columns={columns} data={people} getRowId={(row) => row.id} locale="tr" {...props} />
+  return <DataTable aria-label="Records" columns={columns} data={people} getRowId={(row) => row.id} {...(props as object)} />
 }
 
 /** The text of one column, top to bottom. */
@@ -102,6 +105,24 @@ describe('DataTable sorting', () => {
     act(() => headerButton('Active').click())
     expect(columnText(3)).toEqual(['yes', 'yes', 'no', 'no'])
   })
+
+  it('Shift+click adds a column to the sort; multiSort={false} replaces it instead', () => {
+    const sortAfterShiftClick = (props: Partial<DataTableProps<Person>>) => {
+      const onQueryChange = vi.fn()
+      const { unmount } = render(<Table sortable onQueryChange={onQueryChange} {...props} />)
+      act(() => headerButton('Name').click())
+      act(() => {
+        fireEvent.click(headerButton('Age'), { shiftKey: true })
+      })
+      unmount()
+      return onQueryChange.mock.lastCall![0].sorting
+    }
+    expect(sortAfterShiftClick({})).toEqual([
+      { id: 'name', desc: false },
+      { id: 'age', desc: false },
+    ])
+    expect(sortAfterShiftClick({ multiSort: false })).toEqual([{ id: 'age', desc: false }])
+  })
 })
 
 describe('DataTable features are opt-in', () => {
@@ -142,6 +163,29 @@ describe('DataTable resizing', () => {
   })
 })
 
+describe('actionsColumn', () => {
+  const withActions: Array<DataTableColumn<Person>> = [
+    ...columns,
+    actionsColumn<Person>({
+      label: 'Actions',
+      cell: ({ row }) => <button type="button" aria-label={`Actions for ${row.original.name}`} />,
+    }),
+  ]
+
+  it('is named for screen readers only, 56px wide, and out of sorting, filtering, resizing, hiding, moving and export', () => {
+    const ref = createRef<DataTableHandle<Person>>()
+    render(<Table ref={ref} columns={withActions} sortable filterable resizable hideable reorderable />)
+    const header = screen.getByRole('columnheader', { name: 'Actions' })
+    expect(within(header).getByText('Actions').className).toContain('sr-only')
+    expect(within(header).queryAllByRole('button')).toHaveLength(0)
+    expect(within(header).queryByRole('separator')).toBeNull()
+    expect(header.hasAttribute('data-fixed')).toBe(true)
+    expect(columnFlex('actions')).toBe('0 0 56px')
+    expect(screen.getByRole('button', { name: 'Actions for Zeynep' })).toBeTruthy()
+    expect(ref.current!.getExportData().columns.map((column) => column.label)).not.toContain('Actions')
+  })
+})
+
 describe('DataTable column menus', () => {
   it('hides a column from the Columns menu, but never the last one', async () => {
     render(<Table hideable />)
@@ -167,12 +211,12 @@ describe('DataTable column menus', () => {
   })
 
   it('remembers the layout under storageKey', async () => {
-    const { unmount } = render(<Table reorderable storageKey="people" />)
+    const { unmount } = render(<Table reorderable layout={{ storageKey: 'people' }} />)
     act(() => screen.getByRole('button', { name: 'Name column options' }).click())
     act(() => screen.getByRole('menuitem', { name: 'Move right' }).click())
     unmount()
 
-    render(<Table reorderable storageKey="people" />)
+    render(<Table reorderable layout={{ storageKey: 'people' }} />)
     const headers = screen.getAllByRole('columnheader').map((header) => header.dataset.col)
     expect(headers).toEqual(['email', 'name', 'age', 'active'])
   })
@@ -223,5 +267,55 @@ describe('helpers', () => {
     const result = distributeWidths({ a: 100, b: 300 }, 800, () => 1000)
     expect(result).toEqual({ a: 200, b: 600 })
     expect(distributeWidths({ a: 100 }, 50, () => 1000)).toEqual({ a: 100 })
+  })
+})
+
+describe('filter popup inside a reorderable header', () => {
+  it('a press inside the popup does not start a column drag', () => {
+    render(<Table reorderable filterable />)
+    fireEvent.click(screen.getAllByRole('button', { name: /filter|filtre/i })[0]!)
+    const input = screen.getByRole('textbox')
+    fireEvent.pointerDown(input, { button: 0, pointerType: 'mouse', clientX: 10 })
+    for (const clientX of [60, 160, 260]) fireEvent.pointerMove(window, { clientX, clientY: 20 })
+    expect(document.body.style.cursor).not.toBe('grabbing')
+    fireEvent.pointerUp(window, { clientX: 260, clientY: 20 })
+  })
+})
+
+describe('sort arrow inside a reorderable header', () => {
+  const press = (element: Element) => {
+    fireEvent.pointerDown(element, { button: 0, pointerType: 'mouse', clientX: 10 })
+    for (const clientX of [60, 160, 260]) fireEvent.pointerMove(window, { clientX, clientY: 20 })
+    const cursor = document.body.style.cursor
+    fireEvent.pointerUp(window, { clientX: 260, clientY: 20 })
+    return cursor
+  }
+
+  it('a press on the arrow does not start a column drag', () => {
+    render(<Table reorderable sortable />)
+    const sort = screen.getByRole('button', { name: /^name$/i })
+    expect(press(sort.querySelector('svg')!)).not.toBe('grabbing')
+  })
+
+  it('a press on the label still drags the column', () => {
+    render(<Table reorderable sortable />)
+    const sort = screen.getByRole('button', { name: /^name$/i })
+    expect(press(sort.querySelector('[data-cell-content]')!)).toBe('grabbing')
+  })
+})
+
+describe('row appearance', () => {
+  const frame = () => screen.getByRole('grid').parentElement!
+
+  it('rows are plain and the selection grey by default', () => {
+    render(<Table />)
+    expect(frame().className).not.toContain('--table-row-stripe')
+    expect(frame().className).not.toContain('--table-row-selected')
+  })
+
+  it('striped and a primary selection color set the row variables', () => {
+    render(<Table striped selectable={{ color: 'primary' }} />)
+    expect(frame().className).toContain('[--table-row-stripe:var(--table-row-even)]')
+    expect(frame().className).toContain('[--table-row-selected:var(--table-row-selected-primary)]')
   })
 })

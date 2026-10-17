@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef } from 'react'
 import {
   functionalUpdate,
   type ColumnFiltersState,
-  type ReactTable,
   type Row,
   type RowData,
   type RowSelectionState,
@@ -11,7 +10,6 @@ import {
 } from '@tanstack/react-table'
 import type { DataTableFeatures } from '../features'
 import type { DataTableRowSelection } from '../state'
-import { selectedLoadedRows } from './export-columns'
 import {
   NO_SELECTION,
   fromSelectionMap,
@@ -73,14 +71,45 @@ export function useSelectionModel<TData extends RowData>({
 }
 
 /**
+ * Server mode: the data of selected rows, kept from when they were loaded. A
+ * row can only be ticked while it is on screen, so its data was at hand then;
+ * holding it lets an `ids` selection outlive its page (another page, a new
+ * search) and still be exported without asking the backend.
+ */
+export function useHeldRows<TData extends RowData>({
+  server,
+  selection,
+  ids,
+  data,
+}: {
+  server: boolean
+  selection: DataTableRowSelection
+  /** The loaded rows' ids, index for index with `data`. */
+  ids: readonly string[]
+  data: TData[]
+}) {
+  const held = useRef(new Map<string, TData>())
+  useLayoutEffect(() => {
+    const rows = held.current
+    if (!server || selection.type !== 'ids' || !selection.ids.length) return rows.clear()
+    const selected = new Set(selection.ids)
+    for (const id of rows.keys()) if (!selected.has(id)) rows.delete(id)
+    ids.forEach((id, index) => {
+      if (selected.has(id)) rows.set(id, data[index]!)
+    })
+  }, [server, selection, ids, data])
+  return held
+}
+
+/**
  * Everything the grid shows and does about row selection once the rows are
  * known: the counts, the header checkbox's state and step, select-all, and the
  * rules that keep a selection valid — removed rows leave it, a page-scoped one
- * resets with the view, and a server "all matching" one resets with the
- * filters (its exclusions describe a result that no longer exists).
+ * resets with the view, and an "all matching" one resets with the filters,
+ * the grid's own or the selection's `scopeKey` (it, and its exclusions,
+ * describe a result that no longer exists). Ids picked one by one stay.
  */
 export function useSelectionView<TData extends RowData>({
-  table,
   selectable,
   isRowSelectable,
   server,
@@ -93,9 +122,7 @@ export function useSelectionView<TData extends RowData>({
   pageRows,
   total,
   view,
-  onSelectionChange,
 }: {
-  table: ReactTable<DataTableFeatures, TData>
   selectable: boolean
   isRowSelectable: ((row: TData) => boolean) | undefined
   server: boolean
@@ -109,12 +136,16 @@ export function useSelectionView<TData extends RowData>({
   allRows: Array<GridRow<TData>>
   /** The rows on screen. */
   pageRows: Array<GridRow<TData>>
-  /** How many rows match in all (server: `rowCount`). */
+  /** How many selectable rows match in all (server: `rowCount`, or the backend's count of eligible rows). */
   total: number
-  /** What a page-scoped selection resets with. */
-  view: { pageIndex: number; pageLength: number; sorting: SortingState; columnFilters: ColumnFiltersState }
-  /** The deprecated rows callback. */
-  onSelectionChange: ((rows: TData[]) => void) | undefined
+  /** What a selection resets with. `scopeKey`: the query's filters outside the grid. */
+  view: {
+    pageIndex: number
+    pageLength: number
+    sorting: SortingState
+    columnFilters: ColumnFiltersState
+    scopeKey: string | undefined
+  }
 }) {
   const { ids, eligibleIds, selectionMap } = model
   const eligible = useCallback((row: GridRow<TData>) => isRowSelectable?.(row.original) ?? true, [isRowSelectable])
@@ -144,6 +175,7 @@ export function useSelectionView<TData extends RowData>({
     if (previous === view) return
     previousView.current = view
     const filtersChanged =
+      previous.scopeKey !== view.scopeKey ||
       previous.columnFilters.length !== view.columnFilters.length ||
       previous.columnFilters.some((filter, i) => filter.id !== view.columnFilters[i]?.id || !Object.is(filter.value, view.columnFilters[i]?.value))
     const sortChanged =
@@ -152,15 +184,20 @@ export function useSelectionView<TData extends RowData>({
     const pageChanged = previous.pageIndex !== view.pageIndex || previous.pageLength !== view.pageLength
     if (
       (scope === 'page' && (pageChanged || sortChanged || filtersChanged)) ||
-      (server && filtersChanged && selection.type === 'allMatching')
+      (filtersChanged && selection.type === 'allMatching')
     ) {
       setSelection(NO_SELECTION)
     }
-  }, [view, scope, server, selection.type, setSelection])
+  }, [view, scope, selection.type, setSelection])
 
   const selectedRowCount = selectable ? selectedCount(selection, selectableTotal, matchingIds) : 0
   const hiddenSelectedRows =
     selectable && matchingIds && selection.type === 'ids' ? selection.ids.filter((id) => !matchingIds.has(id)).length : 0
+  const offPageSelectedRows = useMemo(() => {
+    if (!selectable || !server || selection.type !== 'ids') return 0
+    const loaded = new Set(ids)
+    return selection.ids.filter((id) => !loaded.has(id)).length
+  }, [selectable, server, selection, ids])
   const headerState: HeaderSelection = selectable
     ? headerSelection({
         selection,
@@ -205,26 +242,13 @@ export function useSelectionView<TData extends RowData>({
     else selectPage()
   }
 
-  // The deprecated rows callback, kept for compatibility.
-  const callback = useRef(onSelectionChange)
-  const tableRef = useRef(table)
-  useLayoutEffect(() => {
-    callback.current = onSelectionChange
-    tableRef.current = table
-  })
-  const reported = useRef(selection)
-  useEffect(() => {
-    if (reported.current === selection) return
-    reported.current = selection
-    callback.current?.(selectedLoadedRows(tableRef.current, selection).map((row) => row.original))
-  }, [selection])
-
   return {
     matchingIds,
     pageIds,
     selectableTotal,
     selectedRowCount,
     hiddenSelectedRows,
+    offPageSelectedRows,
     headerState,
     selectAllMatching,
     clearSelection,

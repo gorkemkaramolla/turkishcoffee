@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { lockedEdgeIds, resizeWithin, type FitColumn } from './internal/autofit'
+import { fitWithin, lockedEdgeIds, resizeWithin, type FitColumn } from './internal/autofit'
 import { windowSlots } from './internal/column-slots'
 
 const col = (id: string, width: number, extra: Partial<FitColumn> = {}): FitColumn => ({
@@ -61,6 +61,68 @@ describe('resizeWithin: columns that overflow the frame (the table scrolls)', ()
   })
   it('shrinking past the frame width fills the gap instead of leaving one', () => {
     expect(resizeWithin(wide, 'a', 100, 1000)).toEqual({ a: 100, b: 900 })
+  })
+})
+
+describe('fitWithin: fitting one column shares the difference among the others', () => {
+  const close = (widths: Record<string, number>) =>
+    Object.fromEntries(Object.entries(widths).map(([id, width]) => [id, Math.round(width * 100) / 100]))
+
+  it('narrower: the least stretched columns take the room first, and the row still fills the frame', () => {
+    // b is stretched to twice its content, c to three times.
+    const columns = [col('a', 300, { floor: 150 }), col('b', 300, { floor: 150 }), col('c', 300, { floor: 100 }), row[3]!]
+    const widths = fitWithin(columns, 'a', 150, 1000)
+    expect(close(widths)).toEqual({ a: 150, b: 450, c: 300, actions: 100 })
+  })
+
+  it('fitting columns one after another spreads the room instead of piling it into the last one', () => {
+    let columns = [
+      col('a', 200, { floor: 100 }),
+      col('b', 300, { floor: 150 }),
+      col('c', 240, { floor: 120 }),
+      col('d', 160, { floor: 80 }),
+      col('actions', 100, { resizable: false }),
+    ]
+    for (const id of ['a', 'b', 'c']) {
+      const widths = fitWithin(columns, id, columns.find((column) => column.id === id)!.floor!, 1000)
+      columns = columns.map((column) => ({ ...column, width: widths[column.id]! }))
+    }
+    const widths = close(Object.fromEntries(columns.map((column) => [column.id, column.width])))
+    // resizeWithin would have handed d every freed pixel: 160 + 100 + 150 + 120 = 530.
+    expect(widths).toEqual({ a: 250, b: 330, c: 120, d: 200, actions: 100 })
+  })
+
+  it('wider: the most stretched columns give way first, none below its content width', () => {
+    const columns = [col('a', 200, { floor: 100 }), col('b', 200, { floor: 190 }), col('c', 500, { floor: 100 }), row[3]!]
+    expect(close(fitWithin(columns, 'a', 400, 1000))).toEqual({ a: 400, b: 200, c: 300, actions: 100 })
+  })
+
+  it('wider than the others can make room for: the column still gets its content width, and the table scrolls', () => {
+    const columns = [col('a', 300, { floor: 300 }), col('b', 300, { floor: 280 }), col('c', 300, { floor: 290 }), row[3]!]
+    const widths = fitWithin(columns, 'a', 500, 1000)
+    expect(close(widths)).toEqual({ a: 500, b: 280, c: 290, actions: 100 })
+    expect(sum(widths)).toBeGreaterThan(1000)
+  })
+
+  it('an unmeasured neighbour is never squeezed', () => {
+    const columns = [col('a', 300, { floor: 100 }), col('b', 600), row[3]!]
+    expect(fitWithin(columns, 'a', 400, 1000)).toEqual({ a: 400, b: 600, actions: 100 })
+  })
+
+  it('columns that overflow the frame: only the column changes, and a gap it would leave is filled', () => {
+    const wide = [col('a', 600, { floor: 100 }), col('b', 600, { floor: 300 })]
+    expect(fitWithin(wide, 'a', 900, 1000)).toEqual({ a: 900, b: 600 })
+    expect(close(fitWithin(wide, 'a', 100, 1000))).toEqual({ a: 100, b: 900 })
+  })
+
+  it('when no column can take the room, the column stops shrinking', () => {
+    const columns = [col('a', 500, { floor: 100 }), col('b', 500, { max: 500 })]
+    expect(fitWithin(columns, 'a', 100, 1000)).toEqual({ a: 500, b: 500 })
+  })
+
+  it('min and max still hold', () => {
+    expect(fitWithin(row, 'a', 10, 1000).a).toBe(50)
+    expect(fitWithin([col('a', 300, { max: 350 }), col('b', 700)], 'a', 600, 1000).a).toBe(350)
   })
 })
 

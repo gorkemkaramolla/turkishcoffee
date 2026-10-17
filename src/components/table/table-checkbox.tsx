@@ -47,6 +47,8 @@ export function TableCheckbox({
     <Checkbox
       data-slot="table-checkbox"
       className={cn(
+        // A 32px target around the 16px box: the inset counts from inside its 1px border.
+        'relative after:absolute after:-inset-2.25',
         hidden &&
           'opacity-0 transition-opacity group-hover/row:opacity-100 group-hover/header:opacity-100 group-focus-within/row:opacity-100 focus-visible:opacity-100 in-data-has-selection:opacity-100 [@media(hover:none)]:opacity-100',
         scope === 'visible' && 'data-checked:bg-background data-checked:text-primary-text',

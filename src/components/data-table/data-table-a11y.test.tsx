@@ -26,7 +26,7 @@ const columns: Array<DataTableColumn<Person>> = [
 ]
 
 function Table(props: Partial<DataTableProps<Person>>) {
-  return <DataTable aria-label="Records" columns={columns} data={people} getRowId={(row) => row.id} pageSize={10} {...props} />
+  return <DataTable aria-label="Records" columns={columns} data={people} getRowId={(row) => row.id} pageSize={10} {...(props as object)} />
 }
 
 const grid = () => screen.getByRole('grid')

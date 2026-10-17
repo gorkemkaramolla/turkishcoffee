@@ -1,4 +1,5 @@
 import type { DataTableLabels } from '../labels'
+import type { FilterSetup } from './filter'
 
 /**
  * What the header needs from DataTable, passed down as one object. Stable
@@ -12,6 +13,8 @@ export type GridApi = {
   hideable: boolean
   filterable: boolean
   dir: 'ltr' | 'rtl'
+  /** The page's language: counts in an options filter. */
+  locale: string | undefined
   /** Header clicks select columns (Excel) instead of sorting. */
   columnSelection: boolean
   labels: DataTableLabels
@@ -24,6 +27,8 @@ export type GridApi = {
   startDrag: (event: React.PointerEvent<HTMLElement>, columnId: string) => void
   /** Opens the shared options menu for a column, anchored to its chevron. */
   openMenu: (columnId: string, anchor: HTMLElement) => void
+  /** A column's filter panel, worked out when it opens from the column, its value and the rows. */
+  filterSetup: (columnId: string, value: unknown) => FilterSetup
   /** Selects a column: plain click, Ctrl/⌘ to toggle, Shift for a range. */
   selectColumn: (columnId: string, modifiers: { ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }) => void
 }

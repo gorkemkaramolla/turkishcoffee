@@ -3,6 +3,8 @@
 import { useId } from 'react'
 import { validatePageSize, validateNonnegativeInteger } from './internal/pagination'
 import { cn } from '../../lib/cn'
+import { DEFAULT_LOCALE, inLanguage } from '../../lib/i18n'
+import { useLocale } from '../locale-provider/locale-provider'
 import { ChevronLeftIcon, ChevronLeftPipeIcon, ChevronRightIcon, ChevronRightPipeIcon } from '../../lib/icons'
 import { Button } from '../button/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../select/select'
@@ -10,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 /** A page size, or every row on one page. */
 export type TablePageSize = number | 'all'
 
-/** Every word TablePagination renders. English by default. */
+/** Every word TablePagination renders, in the locale's language (see LocaleProvider). */
 export type TablePaginationLabels = {
   rowsPerPage: string
   all: string
@@ -22,15 +24,36 @@ export type TablePaginationLabels = {
   lastPage: string
 }
 
-export const defaultTablePaginationLabels: TablePaginationLabels = {
-  rowsPerPage: 'Rows per page:',
-  all: 'All',
-  range: (from, to, total) => `${from}–${to} of ${total}`,
-  firstPage: 'First page',
-  previousPage: 'Previous page',
-  nextPage: 'Next page',
-  lastPage: 'Last page',
+/** The labels in `locale`'s language, with its numerals. */
+export function tablePaginationLabelsForLocale(locale: string): TablePaginationLabels {
+  const n = (value: number) => value.toLocaleString(locale)
+  return inLanguage<TablePaginationLabels>(
+    {
+      en: {
+        rowsPerPage: 'Rows per page:',
+        all: 'All',
+        range: (from, to, total) => `${n(from)}–${n(to)} of ${n(total)}`,
+        firstPage: 'First page',
+        previousPage: 'Previous page',
+        nextPage: 'Next page',
+        lastPage: 'Last page',
+      },
+      tr: {
+        rowsPerPage: 'Sayfa başına satır:',
+        all: 'Tümü',
+        range: (from, to, total) => `${n(from)}–${n(to)} / ${n(total)}`,
+        firstPage: 'İlk sayfa',
+        previousPage: 'Önceki sayfa',
+        nextPage: 'Sonraki sayfa',
+        lastPage: 'Son sayfa',
+      },
+    },
+    locale,
+  )
 }
+
+/** The English labels. */
+export const defaultTablePaginationLabels: TablePaginationLabels = tablePaginationLabelsForLocale(DEFAULT_LOCALE)
 
 export type TablePaginationProps = {
   /** The current page, 1-based. */
@@ -44,6 +67,8 @@ export type TablePaginationProps = {
   /** Omit to hide the page-size picker. */
   onPageSizeChange?: (pageSize: TablePageSize) => void
   labels?: Partial<TablePaginationLabels>
+  /** The labels' language and numerals. Defaults to LocaleProvider's, else the page's `<html lang>`. */
+  locale?: string
   /** Disables every control, e.g. while the next page is loading. */
   disabled?: boolean
   className?: string
@@ -74,6 +99,7 @@ export function TablePagination({
   onPageChange,
   onPageSizeChange,
   labels: labelOverrides,
+  locale: localeProp,
   disabled = false,
   className,
 }: TablePaginationProps) {
@@ -82,7 +108,8 @@ export function TablePagination({
   validateNonnegativeInteger(page - 1, 'page - 1')
   pageSizeOptions.forEach(validatePageSize)
   const labelId = useId()
-  const labels = { ...defaultTablePaginationLabels, ...labelOverrides }
+  const locale = useLocale(localeProp)
+  const labels = { ...tablePaginationLabelsForLocale(locale), ...labelOverrides }
   const size = pageSize === 'all' ? Math.max(total, 1) : pageSize
   const pageCount = Math.max(1, Math.ceil(total / size))
   const current = Math.min(Math.max(page, 1), pageCount)

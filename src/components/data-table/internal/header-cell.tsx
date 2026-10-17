@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useState } from 'react'
+import { memo } from 'react'
 import { FlexRender, type Column, type Header, type RowData } from '@tanstack/react-table'
 import { cn } from '../../../lib/cn'
 import {
@@ -11,7 +11,6 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   EyeOffIcon,
-  FilterIcon,
   XIcon,
 } from '../../../lib/icons'
 import {
@@ -20,7 +19,15 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '../../dropdown-menu/dropdown-menu'
-import { TableColumnFilter } from '../../table/table-column-filter'
+import {
+  ColumnFilterPopover,
+  DateFilterPanel,
+  NumberFilterPanel,
+  OptionsFilterPanel,
+  TextFilterPanel,
+  type TableColumnFilterLabels,
+} from '../../table/table-column-filter'
+import { isDateRange, isNumberRange } from './filter'
 import { tableCellPaddingClass, tableHeadTextClass } from '../../table/internal/styles'
 import { columnCanMove, columnClass, columnLabel } from './columns'
 import type { DataTableFeatures } from '../features'
@@ -30,7 +37,6 @@ import { SELECT_COLUMN_ID } from './selection'
 import type { ColumnScope } from './use-column-selection'
 import { activeCellClass } from './body'
 import { columnSlots } from './column-slots'
-import { Popover, PopoverContent, PopoverTrigger } from '../../popover/popover'
 import { cellId } from './use-grid-navigation'
 
 type GridHeader<TData extends RowData> = Header<DataTableFeatures, TData, unknown>
@@ -151,7 +157,7 @@ function HeaderCells<TData extends RowData>({
   lockedEdges: ReadonlySet<string>
 }) {
   return (
-    <div role="row" aria-rowindex={1} className="flex border-b border-border" style={{ height: rowHeight }}>
+    <div role="row" aria-rowindex={1} className="group/headers flex border-b border-border" style={{ height: rowHeight }}>
       {columnSlots(headers, columnWindow, (header) => header.column.id, (header, index) => {
         const { column } = header
         const sorted = column.getIsSorted()
@@ -285,19 +291,27 @@ const HeaderCell = memo(function HeaderCell<TData extends RowData>({
   const name = columnLabel(column)
 
   const label = (
-    <span data-cell-content="" className="min-w-0 truncate">
+    // The checkbox's span leaves room for its 32px target, which the clip would cut.
+    <span data-cell-content="" className={cn('min-w-0 truncate', checkbox && '-m-2 p-2')}>
       <FlexRender header={header} />
     </span>
   )
 
+  const toggleSorting = column.getToggleSortingHandler()
   let body: React.ReactNode
   if (canSort) {
     body = (
       <button
         type="button"
         tabIndex={-1}
-          data-grid-control=""
-        onClick={column.getToggleSortingHandler()}
+        data-grid-control=""
+        onClick={(event) => {
+          // A movable column's label is its drag handle: a pointer sorts only
+          // from the arrow. Keyboard and screen-reader presses (detail 0) still sort.
+          const fromArrow = (event.target as Element).closest('[data-sort-arrow]')
+          if (canMove && event.detail > 0 && !fromArrow) return
+          toggleSorting?.(event)
+        }}
         className={cn(
           'flex min-w-0 flex-1 items-center gap-1 self-stretch rounded-sm text-start outline-none',
           'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
@@ -306,7 +320,7 @@ const HeaderCell = memo(function HeaderCell<TData extends RowData>({
         )}
       >
         {label}
-        <SortIndicator sorted={sorted} priority={sortPriority} />
+        <SortIndicator sorted={sorted} priority={sortPriority} movable={canMove} />
       </button>
     )
   } else {
@@ -338,29 +352,14 @@ const HeaderCell = memo(function HeaderCell<TData extends RowData>({
         'transition-[translate] duration-150 ease-out in-data-settling:transition-none',
         canSort && 'hover:bg-muted/60 active:bg-muted',
         canMove && 'cursor-grab',
-        dragging && 'z-20 cursor-grabbing bg-background shadow-float ring-1 ring-border',
+        dragging && 'z-20 cursor-grabbing bg-[var(--table-header)] shadow-float ring-1 ring-border',
         column.columnDef.meta?.headerClassName,
       )}
       // During a header drag useColumnDrag sets `translate` here to slide the
       // column aside, or `transform` on the dragged header to follow the pointer.
     >
       {body}
-      {canFilter && (column.columnDef.meta?.filterControl ? <CustomFilter column={column} grid={grid} value={filterValue} /> : (
-        <TableColumnFilter
-          column={name}
-          value={String(filterValue ?? '')}
-          tabIndex={-1}
-          data-grid-control=""
-          onApply={(value) => column.setFilterValue(value || undefined)}
-          labels={{
-            filter: labels.filter,
-            contains: labels.filterContains,
-            apply: labels.apply,
-            clear: labels.clearFilter,
-            cancel: labels.cancel,
-          }}
-        />
-      ))}
+      {canFilter && <ColumnFilter column={column} grid={grid} name={name} value={filterValue} />}
       {(canSort || canResize || canMove || canHide) && (
         <button
           type="button"
@@ -391,16 +390,35 @@ const HeaderCell = memo(function HeaderCell<TData extends RowData>({
 /**
  * The arrow after a sortable header's label. It shows only on the sorted
  * column, so the headers stay quiet; unsorted ones hint at it on hover. The slot is always reserved, so
- * sorting never truncates a header that was just fitted.
+ * sorting never truncates a header that was just fitted. On a movable column
+ * the arrow is the only place a click sorts, so it gets a target of its own.
  */
-function SortIndicator({ sorted, priority }: { sorted: false | 'asc' | 'desc'; priority: number | null }) {
+function SortIndicator({
+  sorted,
+  priority,
+  movable,
+}: {
+  sorted: false | 'asc' | 'desc'
+  priority: number | null
+  movable: boolean
+}) {
   const Icon = sorted === 'desc' ? ArrowDownIcon : ArrowUpIcon
   return (
-    <span className="flex shrink-0 items-center text-foreground">
+    // Pressing the arrow sorts; only the label starts a column drag.
+    <span
+      data-no-drag=""
+      data-sort-arrow=""
+      className={cn(
+        'group/sort flex shrink-0 cursor-pointer items-center text-foreground',
+        movable && '-my-1 rounded-sm p-1 transition-colors hover:bg-muted',
+      )}
+    >
       <Icon
         className={cn(
           'size-3.5 transition-opacity',
           !sorted && 'opacity-0 group-hover/header:opacity-40',
+          // Touch has no hover: a movable column shows the arrow it must be sorted from.
+          !sorted && movable && 'group-hover/sort:opacity-100 [@media(hover:none)]:opacity-40',
         )}
       />
       {priority !== null && <span className="text-[0.625rem] leading-none tabular-nums">{priority}</span>}
@@ -539,51 +557,78 @@ function HeaderMenuItems<TData extends RowData>({
 }
 
 /**
- * A column's own filter editor (`meta.filterControl`) behind the same funnel
- * as the built-in "contains" filter: hidden until the header is hovered, and
- * filled while a filter applies. The value is whatever the control applies.
+ * The header's funnel. Which panel it opens — the column's own
+ * `meta.filter.control`, a checklist, Min and Max, a calendar or "contains" — is
+ * worked out when it opens, from the column, its value and the rows then, so a
+ * memoized header never shows a stale kind.
  */
-function CustomFilter<TData extends RowData>({
+function ColumnFilter<TData extends RowData>({
   column,
   grid,
+  name,
   value,
 }: {
   column: GridColumn<TData>
   grid: GridApi
+  name: string
   value: unknown
 }) {
-  const [open, setOpen] = useState(false)
-  const Control = column.columnDef.meta!.filterControl!
-  const active = value !== undefined
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        tabIndex={-1}
-        data-grid-control=""
-        data-no-drag=""
-        aria-label={grid.labels.filter(columnLabel(column))}
-        className={cn(
-          'flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-sm outline-none',
-          'hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring',
-          'data-popup-open:bg-muted data-popup-open:opacity-100',
-          active
-            ? 'text-primary-text'
-            : 'text-muted-foreground opacity-0 transition-opacity group-hover/header:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100',
-        )}
-      >
-        <FilterIcon className={cn('size-3.5', active && 'fill-current')} />
-      </PopoverTrigger>
-      <PopoverContent align="start" className="p-3">
-        <Control
-          columnId={column.id}
-          value={value}
-          onApply={(next) => {
-            column.setFilterValue(next)
-            setOpen(false)
-          }}
-          close={() => setOpen(false)}
-        />
-      </PopoverContent>
-    </Popover>
+    <ColumnFilterPopover column={name} active={value !== undefined} labels={grid.labels} tabIndex={-1}>
+      {(close) => <FilterPanel column={column} grid={grid} value={value} close={close} />}
+    </ColumnFilterPopover>
   )
+}
+
+function FilterPanel<TData extends RowData>({
+  column,
+  grid,
+  value,
+  close,
+}: {
+  column: GridColumn<TData>
+  grid: GridApi
+  value: unknown
+  close: () => void
+}) {
+  const { labels, locale } = grid
+  const apply = (next: unknown) => column.setFilterValue(next)
+  const Control = column.columnDef.meta?.filter?.control
+  if (Control) {
+    return (
+      <Control
+        columnId={column.id}
+        value={value}
+        onApply={(next) => {
+          apply(next)
+          close()
+        }}
+        close={close}
+      />
+    )
+  }
+  const panelLabels: TableColumnFilterLabels = {
+    filter: labels.filter,
+    contains: labels.filterContains,
+    apply: labels.apply,
+    clear: labels.clearFilter,
+    cancel: labels.cancel,
+    searchOptions: labels.filterSearchOptions,
+    noOptions: labels.filterNoOptions,
+    min: labels.filterMin,
+    max: labels.filterMax,
+    pickDates: labels.filterPickDates,
+  }
+  const setup = grid.filterSetup(column.id, value)
+  const props = { onApply: apply, close, labels: panelLabels }
+  switch (setup.variant) {
+    case 'options':
+      return <OptionsFilterPanel {...props} options={setup.options ?? []} value={Array.isArray(value) ? value : undefined} locale={locale} />
+    case 'number':
+      return <NumberFilterPanel {...props} value={isNumberRange(value) ? value : undefined} />
+    case 'date':
+      return <DateFilterPanel {...props} value={isDateRange(value) ? value : undefined} locale={locale} />
+    default:
+      return <TextFilterPanel {...props} value={typeof value === 'string' ? value : ''} onApply={(text) => apply(text || undefined)} />
+  }
 }

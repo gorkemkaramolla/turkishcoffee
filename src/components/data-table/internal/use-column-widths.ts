@@ -4,6 +4,7 @@ import type { DataTableFeatures } from '../features'
 import {
   CELL_PADDING,
   estimateColumnWidth,
+  fitWithin,
   lockedEdgeIds,
   measureColumnWidths,
   resizeWithin,
@@ -86,7 +87,8 @@ export function useColumnSizing({
  *   key press of a keyboard resize (the cache gives the others' floors).
  * - Under column virtualization, columns that scroll into view are measured
  *   once scrolling pauses, so a scroll never forces a layout of every cell.
- * - Resizing follows the splitter rule (`resizeWithin`).
+ * - A drag follows the splitter rule (`resizeWithin`); fitting one column to
+ *   its content shares the difference among the others (`fitWithin`).
  */
 export function useColumnFitting<TData extends RowData>({
   table,
@@ -279,26 +281,17 @@ export function useColumnFitting<TData extends RowData>({
   // going back and forth puts every column back where it was.
   const resizeStart = useRef<{ id: string; columns: FitColumn[] } | null>(null)
 
-  /**
-   * Gives a column a new width by the splitter rule: while the columns fit,
-   * the others make or take the room, down to their content width, so the row
-   * stays exactly as wide as the frame. Every width that moved becomes the user's.
-   */
-  const resizeColumn = (columnId: string, width: number) => {
-    const current = tableRef.current
-    const dragging = current.state.columnResizing.isResizingColumn === columnId
-    let start = dragging ? resizeStart.current : null
-    if (!start || start.id !== columnId) {
-      const columns = fitColumns()
-      const others = columns.filter((column) => column.resizable && column.id !== columnId).map((column) => column.id)
-      measureMissing(others)
-      const floors = contentWidths()
-      start = { id: columnId, columns: columns.map((column) => ({ ...column, floor: floors[column.id] })) }
-      if (dragging) resizeStart.current = start
-    }
-    const widths = resizeWithin(start.columns, columnId, width, scroller?.clientWidth ?? box.available)
+  /** `fitColumns()`, each column floored at its content width so a neighbour's resize never truncates it. */
+  const flooredColumns = (columnId: string): FitColumn[] => {
+    const columns = fitColumns()
+    measureMissing(columns.filter((column) => column.resizable && column.id !== columnId).map((column) => column.id))
+    const floors = contentWidths()
+    return columns.map((column) => ({ ...column, floor: floors[column.id] }))
+  }
+
+  /** Every resizable width that moved becomes the user's. */
+  const commitWidths = (columns: readonly FitColumn[], widths: Record<string, number>) => {
     const natural = fit.natural
-    const columns = start.columns
     setUserSizing((previous) => {
       const result = { ...previous }
       for (const column of columns) {
@@ -307,6 +300,27 @@ export function useColumnFitting<TData extends RowData>({
       }
       return result
     })
+  }
+
+  /**
+   * Gives a column a new width by the splitter rule: while the columns fit,
+   * the others make or take the room, down to their content width, so the row
+   * stays exactly as wide as the frame.
+   */
+  const resizeColumn = (columnId: string, width: number) => {
+    const dragging = tableRef.current.state.columnResizing.isResizingColumn === columnId
+    let start = dragging ? resizeStart.current : null
+    if (!start || start.id !== columnId) {
+      start = { id: columnId, columns: flooredColumns(columnId) }
+      if (dragging) resizeStart.current = start
+    }
+    commitWidths(start.columns, resizeWithin(start.columns, columnId, width, scroller?.clientWidth ?? box.available))
+  }
+
+  /** Fits one column to its content; the others share the difference evenly (`fitWithin`). */
+  const fitColumn = (columnId: string, width: number) => {
+    const columns = flooredColumns(columnId)
+    commitWidths(columns, fitWithin(columns, columnId, width, scroller?.clientWidth ?? box.available))
   }
   const endResize = () => {
     resizeStart.current = null
@@ -325,7 +339,7 @@ export function useColumnFitting<TData extends RowData>({
       widths[id] = Math.max(widths[id] ?? 0, estimateColumnWidth(columnLabel(column), sample.map((row) => estimateText(row.getValue(id))), CELL_PADDING))
     }
     const [only] = columnIds
-    if (columnIds.length === 1 && widths[only!] !== undefined) return resizeColumn(only!, clamp(only!, widths[only!]!))
+    if (columnIds.length === 1 && widths[only!] !== undefined) return fitColumn(only!, clamp(only!, widths[only!]!))
     current.setColumnSizing((old) => {
       const next = { ...old }
       for (const id of columnIds) if (widths[id] !== undefined) next[id] = clamp(id, widths[id]!)

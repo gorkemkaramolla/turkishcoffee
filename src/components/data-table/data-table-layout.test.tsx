@@ -16,7 +16,7 @@ const columns: Array<DataTableColumn<Row>> = [
 const rows: Row[] = [{ id: '1', a: 'a1', b: 'b1', c: 'c1', nested: { d: 'd1' } }]
 
 function Table(props: Partial<DataTableProps<Row>>) {
-  return <DataTable aria-label="Records" columns={columns} data={rows} getRowId={(row) => row.id} {...props} />
+  return <DataTable aria-label="Records" columns={columns} data={rows} getRowId={(row) => row.id} {...(props as object)} />
 }
 
 const order = () => screen.getAllByRole('columnheader').map((header) => header.dataset.col)
@@ -69,13 +69,13 @@ describe('layout reconciliation', () => {
 
   it('a stored v1 layout with a removed column still loads, and keeps the checkbox column first', () => {
     localStorage.setItem('turkishcoffee:data-table:abc', JSON.stringify({ columnOrder: ['__select', 'c', 'removed', 'a', 'b'] }))
-    render(<Table selectable reorderable storageKey="abc" />)
+    render(<Table selectable reorderable layout={{ storageKey: 'abc' }} />)
     expect(order()).toEqual(['__select', 'c', 'a', 'b'])
     localStorage.clear()
   })
 
   it('stores v2 with the column ids', async () => {
-    const { unmount } = render(<Table reorderable storageKey="v2" />)
+    const { unmount } = render(<Table reorderable layout={{ storageKey: 'v2' }} />)
     await menu('A', 'Move right')
     unmount()
     const saved = JSON.parse(localStorage.getItem('turkishcoffee:data-table:v2')!)
@@ -129,35 +129,61 @@ describe('column combinations', () => {
   })
 })
 
-describe('savedLayout + onLayoutChange (a layout the app keeps, e.g. in a cookie)', () => {
+describe('layout.saved + onChange (a layout the app keeps, e.g. in a cookie)', () => {
   const saved = { columnOrder: ['c', 'a', 'b'], columnVisibility: { b: false }, columnSizing: { a: 222 } }
 
   it('the server render is already in the saved layout: nothing to jump after hydration', () => {
-    const html = renderToString(<Table reorderable hideable resizable savedLayout={saved} />)
+    const html = renderToString(<Table reorderable hideable resizable layout={{ saved, onChange: () => {} }} />)
     const headers = [...html.matchAll(/role="columnheader"[^>]*data-col="(\w+)"/g)].map((match) => match[1])
     expect(headers).toEqual(['c', 'a'])
     expect(html).toContain('.dt-c-a{flex:222 0 222px}')
   })
 
-  it('wins over localStorage, which it leaves alone; malformed fields and unknown columns are dropped', () => {
-    localStorage.setItem('turkishcoffee:data-table:t', JSON.stringify({ v: 2, columns: [], columnOrder: ['b', 'a', 'c'] }))
+  it('drops malformed fields and unknown columns', () => {
     render(
       <Table
         reorderable
         hideable
         resizable
-        storageKey="t"
-        savedLayout={{ columnOrder: ['gone', 'b', 'c', 'a'], columnSizing: { a: 'wide' as never }, columnVisibility: 'x' as never }}
+        layout={{
+          saved: { columnOrder: ['gone', 'b', 'c', 'a'], columnSizing: { a: 'wide' as never }, columnVisibility: 'x' as never },
+          onChange: () => {},
+        }}
       />,
     )
     expect(order()).toEqual(['b', 'c', 'a'])
     expect(flex('a')).not.toContain('wide')
-    localStorage.removeItem('turkishcoffee:data-table:t')
+  })
+
+  it('applies across column changes: removed ones drop, new ones take their place, reset returns to the defaults', () => {
+    const onChange = vi.fn()
+    const saved = { columnOrder: ['c', 'gone', 'a', 'b'], columnVisibility: { gone: false, b: false }, columnSizing: {} }
+    const { rerender } = render(
+      <Table reorderable hideable layout={{ saved, onChange, defaults: { columnOrder: ['b', 'a', 'c'] } }} />,
+    )
+    expect(order()).toEqual(['c', 'a'])
+    rerender(
+      <DataTable
+        aria-label="Records"
+        columns={[...columns, { id: 'd', accessorFn: (row) => row.nested.d, header: 'D' }]}
+        data={rows}
+        getRowId={(row) => row.id}
+        reorderable
+        hideable
+        layout={{ saved, onChange, defaults: { columnOrder: ['b', 'a', 'c'] } }}
+      />,
+    )
+    // D follows C, its neighbour in the definitions.
+    expect(order()).toEqual(['c', 'd', 'a'])
+    act(() => screen.getByRole('button', { name: 'Columns' }).click())
+    act(() => screen.getByRole('menuitem', { name: 'Reset layout' }).click())
+    expect(onChange).toHaveBeenLastCalledWith(null)
+    expect(order()).toEqual(['b', 'a', 'c', 'd'])
   })
 
   it('reports the whole layout after each edit, and null after a reset', async () => {
     const onLayoutChange = vi.fn()
-    render(<Table reorderable hideable savedLayout={null} onLayoutChange={onLayoutChange} />)
+    render(<Table reorderable hideable layout={{ saved: null, onChange: onLayoutChange }} />)
     await menu('A', 'Move right')
     await waitFor(() => expect(onLayoutChange).toHaveBeenLastCalledWith({ columnOrder: ['b', 'a', 'c'], columnSizing: {}, columnVisibility: {} }))
     await menu('C', 'Hide column')

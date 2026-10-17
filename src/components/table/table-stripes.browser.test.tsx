@@ -18,7 +18,7 @@ for (const dark of [false, true]) {
       const { container } = render(
         <div className={dark ? 'dark' : ''}>
           <h1>Outside</h1>
-          <Table>
+          <Table striped>
             <TableHeader><TableRow><TableHead>Name</TableHead></TableRow></TableHeader>
             <TableBody>
               <TableRow><TableCell>Odd</TableCell></TableRow>
@@ -49,8 +49,8 @@ for (const dark of [false, true]) {
     it('stripes flow DataTable rows and preserves selected fill', () => {
       const { container } = render(
         <div className={dark ? 'dark' : ''}><h1>Outside</h1>
-          <DataTable columns={columns} data={data.slice(0, 4)} selectable
-            rowSelection={{ type: 'ids', ids: ['2', '3'] }} getRowId={(row) => row.id} />
+          <DataTable columns={columns} data={data.slice(0, 4)} striped
+            selectable={{ value: { type: 'ids', ids: ['2', '3'] } }} getRowId={(row) => row.id} />
         </div>,
       )
       const rows = [...container.querySelectorAll<HTMLElement>('[role="row"][data-stripe]')]
@@ -62,7 +62,7 @@ for (const dark of [false, true]) {
     it('keeps virtual row colors stable when the rendered window moves', async () => {
       const { container } = render(
         <div className={dark ? 'dark' : ''}><h1>Outside</h1>
-          <DataTable columns={columns} data={data} height={220} getRowId={(row) => row.id} />
+          <DataTable columns={columns} data={data} height={220} getRowId={(row) => row.id} striped />
         </div>,
       )
       const rows = () => [...container.querySelectorAll<HTMLElement>('[role="row"][data-stripe]')]
@@ -78,6 +78,39 @@ for (const dark of [false, true]) {
         expect(row.dataset.stripe).toBe(stripe)
         expect(fill(row)).toBe(stripe === 'odd' ? odd : even)
       }
+    })
+
+    it('body rows part with a fainter line than the header, in Table and DataTable alike', () => {
+      const { container } = render(
+        <div className={dark ? 'dark' : ''}><h1>Outside</h1>
+          <Table>
+            <TableHeader><TableRow><TableHead>Name</TableHead></TableRow></TableHeader>
+            <TableBody><TableRow><TableCell>One</TableCell></TableRow><TableRow><TableCell>Two</TableCell></TableRow></TableBody>
+          </Table>
+          <DataTable aria-label="Grid" columns={columns} data={data.slice(0, 3)} getRowId={(row) => row.id} />
+        </div>,
+      )
+      const line = (selector: string) => getComputedStyle(container.querySelector(selector)!).borderBottomColor
+      expect(line('tbody tr')).not.toBe(line('thead tr'))
+      expect(line('[role="grid"] [role="row"][data-stripe]')).toBe(line('tbody tr'))
+      expect(line('[role="grid"] [role="row"][aria-rowindex="1"]')).toBe(line('thead tr'))
+    })
+
+    it('rows are plain unless striped; selection is grey unless primary', () => {
+      const { container } = render(
+        <div className={dark ? 'dark' : ''}><h1>Outside</h1>
+          {(['neutral', 'primary'] as const).map((selectionColor) => (
+            <DataTable key={selectionColor} aria-label={selectionColor} columns={columns} data={data.slice(0, 3)}
+              selectable={{ color: selectionColor, value: { type: 'ids', ids: ['2'] } }} getRowId={(row) => row.id} />
+          ))}
+        </div>,
+      )
+      const [neutral, primary] = [...container.querySelectorAll<HTMLElement>('[role="grid"]')].map((grid) => [
+        ...grid.querySelectorAll<HTMLElement>('[role="row"][data-stripe]'),
+      ])
+      expect(fill(neutral![0]!)).toBe(fill(neutral![1]!))
+      expect(fill(neutral![2]!)).not.toBe(fill(neutral![0]!))
+      expect(fill(primary![2]!)).not.toBe(fill(neutral![2]!))
     })
   })
 }

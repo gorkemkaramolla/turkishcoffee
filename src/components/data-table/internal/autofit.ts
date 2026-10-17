@@ -181,6 +181,103 @@ export function resizeWithin(
 }
 
 /**
+ * Fits one column to `target` px (its content width) in a table that fills its
+ * frame. The other resizable columns share the difference so they end up as
+ * evenly stretched over their content as they can be, the proportions the
+ * table starts with. Handing it all to the nearest neighbour, as a drag does
+ * (`resizeWithin`), piles the room into the last column when columns are
+ * fitted one after another.
+ *
+ * - Narrower: the least stretched columns grow first, each up to its `max`.
+ *   When none can take the room, the column stops shrinking.
+ * - Wider: free room in the frame first, then the most stretched columns give
+ *   way, none below its content width (`floor`). The column still gets its
+ *   whole content width: when the others can't make room, the table scrolls.
+ * - Columns that already overflow the frame: only the column changes, and a
+ *   gap it would leave is shared out as above.
+ *
+ * Returns every column's new width.
+ */
+export function fitWithin(
+  columns: readonly FitColumn[],
+  id: string,
+  target: number,
+  available: number,
+): Record<string, number> {
+  const widths: Record<string, number> = Object.fromEntries(columns.map((column) => [column.id, column.width]))
+  const column = columns.find((each) => each.id === id)
+  if (!column) return widths
+  const before = columns.reduce((sum, each) => sum + each.width, 0)
+  const wanted = Math.round(Math.min(Math.max(target, column.min), column.max))
+  const after = before - column.width + wanted
+  const others = columns.filter((each) => each.resizable && each.id !== id)
+  widths[id] = wanted
+
+  if (after < available) {
+    const left = growEvenly(widths, others, available - after)
+    if (left > 0.01) widths[id] = Math.min(column.max, wanted + left)
+  } else if (after > available && before <= available + 0.5) {
+    shrinkEvenly(widths, others, after - available)
+  }
+  return widths
+}
+
+/** What a column is stretched over: its content width, never under `min`; its width when unmeasured. */
+function contentBase(column: FitColumn): number {
+  return Math.max(column.min, column.floor ?? column.width, 1)
+}
+
+/**
+ * Hands `room` px to `columns`, raising the least stretched (width over
+ * content) first, so they end as evenly stretched as their `max` allows.
+ * Returns the room left over.
+ */
+function growEvenly(widths: Record<string, number>, columns: readonly FitColumn[], room: number): number {
+  const items = columns.map((column) => ({ id: column.id, width: widths[column.id]!, base: contentBase(column), max: column.max }))
+  const capacity = items.reduce((sum, item) => sum + Math.max(0, item.max - item.width), 0)
+  if (capacity <= room) {
+    for (const item of items) widths[item.id] = Math.max(item.width, item.max)
+    return room - capacity
+  }
+  const widthAt = (item: (typeof items)[number], level: number) => Math.min(item.max, Math.max(item.width, level * item.base))
+  const placed = (level: number) => items.reduce((sum, item) => sum + widthAt(item, level) - item.width, 0)
+  let low = Math.min(...items.map((item) => item.width / item.base))
+  let high = Math.max(...items.map((item) => item.max / item.base))
+  for (let step = 0; step < 60; step++) {
+    const level = (low + high) / 2
+    if (placed(level) < room) low = level
+    else high = level
+  }
+  for (const item of items) widths[item.id] = widthAt(item, high)
+  return 0
+}
+
+/**
+ * Takes up to `room` px from `columns`, lowering the most stretched first,
+ * none below its content width. Returns the room it could not find.
+ */
+function shrinkEvenly(widths: Record<string, number>, columns: readonly FitColumn[], room: number): number {
+  const items = columns.map((column) => ({ id: column.id, width: widths[column.id]!, base: contentBase(column) }))
+  const slack = items.reduce((sum, item) => sum + Math.max(0, item.width - item.base), 0)
+  if (slack <= room) {
+    for (const item of items) widths[item.id] = Math.min(item.width, item.base)
+    return room - slack
+  }
+  const widthAt = (item: (typeof items)[number], level: number) =>
+    item.width > item.base ? Math.max(item.base, Math.min(item.width, level * item.base)) : item.width
+  const taken = (level: number) => items.reduce((sum, item) => sum + item.width - widthAt(item, level), 0)
+  let low = 1
+  let high = Math.max(...items.map((item) => item.width / item.base))
+  for (let step = 0; step < 60; step++) {
+    const level = (low + high) / 2
+    if (taken(level) > room) low = level
+    else high = level
+  }
+  for (const item of items) widths[item.id] = widthAt(item, low)
+  return 0
+}
+
+/**
  * The columns whose right edge can't move, in one pass. While the columns fit
  * the frame, dragging an edge works only with a resizable column after it to
  * give or take the room — the last column's edge sits on the frame, and the

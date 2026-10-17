@@ -2,8 +2,10 @@
 
 import { useState } from 'react'
 import type { ReactTable, RowData } from '@tanstack/react-table'
-import { DownloadIcon, XIcon } from '../../../lib/icons'
+import { cn } from '../../../lib/cn'
+import { DownloadIcon, FilterOffIcon, XIcon } from '../../../lib/icons'
 import { Button } from '../../button/button'
+import { CommandButton } from '../../command-button/command-button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,28 +15,23 @@ import {
   DropdownMenuTrigger,
 } from '../../dropdown-menu/dropdown-menu'
 import { type TableExportFormat } from '../../table/export'
-import { executeExport } from './execute-export'
+import { executeExport, type ExportOptions } from './execute-export'
 import type { DataTableFeatures } from '../features'
 import type { DataTableLabels } from '../labels'
-import type { DataTableExportData, DataTableExportRequest } from '../state'
+import type { DataTableExportData } from '../state'
+import type { TableRowAppearance } from '../../table/internal/styles'
 import { ColumnsMenu } from './columns-menu'
 import type { HeaderSelection } from './row-selection'
 import type { ColumnScope } from './use-column-selection'
 
-/** The built-in Export menu's options (`exportable`). */
-export type ToolbarExport = {
-  onExportError?: (error: unknown, format: TableExportFormat) => void
-  fileName?: string
-  locale?: string
-  /** Server mode: export every covered row through the app's backend. */
-  onServerExport?: (request: DataTableExportRequest, format: TableExportFormat) => void | Promise<void>
-}
 
 /**
- * The row above the grid. Left: what is selected, each with a ✕ to clear it
- * and, while a selection covers only this page, a shortcut to all rows
- * (Gmail's "Select all 57"). Right: Export and the Columns menu. Fixed
- * height, so selecting the first row does not push the grid down.
+ * One row: the app's own controls on the left, then the selection's count,
+ * Export and Columns on the right. A selection adds its count beside Export
+ * instead of a row of its own, so nothing on the page moves when a checkbox
+ * is ticked: Export stays where it was, and Export is what a selection is for.
+ * Column filters add Clear filters the same way, so one click undoes every
+ * funnel instead of a trip through each header.
  */
 export function Toolbar<TData extends RowData>({
   custom,
@@ -42,6 +39,8 @@ export function Toolbar<TData extends RowData>({
   labels,
   selectedRows,
   hiddenSelectedRows,
+  offPageSelectedRows,
+  selectionColor,
   rowScope,
   matchingRows,
   pageRows,
@@ -62,6 +61,10 @@ export function Toolbar<TData extends RowData>({
   selectedRows: number
   /** Selected rows the current filters hide (`ids` selections only). */
   hiddenSelectedRows: number
+  /** Server mode: selected rows not in the loaded page (another page, or filtered out). */
+  offPageSelectedRows: number
+  /** Tints the count like the selected rows. */
+  selectionColor: TableRowAppearance['selectionColor']
   /** The header checkbox's state; `page` offers the step to every row. */
   rowScope: HeaderSelection
   matchingRows: number
@@ -73,7 +76,7 @@ export function Toolbar<TData extends RowData>({
   onClearColumns: () => void
   /** Widens the column selection from this page to every row. */
   onWidenColumns: () => void
-  exportable: ToolbarExport | null
+  exportable: ExportOptions<TData> | null
   prepareExport: () => DataTableExportData<TData>
   hideable: boolean
   onResetLayout: () => void
@@ -88,81 +91,75 @@ export function Toolbar<TData extends RowData>({
   const rowLabel =
     hiddenSelectedRows > 0
       ? `${labels.rowsSelected(selectedRows)} · ${labels.rowsHiddenByFilter(hiddenSelectedRows)}`
-      : labels.rowsSelected(selectedRows)
+      : offPageSelectedRows > 0
+        ? `${labels.rowsSelected(selectedRows)} · ${labels.rowsOffPage(offPageSelectedRows)}`
+        : labels.rowsSelected(selectedRows)
+  const hasSelection = selectedRows > 0 || selectedColumns > 0
+  const hasFilters = table.state.columnFilters.length > 0
+  const exportMenu = exportable && (
+    <ExportMenu labels={labels} options={exportable} prepare={prepareExport} matchingRows={matchingRows} />
+  )
 
+  if (!custom && !hideable && !exportable && !hasSelection && !hasFilters) return null
   return (
-    <div className="flex min-h-8 flex-wrap items-center gap-2">
-      {selectedRows > 0 && (
-        <SelectionChip
-          label={rowLabel}
-          clearLabel={labels.clearSelection}
-          onClear={onClearRows}
-          action={rowScope === 'page' ? { label: labels.selectAllRows(matchingRows), run: onSelectAllRows } : undefined}
-        />
-      )}
-      {selectedColumns > 0 && (
-        <SelectionChip
-          label={columnLabel}
-          clearLabel={labels.clearSelection}
-          onClear={onClearColumns}
-          action={
-            selectedRows === 0 && columnScope === 'page' && matchingRows > pageRows
-              ? { label: labels.selectAllRows(matchingRows), run: onWidenColumns }
-              : undefined
-          }
-        />
-      )}
+    <div data-slot="data-table-controls" className="flex min-h-control min-w-0 flex-wrap items-center gap-2">
       {custom}
-      <div className="ms-auto flex items-center gap-2">
-        {exportable && (
-          <ExportMenu labels={labels} options={exportable} prepare={prepareExport} matchingRows={matchingRows} />
+      <div className="ms-auto flex min-w-0 flex-wrap items-center justify-end gap-1">
+        {hasSelection && (
+          <div
+            data-slot="data-table-selection"
+            className={cn(
+              'me-1 flex min-h-control-sm min-w-0 flex-wrap items-center gap-x-3 rounded-md py-0.5 ps-2.5 pe-0.5 text-sm text-foreground',
+              selectionColor === 'primary' ? 'bg-primary-soft' : 'bg-selection',
+            )}
+          >
+            <span role="status" className="flex flex-wrap items-center gap-x-3 font-medium">
+              {selectedRows > 0 && <span>{rowLabel}</span>}
+              {selectedColumns > 0 && <span>{columnLabel}</span>}
+            </span>
+            {selectedRows > 0 && rowScope === 'page' && matchingRows > pageRows && (
+              <Button variant="link" className="h-auto p-0" onClick={onSelectAllRows}>
+                {labels.selectAllRows(matchingRows)}
+              </Button>
+            )}
+            {selectedRows === 0 && selectedColumns > 0 && columnScope === 'page' && matchingRows > pageRows && (
+              <Button variant="link" className="h-auto p-0" onClick={onWidenColumns}>
+                {labels.selectAllRows(matchingRows)}
+              </Button>
+            )}
+            <button
+              type="button"
+              aria-label={labels.clearSelection}
+              title={labels.clearSelection}
+              className="grid size-6 shrink-0 place-items-center rounded-sm text-muted-foreground outline-none transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5"
+              onClick={() => {
+                if (selectedRows > 0) onClearRows()
+                if (selectedColumns > 0) onClearColumns()
+              }}
+            >
+              <XIcon />
+            </button>
+          </div>
         )}
+        {hasFilters && (
+          // Through the table, so the grid goes back to the first page as for any filter change.
+          <CommandButton onClick={() => table.resetColumnFilters(true)}>
+            <FilterOffIcon />
+            {labels.clearFilters}
+          </CommandButton>
+        )}
+        {exportMenu}
         {hideable && <ColumnsMenu table={table} labels={labels} onReset={onResetLayout} />}
       </div>
     </div>
   )
 }
 
-function SelectionChip({
-  label,
-  clearLabel,
-  onClear,
-  action,
-}: {
-  label: string
-  clearLabel: string
-  onClear: () => void
-  action?: { label: string; run: () => void }
-}) {
-  return (
-    <span className="inline-flex h-7 items-center gap-1 rounded-md bg-selection pr-1 pl-3 text-xs font-medium text-foreground">
-      {label}
-      {action && (
-        <button
-          type="button"
-          onClick={action.run}
-          className="ml-1 rounded-sm px-1 font-semibold text-primary-text underline-offset-2 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          {action.label}
-        </button>
-      )}
-      <button
-        type="button"
-        aria-label={clearLabel}
-        onClick={onClear}
-        className="flex size-5 items-center justify-center rounded-md outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <XIcon className="size-3" />
-      </button>
-    </span>
-  )
-}
-
 /**
  * The built-in Export menu. It asks DataTable what the export covers and hands
- * that to the file writer (`exportTable`) — or, for rows only the server holds,
- * to `onServerExport`. Without `onServerExport` it writes the loaded rows and
- * says so. The scope is read only when the menu opens.
+ * that to the file writer (`exportTable`) — for rows only the server holds,
+ * after `fetchRows`, or to `onServerExport`. With neither it writes the loaded
+ * rows and says so. The scope is read only when the menu opens.
  */
 function ExportMenu<TData extends RowData>({
   labels,
@@ -171,7 +168,7 @@ function ExportMenu<TData extends RowData>({
   matchingRows,
 }: {
   labels: DataTableLabels
-  options: ToolbarExport
+  options: ExportOptions<TData>
   prepare: () => DataTableExportData<TData>
   matchingRows: number
 }) {
@@ -199,18 +196,17 @@ function ExportMenu<TData extends RowData>({
         if (!open) return
         const data = prepare()
         const columns = data.columns.length
-        if (!data.request) return setHeading(labels.exportScope(columns, data.rows.length))
-        if (!options.onServerExport) return setHeading(labels.exportLoadedOnly(columns, data.rows.length))
-        // The server writes the file: count what it will cover.
-        const selection = data.request.selection
-        const rows =
-          selection?.type === 'ids'
-            ? selection.ids.length
-            : Math.max(0, matchingRows - (selection?.type === 'allMatching' ? selection.excludedIds.length : 0))
-        setHeading(labels.exportScope(columns, rows))
+        if (!data.request) return setHeading(labels.exportScope(columns, data.rows.length, data.scope))
+        if (!options.fetchRows && !options.onServerExport) {
+          return setHeading(labels.exportLoadedOnly(columns, data.rows.length, data.scope))
+        }
+        // The server holds some of the rows: count what the request covers.
+        const covered = data.request.rows
+        const rows = covered.type === 'ids' ? covered.ids.length : Math.max(0, matchingRows - covered.excludedIds.length)
+        setHeading(labels.exportScope(columns, rows, data.scope))
       }}
     >
-      <DropdownMenuTrigger render={<Button variant="secondary" size="sm" disabled={busy} />}>
+      <DropdownMenuTrigger render={<CommandButton disabled={busy} />}>
         <DownloadIcon />
         {labels.export}
       </DropdownMenuTrigger>

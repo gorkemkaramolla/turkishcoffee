@@ -115,6 +115,7 @@ export const VirtualBody = memo(function VirtualBody<TData extends RowData>({
   return (
     <List
       role="rowgroup"
+      data-dt-body=""
       listRef={setList}
       rowComponent={VirtualRow as (props: RowComponentProps<BodyProps<RowData>>) => React.ReactElement}
       rowProps={rowProps as unknown as BodyProps<RowData>}
@@ -179,7 +180,11 @@ function VirtualRow<TData extends RowData>({
   idPrefix,
 }: RowComponentProps<BodyProps<TData>>) {
   const row = rows[index]!
-  if (active.row === firstRowIndex + index) return <div aria-hidden="true" style={style} />
+  // react-window places rows with a physical `left: 0`; in RTL that pushes them
+  // into the overflow on the right, which cannot be scrolled to. Anchor them to
+  // the inline start instead, like the retained active row.
+  const placed = { ...style, left: undefined, insetInlineStart: 0 }
+  if (active.row === firstRowIndex + index) return <div aria-hidden="true" style={placed} />
   return (
     <DataRow
       row={row}
@@ -192,7 +197,7 @@ function VirtualRow<TData extends RowData>({
       activeColumn={active.row === firstRowIndex + index ? active.col : null}
       idPrefix={idPrefix}
       // The row's width comes from the grid's width rules, not react-window's 100%.
-      style={{ ...style, width: undefined }}
+      style={{ ...placed, width: undefined }}
     />
   )
 }
@@ -330,8 +335,8 @@ const GridCell = memo(function GridCell<TData extends RowData>({ cell, colIndex,
       )}
       // A header drag slides this cell aside by setting `translate` directly.
     >
-      {/* p-1/-m-1 leaves room for a focus ring inside the clipped span. */}
-      <span data-cell-content="" className="-m-1 min-w-0 truncate p-1">
+      {/* p-1/-m-1 leaves room for a focus ring inside the clipped span; p-2 for the checkbox's 32px target. */}
+      <span data-cell-content="" className={cn('-m-1 min-w-0 truncate p-1', column.id === SELECT_COLUMN_ID && '-m-2 p-2')}>
         <FlexRender cell={cell} />
       </span>
     </div>

@@ -2,40 +2,41 @@
 
 import { useCallback, useEffect, useId, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
+  functionalUpdate,
   useTable,
   type ColumnFiltersState,
-  type ColumnOrderState,
-  type ColumnSizingState,
-  type ColumnVisibilityState,
   type RowData,
   type SortingState,
+  type Updater,
 } from '@tanstack/react-table'
 import { DirectionProvider } from '@base-ui/react/direction-provider'
 import { cn } from '../../lib/cn'
 import { cssAttributeValue } from '../../lib/css'
 import { isDev } from '../../lib/dev'
-import { type TableExportFormat } from '../table/export'
 import { validateNonnegativeInteger, validatePageSize } from '../table/internal/pagination'
+import { tableRowAppearanceClass } from '../table/internal/styles'
 import { TablePagination, type TablePageSize } from '../table/table-pagination'
 import { FlowBody, VirtualBody, type ListApi } from './internal/body'
 import {
   ROW_WIDTH_CLASS,
   columnCanMove,
+  columnClass,
   columnDefLeaves,
   moveColumn,
   orderedColumnIds,
   widthStyleSheet,
 } from './internal/columns'
 import { executeExport } from './internal/execute-export'
+import { SkeletonRows } from './internal/skeleton-rows'
 import { dataColumns, getExportData, selectedLoadedRows, type ExportContext } from './internal/export-columns'
-import { createContainsFilterFn } from './internal/filter'
+import { createContainsFilterFn, resolveFilterSetup } from './internal/filter'
 import { ROW_HEIGHT, type GridApi } from './internal/grid'
 import { HeaderMenu, HeaderRow } from './internal/header-cell'
 import { NO_SELECTION } from './internal/row-selection'
-import { inlineScroll, setInlineScroll } from './internal/scroll'
+import { headerFollowsNatively, inlineScroll, mirrorHeader, setInlineScroll } from './internal/scroll'
 import { SELECT_COLUMN_ID, SelectionHeaderContext, selectionColumn } from './internal/selection'
 import { createSmartSortFn } from './internal/sort'
-import { Toolbar, type ToolbarExport } from './internal/toolbar'
+import { Toolbar } from './internal/toolbar'
 import { useColumnDrag } from './internal/use-column-drag'
 import { NO_COLUMNS, useColumnSelection } from './internal/use-column-selection'
 import { useColumnFitting, useColumnSizing } from './internal/use-column-widths'
@@ -43,25 +44,22 @@ import { useColumnWindow, useVisibleColumns } from './internal/use-column-window
 import { useControllableState } from './internal/use-controllable-state'
 import { cellId, useGridNavigation } from './internal/use-grid-navigation'
 import { useLayoutState } from './internal/use-layout-state'
-import type { DataTableLayout } from './internal/use-persisted-layout'
-import { useSelectionModel, useSelectionView } from './internal/use-row-selection'
+import { useHeldRows, useSelectionModel, useSelectionView } from './internal/use-row-selection'
 import { AUTO_SIZE, DEFAULT_SIZE, MAX_SIZE, MIN_SIZE, isAuto } from './internal/widths'
-import { dataTableFeatures, type DataTableColumn } from './features'
+import { dataTableFeatures, type DataTableColumn, type DataTableFilterVariant } from './features'
 import { dataTableLabelsForLocale, type DataTableLabels } from './labels'
+import { useLocale } from '../locale-provider/locale-provider'
 import type {
-  DataTableColumnSelection,
-  DataTableExportRequest,
+  DataTableColumnSelectionOptions,
+  DataTableExportOptions,
   DataTableHandle,
+  DataTableLayoutOptions,
   DataTablePagination,
-  DataTableRowSelection,
+  DataTableQuery,
+  DataTableQueryChange,
+  DataTableSelectionOptions,
   DataTableServer,
-  DataTableState,
 } from './state'
-
-/** Starting values for uncontrolled state. A layout stored under `storageKey` wins over them. */
-export type DataTableInitialState = Partial<DataTableState>
-
-type OnChange<T> = (next: T) => void
 
 type DataTableBaseProps<TData extends RowData> = {
   /** TanStack Table v9 column definitions: `DataTableColumn<Row>[]`. */
@@ -84,6 +82,12 @@ type DataTableBaseProps<TData extends RowData> = {
    */
   sortable?: boolean
   /**
+   * Whether Shift+click adds a second sort (default `true`). `false` keeps one
+   * sort column, Shift or not — for a backend that sorts by one column, so the
+   * grid never shows a sort the server ignores.
+   */
+  multiSort?: boolean
+  /**
    * Drag a column's right edge to resize it; double-click the edge to fit the
    * column to its content, as in Excel. Opt out per column with
    * `enableResizing: false`; bound it with `minSize` / `maxSize`.
@@ -94,46 +98,37 @@ type DataTableBaseProps<TData extends RowData> = {
   /** Adds a "Columns" menu to show and hide columns. Opt a column out with `enableHiding: false`. */
   hideable?: boolean
   /**
-   * Adds a checkbox column. `true`: boxes always visible. `'hover'`: subtle
-   * selection, for dense lists — a row's box shows on hover, every box once anything is
-   * selected. The header box works in two steps: this page, then every row
-   * matching the filters (on the server too); Shift+click selects a range.
+   * Adds a checkbox column. `true`: boxes always visible; `'hover'`: a row's
+   * box shows on hover, every box once anything is selected. The header box
+   * works in two steps: this page, then every row matching the query (on the
+   * server too); Shift+click selects a range. Options — the scope, the
+   * eligible rows, the controlled selection — in {@link DataTableSelectionOptions}.
    */
-  selectable?: boolean | 'hover'
-  /**
-   * `'crossPage'` (default): a selection survives page changes. `'page'`:
-   * changing the page, the sorting or the filters clears it, and the header
-   * box selects the page only.
-   */
-  selectionScope?: 'page' | 'crossPage'
+  selectable?: boolean | 'hover' | DataTableSelectionOptions<TData>
+  /** Alternate the body rows' background. Off by default. */
+  striped?: boolean
   /**
    * Excel's column selection, from the thin strip above the headers. The first
    * click covers this page, the second every row, the third clears; Ctrl/⌘
    * adds a column, Shift a range, Escape clears.
    */
-  selectableColumns?: boolean
+  selectableColumns?: boolean | DataTableColumnSelectionOptions
   /**
-   * A "contains" filter per column, behind a funnel that shows on header
-   * hover. Case-insensitive in the page's language; dates and numbers match as
-   * shown. Opt out per column with `enableColumnFilter: false`, or give one
-   * its own `filterFn`. With `server`, the server filters.
+   * A filter per column, behind a funnel that shows on header hover: a
+   * checklist, Min and Max, a calendar or "contains", by the column's
+   * `meta.filter` or its values. Opt out per column with
+   * `enableColumnFilter: false`, or give one its own `filterFn`. With
+   * `server`, the server filters.
    */
   filterable?: boolean
   /**
    * Adds the toolbar's Export menu (CSV or Excel). It writes the selected
    * columns (else the visible ones) of the selected rows (else the rows the
-   * column selection covers, else every filtered row). DataTable only picks
-   * the rows and columns — `exportTable` writes the file. For a button of your
-   * own, use the ref's `getExportData`. With `server`, rows beyond the loaded
-   * page go to `onServerExport`; without it, only loaded rows are written and
-   * the menu says so.
+   * column selection covers, else every filtered row). With `server`, rows
+   * beyond the loaded page come from `fetchRows`, or the backend writes the
+   * file through `onServerExport` ({@link DataTableExportOptions}).
    */
-  exportable?:
-    | boolean
-    | {
-        fileName?: string
-        onServerExport?: (request: DataTableExportRequest, format: TableExportFormat) => void | Promise<void>
-      }
+  exportable?: boolean | DataTableExportOptions<TData>
 
   // ── Layout and paging ─────────────────────────────────────────────────────
 
@@ -158,79 +153,42 @@ type DataTableBaseProps<TData extends RowData> = {
    */
   stickyHeader?: boolean | { top: number }
   /**
-   * Rows per page, or `'all'`; turns on the pagination bar. Shorthand for
-   * `initialState.pagination.pageSize`. Changing it later (uncontrolled)
-   * applies the new size and returns to the first page.
+   * Rows per page; turns on the pagination bar. The uncontrolled query's
+   * starting size: changing it later applies the new size and returns to the
+   * first page. `'all'` is not offered with `server`. Server pages default to 25.
    */
   pageSize?: TablePageSize
-  /** Choices in the pagination bar's page-size picker. Defaults to 10, 25, 50, 100, 200 and All. */
+  /** Choices in the page-size picker. Defaults to 10, 25, 50, 100, 200 and All (All left out with `server`). */
   pageSizeOptions?: TablePageSize[]
   /**
-   * Server-side data: `data` is the current page; sorting, filtering and paging
-   * happen on the server through the state callbacks (`onSortingChange`,
-   * `onColumnFiltersChange`, `onPaginationChange`). DataTable never sorts or
+   * Server-side data: `data` is the current page; the backend sorts, filters
+   * and pages it from the query (`onQueryChange`). DataTable never sorts or
    * filters a loaded page by itself.
    */
   server?: DataTableServer
+  /**
+   * Where the column layout (widths, order, visibility) is kept: `storageKey`
+   * (this browser), or `saved` + `onChange` (a cookie, a backend), and the
+   * `defaults` it resets to. {@link DataTableLayoutOptions}
+   */
+  layout?: DataTableLayoutOptions
 
-  // ── State: each piece controlled (value + on…Change) or uncontrolled ──────
+  // ── Query: sorting, filters and page, as one value ───────────────────────
 
   /**
-   * Uncontrolled starting values. Precedence for each piece of state:
-   * controlled prop > layout stored under `storageKey` (visibility, order,
-   * sizing) > `initialState` > default.
+   * The controlled query. With it the app owns sorting, filters and page:
+   * the grid shows exactly this and asks for changes through
+   * `onQueryChange`. Without it the grid keeps the query, from `defaultQuery`.
    */
-  initialState?: DataTableInitialState
+  query?: DataTableQuery
+  /** The uncontrolled query's starting value, read once. Also where `ref.resetQuery()` returns. */
+  defaultQuery?: Partial<DataTableQuery>
   /**
-   * Remembers column widths, order and visibility in `localStorage` under this
-   * key, per browser. The server can't read `localStorage`: on a
-   * server-rendered page the defaults show until hydration, then the saved
-   * layout. To avoid that jump, keep the layout where the server can read it
-   * (a cookie) with `savedLayout` + `onLayoutChange` instead.
+   * Every change to the query, whole: a new sort or filter also returns to the
+   * first page, in the same call. `change` says which part the user changed.
+   * On the server, fetch exactly `query` — one change, one request.
    */
-  storageKey?: string
-  /**
-   * A layout the app saved itself (from `onLayoutChange`), e.g. read from a
-   * cookie on the server: the page then renders in it from the first byte.
-   * Takes the place of `storageKey`'s `localStorage` copy. Malformed fields
-   * and unknown columns are ignored. `null`: nothing saved yet.
-   *
-   * @example
-   * // page.tsx (server)
-   * const raw = (await cookies()).get('employees-layout')?.value
-   * <EmployeeTable savedLayout={raw ? JSON.parse(raw) : null} />
-   * // employee-table.tsx (client)
-   * <DataTable savedLayout={savedLayout} onLayoutChange={(layout) => {
-   *   document.cookie = layout
-   *     ? `employees-layout=${encodeURIComponent(JSON.stringify(layout))}; path=/; max-age=31536000; samesite=lax`
-   *     : 'employees-layout=; path=/; max-age=0'
-   * }} />
-   */
-  savedLayout?: Partial<DataTableLayout> | null
-  /** The whole layout after edits and content-width measurements; null after "Reset layout". */
-  onLayoutChange?: (layout: DataTableLayout | null) => void
-  sorting?: SortingState
-  onSortingChange?: OnChange<SortingState>
-  columnFilters?: ColumnFiltersState
-  onColumnFiltersChange?: OnChange<ColumnFiltersState>
-  pagination?: DataTablePagination
-  onPaginationChange?: OnChange<DataTablePagination>
-  rowSelection?: DataTableRowSelection
-  onRowSelectionChange?: OnChange<DataTableRowSelection>
-  columnSelection?: DataTableColumnSelection
-  onColumnSelectionChange?: OnChange<DataTableColumnSelection>
-  columnVisibility?: ColumnVisibilityState
-  onColumnVisibilityChange?: OnChange<ColumnVisibilityState>
-  columnOrder?: ColumnOrderState
-  onColumnOrderChange?: OnChange<ColumnOrderState>
-  /** Widths the user set; automatic (fitted) widths are not state. */
-  columnSizing?: ColumnSizingState
-  onColumnSizingChange?: OnChange<ColumnSizingState>
-  /**
-   * @deprecated Use `onRowSelectionChange`. Called with the selected rows
-   * DataTable holds — under an `allMatching` selection, the loaded ones.
-   */
-  onSelectionChange?: (rows: TData[]) => void
+  onQueryChange?: (query: DataTableQuery, change: DataTableQueryChange) => void
 
   /** Render only a window of rows. false keeps all rows in normal document flow; auto uses height or the 100-row threshold. */
   rowVirtualization?: boolean | 'auto'
@@ -238,16 +196,15 @@ type DataTableBaseProps<TData extends RowData> = {
   autoSize?: 'initial' | 'data' | false
   /** Custom content beside the built-in toolbar controls. */
   toolbar?: React.ReactNode
-  /** A row's eligibility for selection. Restricted server selection uses explicit IDs only. */
-  isRowSelectable?: (row: TData) => boolean
-  /** Overrides server.loading when supplied. */
+  /**
+   * A request is in flight: a bar runs under the header, the grid is
+   * `aria-busy`, paging pauses, and with no rows yet placeholder rows show.
+   */
   loading?: boolean
   /** Initial loading content, outside the grid's data-row count. */
   loadingMessage?: React.ReactNode
   /** Error content; takes precedence over loading and empty content. */
   errorMessage?: React.ReactNode
-  /** Called for toolbar and imperative export failures. Imperative calls also reject. */
-  onExportError?: (error: unknown, format: TableExportFormat) => void
   /** Accessible name of the grid. Supply this or aria-labelledby. */
   'aria-label'?: string
   /** ID of the visible heading naming the grid. */
@@ -261,11 +218,15 @@ type DataTableBaseProps<TData extends RowData> = {
 
   /** Imperative access: resets, paging, selected rows, export data. */
   ref?: React.Ref<DataTableHandle<TData>>
-  /** Locale for sorting, filtering, numeric labels and exports. Defaults to en-US; pass tr-TR in Turkish apps, including SSR. */
+  /**
+   * Locale for the words the grid renders, sorting, filtering, numerals and
+   * exports. Defaults to LocaleProvider's, else the page's `<html lang>`, else
+   * en-US. English and Turkish words ship complete.
+   */
   locale?: string
   /** Shown in place of rows when `data` is empty. Defaults to "No results." */
   emptyMessage?: React.ReactNode
-  /** Translations for the words DataTable renders itself. */
+  /** Single words to replace, over the locale's own. */
   labels?: Partial<DataTableLabels>
   /** Makes rows clickable (and focusable, Enter activates). Clicks on buttons and links inside a row are ignored. */
   onRowClick?: (row: TData) => void
@@ -277,10 +238,16 @@ type DataTableBaseProps<TData extends RowData> = {
 export type DataTableProps<TData extends RowData> = DataTableBaseProps<TData> & (
   | { server?: undefined }
   | { server: DataTableServer; selectable?: false }
-  | { server: DataTableServer; selectable: boolean | 'hover'; getRowId: (row: TData, index: number) => string }
+  | {
+      server: DataTableServer
+      selectable: boolean | 'hover' | DataTableSelectionOptions<TData>
+      getRowId: (row: TData, index: number) => string
+    }
 )
 
 const NO_SORTING: SortingState = []
+/** Placeholder rows while the first page loads. */
+const SKELETON_ROWS = 8
 const NO_FILTERS: ColumnFiltersState = []
 /** Past this many rows on screen the grid virtualizes even without `height`. */
 const AUTO_VIRTUAL_ROWS = 100
@@ -288,18 +255,29 @@ const AUTO_VIRTUAL_ROWS = 100
 const AUTO_VIRTUAL_HEIGHT = 640
 /** Past this many visible columns, only the columns in view (plus overscan) render. */
 const AUTO_VIRTUAL_COLUMNS = 30
+/** A server page's size when the app sets none. */
+const SERVER_PAGE_SIZE = 25
+/** The page-size choices on the server: every row at once is not a page a backend serves. */
+const SERVER_PAGE_SIZES: TablePageSize[] = [10, 25, 50, 100, 200]
 
 /**
  * A data grid over TanStack Table v9. Every
  * interaction is one boolean away — `sortable`, `resizable` (with Excel's
  * double-click-to-fit), `reorderable`, `hideable`, `selectable`,
- * `selectableColumns`, `filterable`, `exportable` — and every piece of state
- * can be controlled or left to the grid. Client-side by default; `server`
- * hands sorting, filtering and paging to a backend. Import from
+ * `selectableColumns`, `filterable`, `exportable` — and a feature's options
+ * and state sit in its own prop, as an object in place of `true`. Sorting,
+ * filters and page are one value, the query: controlled (`query` +
+ * `onQueryChange`) or left to the grid (`defaultQuery`). Client-side by
+ * default; `server` hands the query to a backend. Import from
  * `turkishcoffee/data-table`. For a static table use the root `Table`
- * primitives instead. Body rows alternate between `--table-row-odd` and
- * `--table-row-even`, including virtualized rows; hover and selection override
- * the alternating background.
+ * primitives instead. Selected rows are grey; `selectable={{ color: 'primary' }}`
+ * tints them with the brand. `striped` alternates the body rows between
+ * `--table-row-odd` and `--table-row-even`, including virtualized rows; hover
+ * and selection override the alternating background.
+ *
+ * Use `toolbar` for search and status filters beside the column controls. When
+ * rows or columns are selected, an inline bar groups the selection count,
+ * export (when enabled) and a visible clear-selection button above the grid.
  *
  * Keyboard: the grid is one tab stop. Arrows, Home/End, Ctrl+Home/End and
  * PageUp/PageDown move the active cell; F2 (or Enter on a cell without its own
@@ -325,14 +303,11 @@ const AUTO_VIRTUAL_COLUMNS = 30
  *
  * <DataTable aria-label="Payments" columns={columns} data={payments} sortable resizable reorderable hideable pageSize={25} />
  *
- * @example <caption>Server data with controlled state</caption>
- * const [sorting, setSorting] = useState<SortingState>([])
- * const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
- * const [pagination, setPagination] = useState<DataTablePagination>({ pageIndex: 0, pageSize: 25 })
- * const { data, isFetching, error } = useQuery({
- *   queryKey: ['orders', sorting, columnFilters, pagination],
- *   queryFn: () => fetchOrders({ sorting, columnFilters, pagination }),
+ * @example <caption>Server data: one query, one request</caption>
+ * const [query, setQuery] = useState<DataTableQuery>({
+ *   sorting: [], columnFilters: [], pagination: { pageIndex: 0, pageSize: 25 },
  * })
+ * const { data, isFetching, error } = useQuery({ queryKey: ['orders', query], queryFn: () => fetchOrders(query) })
  *
  * <DataTable
  *   aria-label="Orders"
@@ -343,18 +318,21 @@ const AUTO_VIRTUAL_COLUMNS = 30
  *   loading={isFetching}
  *   errorMessage={error ? 'Orders could not be loaded.' : undefined}
  *   sortable filterable selectable
- *   sorting={sorting} onSortingChange={setSorting}
- *   columnFilters={columnFilters} onColumnFiltersChange={setColumnFilters}
- *   pagination={pagination} onPaginationChange={setPagination}
- *   exportable={{ onServerExport: (request, format) => api.exportOrders(request, format) }}
- *   onExportError={(error) => toast.error('Export failed')}
+ *   // A sort on page 3 arrives here once, already on page 1.
+ *   query={query} onQueryChange={setQuery}
+ *   exportable={{
+ *     // The grid writes the file from rows the app fetches...
+ *     fetchRows: (request) => api.fetchOrdersForExport(request),
+ *     onError: () => toast.error('Export failed'),
+ *   }}
  * />
  *
  * @example <caption>Restricted selection</caption>
- * // Only open invoices can be selected. On the server, the selection is then
- * // always explicit ids (no "select all matching"), kept across pages.
+ * // Only open invoices can be selected. The backend counts them, so "every
+ * // matching row" stays available; it checks eligibility again when it acts.
  * <DataTable aria-label="Invoices" columns={columns} data={page} getRowId={(row) => row.id}
- *   server={{ rowCount }} selectable isRowSelectable={(row) => row.status === 'open'} />
+ *   server={{ rowCount }}
+ *   selectable={{ isRowSelectable: (row) => row.status === 'open', selectableRowCount: openCount, scopeKey: search }} />
  *
  * @example <caption>Custom filter control and toolbar</caption>
  * const MinimumAmount = ({ value, onApply, close }: DataTableFilterControlProps) => (
@@ -366,18 +344,25 @@ const AUTO_VIRTUAL_COLUMNS = 30
  * const columns: DataTableColumn<Invoice>[] = [{
  *   accessorKey: 'amount', header: 'Amount',
  *   filterFn: (row, id, min) => row.getValue<number>(id) >= (min as number),
- *   meta: { align: 'end', filterControl: MinimumAmount },
+ *   meta: { align: 'end', filter: { control: MinimumAmount } },
  * }]
  *
  * <DataTable aria-label="Invoices" columns={columns} data={invoices} filterable
  *   toolbar={<Button size="sm" onClick={openNewInvoice}>New invoice</Button>} />
+ *
+ * @example <caption>Server export written by the backend</caption>
+ * <DataTable aria-label="Orders" columns={columns} data={page} server={{ rowCount }}
+ *   exportable={{
+ *     onServerExport: async (request, format) => download(await api.exportOrders(request, format)),
+ *     onError: () => toast.error('Export failed'),
+ *   }} />
  *
  * @example <caption>Imperative export with error handling</caption>
  * const ref = useRef<DataTableHandle<Invoice>>(null)
  * try {
  *   await ref.current?.export('xlsx', { rows: 'loaded' })
  * } catch {
- *   // Already reported to onExportError; the promise rejects as well.
+ *   // Already reported to exportable.onError; the promise rejects as well.
  * }
  *
  * @example <caption>Turkish locale, right-to-left, printing</caption>
@@ -393,11 +378,12 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
     data,
     getRowId,
     sortable = false,
+    multiSort = true,
     resizable = false,
     reorderable = false,
     hideable = false,
     selectable = false,
-    selectionScope = 'crossPage',
+    striped = false,
     selectableColumns = false,
     filterable = false,
     exportable = false,
@@ -406,20 +392,18 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
     stickyHeader = true,
     columnVirtualization = 'auto',
     pageSize,
-    pageSizeOptions,
     server,
-    initialState,
-    locale = 'en-US',
+    defaultQuery,
+    locale: localeProp,
     autoSize = 'initial',
     rowVirtualization = 'auto',
     dir = 'ltr',
-    isRowSelectable,
     toolbar,
     emptyMessage,
     labels: labelOverrides,
     onRowClick,
-    onExportError,
     errorMessage,
+    loading = false,
     className,
     ref,
     'aria-label': ariaLabel,
@@ -437,36 +421,86 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
     if (isDev && !ariaLabel && !ariaLabelledBy) console.warn('DataTable: supply aria-label or aria-labelledby to name the grid.')
   }, [ariaLabel, ariaLabelledBy])
 
+  const selecting = Boolean(selectable)
+  const selectionOptions: DataTableSelectionOptions<TData> =
+    typeof selectable === 'object' ? selectable : selectable === 'hover' ? { checkboxes: 'hover' } : {}
+  const { isRowSelectable, scope: selectionScope = 'crossPage', color: selectionColor = 'neutral' } = selectionOptions
+  const columnSelecting = Boolean(selectableColumns)
+  const columnSelectionOptions = typeof selectableColumns === 'object' ? selectableColumns : {}
+  const exportOptions = exportable === true ? {} : exportable || null
+
+  const locale = useLocale(localeProp)
   const labels = useMemo(() => ({ ...dataTableLabelsForLocale(locale), ...labelOverrides }), [locale, labelOverrides])
-  const loading = props.loading ?? server?.loading ?? false
-  const restrictedServer = Boolean(server && isRowSelectable)
+  // Server rows with isRowSelectable: unless the backend counts the eligible
+  // rows, nothing past the loaded page can be selected — explicit ids only.
+  const restrictedServer = Boolean(server && isRowSelectable && selectionOptions.selectableRowCount === undefined)
   const rowHeight = ROW_HEIGHT[size]
   const gridId = useId()
   const paginated =
-    props.pagination !== undefined || pageSize !== undefined || initialState?.pagination !== undefined || !!server
+    pageSize !== undefined || !!server || defaultQuery?.pagination !== undefined || props.query?.pagination !== undefined
+  const pageSizeOptions = server
+    ? (props.pageSizeOptions ?? SERVER_PAGE_SIZES).filter((option) => option !== 'all')
+    : props.pageSizeOptions
 
-  // ── State: one source per slice ─────────────────────────────────────────
+  // ── State: one source each ──────────────────────────────────────────────
 
-  const [sorting, setSorting] = useControllableState(props.sorting, initialState?.sorting ?? NO_SORTING, props.onSortingChange)
-  const [columnFilters, setColumnFilters] = useControllableState(
-    props.columnFilters,
-    initialState?.columnFilters ?? NO_FILTERS,
-    props.onColumnFiltersChange,
+  // Sorting, filters and page are one value: a change that resets the page
+  // along with it is still one change, reported once.
+  const firstPagination = (): DataTablePagination => ({
+    pageIndex: 0,
+    pageSize: pageSize ?? (server ? SERVER_PAGE_SIZE : 'all'),
+  })
+  const [query, setQuery] = useControllableState<DataTableQuery, [DataTableQueryChange]>(
+    props.query,
+    () => ({
+      sorting: defaultQuery?.sorting ?? NO_SORTING,
+      columnFilters: defaultQuery?.columnFilters ?? NO_FILTERS,
+      ...(paginated ? { pagination: defaultQuery?.pagination ?? firstPagination() } : {}),
+    }),
+    props.onQueryChange,
   )
-  const [pagination, setPagination] = useControllableState<DataTablePagination>(
-    props.pagination,
-    () => initialState?.pagination ?? { pageIndex: 0, pageSize: pageSize ?? 'all' },
-    props.onPaginationChange,
+  const { sorting, columnFilters } = query
+  const fallbackSize = pageSize ?? (server ? SERVER_PAGE_SIZE : 'all')
+  const pagination = useMemo<DataTablePagination>(
+    () => query.pagination ?? { pageIndex: 0, pageSize: paginated ? fallbackSize : 'all' },
+    [query.pagination, paginated, fallbackSize],
   )
+  // The query with its page, as the app hears it.
+  const withPagination = (next: DataTableQuery, page: DataTablePagination) => (paginated ? { ...next, pagination: page } : next)
+  const updateQuery = useCallback(
+    (key: 'sorting' | 'columnFilters', updater: Updater<SortingState> | Updater<ColumnFiltersState>) =>
+      setQuery((current) => {
+        const value = functionalUpdate(updater as Updater<unknown>, current[key])
+        if (value === current[key]) return current
+        // A new sort or filter starts again from the first page.
+        const page = current.pagination ?? firstPagination()
+        return withPagination({ ...current, [key]: value }, page.pageIndex === 0 ? page : { ...page, pageIndex: 0 })
+      }, key),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- firstPagination/withPagination read only props
+    [setQuery, paginated, pageSize, server],
+  )
+  const setSorting = useCallback((updater: Updater<SortingState>) => updateQuery('sorting', updater), [updateQuery])
+  const setColumnFilters = useCallback((updater: Updater<ColumnFiltersState>) => updateQuery('columnFilters', updater), [updateQuery])
+  const setPagination = useCallback(
+    (updater: Updater<DataTablePagination>) =>
+      setQuery((current) => {
+        const page = current.pagination ?? firstPagination()
+        const next = functionalUpdate(updater, page)
+        return next.pageIndex === page.pageIndex && next.pageSize === page.pageSize ? current : { ...current, pagination: next }
+      }, 'pagination'),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- firstPagination reads only props
+    [setQuery, pageSize, server],
+  )
+
   const [selection, setSelection] = useControllableState(
-    props.rowSelection,
-    initialState?.rowSelection ?? NO_SELECTION,
-    props.onRowSelectionChange,
+    selectionOptions.value,
+    selectionOptions.defaultValue ?? NO_SELECTION,
+    selectionOptions.onChange,
   )
   const [columnSelection, setColumnSelection] = useControllableState(
-    props.columnSelection,
-    initialState?.columnSelection ?? NO_COLUMNS,
-    props.onColumnSelectionChange,
+    columnSelectionOptions.value,
+    columnSelectionOptions.defaultValue ?? NO_COLUMNS,
+    columnSelectionOptions.onChange,
   )
 
   validatePageSize(pagination.pageSize)
@@ -474,48 +508,35 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
   if (pageSize !== undefined) validatePageSize(pageSize)
   if (server) validateNonnegativeInteger(server.rowCount, 'rowCount')
   if (restrictedServer && selection.type === 'allMatching') {
-    throw new Error('DataTable: server selection with isRowSelectable must use explicit IDs.')
+    throw new Error('DataTable: server selection with isRowSelectable and no selectableRowCount must use explicit IDs.')
   }
 
   const layout = useLayoutState({
     columns: columns as Parameters<typeof useLayoutState>[0]['columns'],
-    selectable: Boolean(selectable),
-    initialState,
-    storageKey: props.storageKey,
-    savedLayout: props.savedLayout,
-    onLayoutChange: props.onLayoutChange,
+    selectable: selecting,
+    layout: props.layout,
     resizable,
     reorderable,
     hideable,
-    columnSizing: props.columnSizing,
-    onColumnSizingChange: props.onColumnSizingChange,
-    columnOrder: props.columnOrder,
-    onColumnOrderChange: props.onColumnOrderChange,
-    columnVisibility: props.columnVisibility,
-    onColumnVisibilityChange: props.onColumnVisibilityChange,
   })
   const { userSizing, setUserSizing, columnOrder, setColumnOrder, columnVisibility, setColumnVisibility } = layout
-
-  // A new sort, filter or page size starts again from the first page.
-  const toFirstPage = useCallback(
-    () => setPagination((current) => (current.pageIndex === 0 ? current : { ...current, pageIndex: 0 })),
-    [setPagination],
-  )
 
   // ── The table ───────────────────────────────────────────────────────────
 
   const selectionModel = useSelectionModel({
     data,
     getRowId,
-    selectable: Boolean(selectable),
+    selectable: selecting,
     isRowSelectable,
     selection,
     setSelection,
   })
+  const heldRows = useHeldRows({ server: !!server, selection, ids: selectionModel.ids, data })
 
+  const checkboxes = selectionOptions.checkboxes ?? 'always'
   const allColumns = useMemo(
-    () => (selectable ? [selectionColumn<TData>(selectable === 'hover' ? 'hover' : 'always', labels), ...columns] : columns),
-    [selectable, labels, columns],
+    () => (selecting ? [selectionColumn<TData>(checkboxes, labels), ...columns] : columns),
+    [selecting, checkboxes, labels, columns],
   )
   const leaves = useMemo(() => columnDefLeaves(allColumns as Parameters<typeof columnDefLeaves>[0]), [allColumns])
   const sizing = useColumnSizing({ leaves, visibility: columnVisibility, userSizing, autoSize })
@@ -542,14 +563,8 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
     getRowId,
     defaultColumn,
     state: { sorting, columnFilters, columnSizing, columnOrder, columnVisibility, rowSelection: selectionModel.selectionMap },
-    onSortingChange: (updater) => {
-      setSorting(updater)
-      toFirstPage()
-    },
-    onColumnFiltersChange: (updater) => {
-      setColumnFilters(updater)
-      toFirstPage()
-    },
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
     onRowSelectionChange: selectionModel.onRowSelectionChange,
     // Only widths the user changed are state (and stored); fitted ones stay automatic.
     onColumnSizingChange: (updater) => {
@@ -566,9 +581,11 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
     onColumnOrderChange: setColumnOrder,
     onColumnVisibilityChange: setColumnVisibility,
     enableSorting: sortable,
+    // Covers the header click and the keyboard's Shift+Enter alike.
+    enableMultiSort: multiSort,
     enableColumnResizing: resizable,
     enableHiding: hideable,
-    enableRowSelection: selectable ? (row) => isRowSelectable?.(row.original) ?? true : false,
+    enableRowSelection: selecting ? (row) => isRowSelectable?.(row.original) ?? true : false,
     columnResizeDirection: dir,
     enableColumnFilters: filterable,
     columnResizeMode: 'onChange',
@@ -582,6 +599,8 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
   // The latest table for callbacks and effects. TanStack hands out a new
   // wrapper object every render; nothing below depends on its identity.
   const tableRef = useRef(table)
+  // Each column's filter kind once its values have shown it (see resolveFilterSetup).
+  const filterKinds = useRef(new Map<string, DataTableFilterVariant>())
   useLayoutEffect(() => {
     tableRef.current = table
   })
@@ -609,15 +628,18 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
   useLayoutEffect(() => {
     if (pageSizeSeen.current === pageSize) return
     pageSizeSeen.current = pageSize
-    if (pageSize !== undefined && props.pagination === undefined) setPagination({ pageIndex: 0, pageSize })
-  }, [pageSize, props.pagination, setPagination])
+    if (pageSize !== undefined && props.query === undefined) setPagination({ pageIndex: 0, pageSize })
+  }, [pageSize, props.query, setPagination])
 
   // ── Selection ───────────────────────────────────────────────────────────
 
-  const view = useMemo(() => ({ pageIndex, pageLength, sorting, columnFilters }), [pageIndex, pageLength, sorting, columnFilters])
+  const scopeKey = selectionOptions.scopeKey
+  const view = useMemo(
+    () => ({ pageIndex, pageLength, sorting, columnFilters, scopeKey }),
+    [pageIndex, pageLength, sorting, columnFilters, scopeKey],
+  )
   const rowSelection = useSelectionView({
-    table,
-    selectable: Boolean(selectable),
+    selectable: selecting,
     isRowSelectable,
     server: !!server,
     restricted: restrictedServer,
@@ -627,15 +649,15 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
     model: selectionModel,
     allRows,
     pageRows: rows,
-    total,
+    // On the server with isRowSelectable, the backend's count of eligible rows.
+    total: server && isRowSelectable && selectionOptions.selectableRowCount !== undefined ? selectionOptions.selectableRowCount : total,
     view,
-    onSelectionChange: props.onSelectionChange,
   })
   const selectionHeader = { state: rowSelection.headerState, total: rowSelection.selectableTotal, advance: rowSelection.advance }
 
   const selectableColumnIds = new Set(dataColumns(table).map((column) => column.id))
   const columnPicker = useColumnSelection(() => dataColumns(tableRef.current).map((column) => column.id), setColumnSelection)
-  const selectedColumns = selectableColumns ? columnSelection.ids.filter((id) => selectableColumnIds.has(id)) : []
+  const selectedColumns = columnSelecting ? columnSelection.ids.filter((id) => selectableColumnIds.has(id)) : []
   const selectedColumnSet = new Set(selectedColumns)
 
   // ── Columns: order, window, widths ──────────────────────────────────────
@@ -699,6 +721,10 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
     rowVirtualization === true || (rowVirtualization === 'auto' && (height !== undefined || rows.length > AUTO_VIRTUAL_ROWS))
   const listHeight =
     height !== undefined ? Math.max(height - rowHeight - 1, rowHeight) : Math.min(rows.length * rowHeight, AUTO_VIRTUAL_HEIGHT)
+  // Loading with nothing to show yet: placeholder rows under the real headers,
+  // unless the app brought its own loading content.
+  const skeleton =
+    loading && errorMessage == null && !rows.length && props.loadingMessage === undefined && visibleColumns.length > 0
   const virtualColumns = columnVirtualization === 'auto' ? visibleColumns.length > AUTO_VIRTUAL_COLUMNS : columnVirtualization
   // aria-rowindex is 1-based and counts the header row.
   const firstRowIndex = (paginated && pagination.pageSize !== 'all' ? pageIndex * pageLength : 0) + 2
@@ -736,12 +762,12 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
       const space = event.key === ' '
 
       // Ctrl+Space selects the column (Excel); Shift adds the range.
-      if (ctrl && space && selectableColumns && selectableColumnIds.has(column.id)) {
+      if (ctrl && space && columnSelecting && selectableColumnIds.has(column.id)) {
         columnPicker.select(column.id, { ctrlKey: false, metaKey: false, shiftKey: event.shiftKey })
         return true
       }
       // Ctrl+A selects every row (crossPage: every matching row; page scope: this page).
-      if (ctrl && event.key.toLowerCase() === 'a' && selectable) {
+      if (ctrl && event.key.toLowerCase() === 'a' && selecting) {
         rowSelection.selectAll()
         return true
       }
@@ -769,7 +795,7 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
       const row = rows[position.row - firstRowIndex]
       if (!row) return false
       // Shift+Space selects the row (Excel); Space on the checkbox column toggles it.
-      if (selectable && space && (event.shiftKey || column.id === SELECT_COLUMN_ID)) {
+      if (selecting && space && (event.shiftKey || column.id === SELECT_COLUMN_ID)) {
         if (row.getCanSelect()) row.toggleSelected()
         return true
       }
@@ -845,8 +871,7 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
 
   const syncHeader = useCallback(
     (event: React.UIEvent<HTMLDivElement>) => {
-      const header = headerScrollRef.current
-      if (header && header.scrollLeft !== event.currentTarget.scrollLeft) header.scrollLeft = event.currentTarget.scrollLeft
+      mirrorHeader(headerScrollRef.current, event.currentTarget)
       noteScroll()
       updateWindow()
     },
@@ -855,32 +880,48 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
   const syncBody = useCallback((event: React.UIEvent<HTMLDivElement>) => {
     // Tabbing to an off-screen header scrolls the header strip by itself.
     const body = scrollerRef.current
-    if (body && body.scrollLeft !== event.currentTarget.scrollLeft) body.scrollLeft = event.currentTarget.scrollLeft
+    const header = event.currentTarget
+    if (!body) return
+    if (headerFollowsNatively()) {
+      // The strip's own scroll is on top of the body's: hand it to the body,
+      // which carries the header along, and zero the strip again.
+      if (header.scrollLeft === 0) return
+      body.scrollLeft += header.scrollLeft
+      header.scrollLeft = 0
+    } else if (body.scrollLeft !== header.scrollLeft) body.scrollLeft = header.scrollLeft
   }, [])
+
 
   // ── Export and the imperative handle ────────────────────────────────────
 
-  const latest = useRef({ rows, selection, columnSelection, pagination: { ...pagination, pageIndex } })
+  const latest = useRef({ rows, selection, columnSelection })
   useLayoutEffect(() => {
-    latest.current = { rows, selection, columnSelection, pagination: { ...pagination, pageIndex } }
+    latest.current = { rows, selection, columnSelection }
   })
   const exportContext = (): ExportContext<TData> => ({
     table: tableRef.current,
     pageRows: latest.current.rows,
     selection: latest.current.selection,
     columnSelection: latest.current.columnSelection,
-    pagination: latest.current.pagination,
-    server: !!server,
+    scopeKey,
+    serverRowCount: server ? server.rowCount : null,
+    heldRows: heldRows.current,
   })
-  const exportOptions: ToolbarExport | null = exportable
-    ? { ...(exportable === true ? {} : exportable), locale, onExportError }
-    : null
 
   useImperativeHandle(
     ref,
     (): DataTableHandle<TData> => ({
-      resetSorting: () => setSorting(initialState?.sorting ?? NO_SORTING),
-      resetColumnFilters: () => setColumnFilters(initialState?.columnFilters ?? NO_FILTERS),
+      resetQuery: () =>
+        setQuery(
+          (current) =>
+            withPagination(
+              { sorting: defaultQuery?.sorting ?? NO_SORTING, columnFilters: defaultQuery?.columnFilters ?? NO_FILTERS },
+              defaultQuery?.pagination ?? { pageIndex: 0, pageSize: (current.pagination ?? firstPagination()).pageSize },
+            ),
+          'reset',
+        ),
+      resetSorting: () => setSorting(defaultQuery?.sorting ?? NO_SORTING),
+      resetColumnFilters: () => setColumnFilters(defaultQuery?.columnFilters ?? NO_FILTERS),
       resetRowSelection: () => setSelection(NO_SELECTION),
       resetColumnSelection: () => setColumnSelection(NO_COLUMNS),
       resetLayout: layout.resetLayout,
@@ -889,7 +930,7 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
       fitColumns: (ids) =>
         autofit(ids ?? tableRef.current.getVisibleLeafColumns().filter((column) => column.getCanResize()).map((column) => column.id)),
       getExportData: (options) => getExportData(exportContext(), options),
-      export: (format, options) => executeExport(getExportData(exportContext(), options), format, { ...exportOptions, onExportError, locale }),
+      export: (format, options) => executeExport(getExportData(exportContext(), options), format, { ...exportOptions, locale }),
     }),
   )
 
@@ -897,7 +938,22 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
 
   // The header cells are memoized, so `grid` stays the same object while
   // nothing it describes changes: the actions reach their latest version through a ref.
-  const actions = { autofit, resizeBy, move, startDrag, selectColumn: columnPicker.select, openMenu }
+  const filterSetup = (columnId: string, value: unknown) => {
+    const current = tableRef.current
+    const column = current.getColumn(columnId)
+    if (!column) return { variant: 'text' as const }
+    return resolveFilterSetup({
+      column,
+      // Every row before filtering on the client; the loaded page on the server.
+      rows: current.getCoreRowModel().rows,
+      value,
+      server: Boolean(server),
+      seen: filterKinds.current,
+      labels,
+      locale,
+    })
+  }
+  const actions = { autofit, resizeBy, move, startDrag, selectColumn: columnPicker.select, openMenu, filterSetup }
   const actionsRef = useRef(actions)
   useLayoutEffect(() => {
     actionsRef.current = actions
@@ -905,12 +961,13 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
   const grid = useMemo<GridApi>(
     () => ({
       dir,
+      locale,
       sortable,
       resizable,
       reorderable,
       hideable,
       filterable,
-      columnSelection: selectableColumns,
+      columnSelection: columnSelecting,
       labels,
       autofit: (columnIds) => actionsRef.current.autofit(columnIds),
       resizeBy: (columnId, delta) => actionsRef.current.resizeBy(columnId, delta),
@@ -918,8 +975,9 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
       startDrag: (event, columnId) => actionsRef.current.startDrag(event, columnId),
       selectColumn: (columnId, modifiers) => actionsRef.current.selectColumn(columnId, modifiers),
       openMenu: (columnId, anchor) => actionsRef.current.openMenu(columnId, anchor),
+      filterSetup: (columnId, value) => actionsRef.current.filterSetup(columnId, value),
     }),
-    [sortable, resizable, reorderable, hideable, filterable, selectableColumns, labels, dir],
+    [sortable, resizable, reorderable, hideable, filterable, columnSelecting, labels, dir, locale],
   )
 
   // ── Render ──────────────────────────────────────────────────────────────
@@ -951,8 +1009,22 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
     active: navigation.active,
     idPrefix: gridId,
   }
+  // The scroll-driven header (theme.css) maps the body's scroll progress onto
+  // a translate; it needs the body's scrollable distance to turn progress into pixels.
+  useLayoutEffect(() => {
+    const frame = frameRef.current
+    if (!frame || !scroller || !headerFollowsNatively()) return
+    const measure = () => frame.style.setProperty('--dt-scroll-max', `${scroller.scrollWidth - scroller.clientWidth}px`)
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(scroller)
+    if (scroller.firstElementChild) observer.observe(scroller.firstElementChild)
+    return () => observer.disconnect()
+  }, [scroller, widthCss, visibleColumns.length, rows.length])
+
   const sticky = stickyHeader !== false
-  const showToolbar = hideable || Boolean(exportable) || Boolean(selectable) || selectableColumns || Boolean(toolbar)
+  const showToolbar =
+    hideable || filterable || Boolean(exportOptions) || selecting || columnSelecting || Boolean(toolbar)
 
   return (
     <DirectionProvider direction={dir}>
@@ -969,8 +1041,10 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
             labels={labels}
             selectedRows={rowSelection.selectedRowCount}
             hiddenSelectedRows={rowSelection.hiddenSelectedRows}
+            offPageSelectedRows={rowSelection.offPageSelectedRows}
+            selectionColor={selectionColor}
             rowScope={rowSelection.headerState}
-            matchingRows={selectable && rowSelection.matchingIds ? rowSelection.selectableTotal : total}
+            matchingRows={selecting && rowSelection.matchingIds ? rowSelection.selectableTotal : total}
             pageRows={rows.length}
             onSelectAllRows={rowSelection.selectAllMatching}
             onClearRows={rowSelection.clearSelection}
@@ -978,7 +1052,7 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
             columnScope={columnSelection.scope}
             onClearColumns={clearColumns}
             onWidenColumns={columnPicker.widen}
-            exportable={exportOptions}
+            exportable={exportOptions && { ...exportOptions, locale }}
             prepareExport={() => getExportData(exportContext())}
             hideable={hideable}
             onResetLayout={layout.resetLayout}
@@ -994,6 +1068,7 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
             // clip, not hidden: `overflow: hidden` would make the frame a scroll
             // container and stop the header from sticking to the page.
             'overflow-clip rounded-md border border-border bg-background',
+            tableRowAppearanceClass({ striped, selectionColor }),
             'has-[[role=grid]:focus-visible]:ring-2 has-[[role=grid]:focus-visible]:ring-ring',
           )}
         >
@@ -1011,11 +1086,13 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
               onPointerDown={navigation.onPointerDown}
               aria-rowcount={total + 1}
               aria-colcount={visibleColumns.length}
-              aria-multiselectable={selectable ? true : undefined}
+              aria-multiselectable={selecting || undefined}
               aria-busy={loading || undefined}
               data-dt={gridId}
               data-has-selection={rowSelection.selectedRowCount > 0 ? '' : undefined}
               className="relative overflow-clip outline-none"
+              // Which way the scroll-driven header moves: content slides left in LTR, right in RTL.
+              style={{ '--dt-scroll-sign': dir === 'rtl' ? 1 : -1 } as React.CSSProperties}
             >
               <style data-widths="">{widthCss}</style>
               {/*
@@ -1027,7 +1104,7 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
                 ref={headerScrollRef}
                 role="rowgroup"
                 onScroll={syncBody}
-                className={cn('overflow-hidden bg-background', sticky ? 'sticky z-20' : 'relative')}
+                className={cn('overflow-hidden bg-[var(--table-header)]', sticky ? 'sticky z-20' : 'relative')}
                 style={{
                   // The header sits outside the scrolling body: the body's
                   // scrollbar width keeps the last column aligned.
@@ -1035,7 +1112,7 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
                   top: sticky ? (typeof stickyHeader === 'object' ? stickyHeader.top : 0) : undefined,
                 }}
               >
-                <div className={ROW_WIDTH_CLASS}>
+                <div className={ROW_WIDTH_CLASS} data-dt-header-row="">
                   <HeaderRow
                     grid={grid}
                     headers={headers}
@@ -1054,22 +1131,40 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
                   />
                 </div>
                 {loading && errorMessage == null && (
-                  // Loading marks the header's edge instead of dimming the rows:
+                  // A hairline travels the header edge instead of dimming the rows:
                   // dimmed text falls below WCAG contrast while it stays readable.
                   // aria-busy tells assistive technology.
                   <div
                     aria-hidden="true"
                     data-loading-bar=""
-                    className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 animate-pulse bg-primary motion-reduce:animate-none"
-                  />
+                    className="pointer-events-none absolute inset-x-0 bottom-0 h-px overflow-hidden"
+                  >
+                    <div className="dt-loading-bar" />
+                  </div>
                 )}
               </div>
               {virtual && rows.length && visibleColumns.length ? (
                 <VirtualBody {...bodyProps} height={listHeight} listRef={setListScroller} listApiRef={listApiRef} onScroll={syncHeader} />
               ) : (
-                <div ref={setScroller} role="rowgroup" onScroll={syncHeader} className="overflow-x-auto">
+                // The rows flow at their own height, so the body only scrolls sideways.
+                // `overflow-x: auto` alone turns y to auto as well: a cell taller than its
+                // row (a 36px button in a 32px sm row) then opens a vertical scrollbar, whose
+                // width in turn pushes the columns into a horizontal one.
+                <div ref={setScroller} role="rowgroup" data-dt-body="" onScroll={syncHeader} className="overflow-x-auto overflow-y-hidden">
                   <div className={ROW_WIDTH_CLASS}>
-                    {rows.length && visibleColumns.length ? <FlowBody {...bodyProps} /> : null}
+                    {rows.length && visibleColumns.length ? (
+                      <FlowBody {...bodyProps} />
+                    ) : skeleton ? (
+                      <SkeletonRows
+                        columns={visibleColumns.map((column) => ({
+                          checkbox: column.id === SELECT_COLUMN_ID,
+                          className: columnClass(column.id),
+                        }))}
+                        rows={SKELETON_ROWS}
+                        rowHeight={rowHeight}
+                        rowClassName={ROW_WIDTH_CLASS}
+                      />
+                    ) : null}
                   </div>
                 </div>
               )}
@@ -1106,7 +1201,11 @@ export function DataTable<TData extends RowData>(props: DataTableProps<TData>) {
               )}
             </div>
           </SelectionHeaderContext>
-          {(errorMessage != null || !rows.length) && (
+          {skeleton ? (
+            <div role="status" className="sr-only">
+              {labels.loading}
+            </div>
+          ) : (errorMessage != null || !rows.length) && (
             <div
               role={errorMessage != null ? 'alert' : 'status'}
               className={cn(
