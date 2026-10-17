@@ -168,7 +168,9 @@ describe('layout (Chromium)', () => {
     cell = activeCell()
     expect(cell?.closest('[role="row"]')?.getAttribute('aria-rowindex')).toBe('1001')
     expect(cell?.getAttribute('aria-colindex')).toBe('80')
-    expect(within(body.getBoundingClientRect(), cell!.getBoundingClientRect())).toBe(true)
+    // A jump across 1,000 rows and 80 columns lands once both virtualizers have rendered
+    // after their scroll, which WebKit takes more frames to do than an arrow key's step.
+    await expect.poll(() => within(body.getBoundingClientRect(), activeCell()!.getBoundingClientRect())).toBe(true)
     expect(document.activeElement).toBe(grid)
   })
 

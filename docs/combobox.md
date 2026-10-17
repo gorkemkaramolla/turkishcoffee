@@ -78,7 +78,7 @@ Only props this library adds or changes; everything else forwards to the underly
 - `ComboboxChipsInput` — The input inside ComboboxChips; it takes the rest of the row.
 - `type ComboboxContentProps`
 - `ComboboxContent` — The options panel under the field, as wide as the field; renders its own portal.
-- `ComboboxList` — The scrolling list. Pass a function child to render each of `items`; it is called for the filtered ones only.
+- `ComboboxList` — The scrolling list. Pass a function child to render each of `items`; it is called for the filtered ones only. The listbox is named after the field ("Manager"), since a listbox needs a name of its own; pass `aria-label` to name it otherwise.
 - `ComboboxItem` — One option. `value` is the item itself; a check marks the selected one(s).
 - `ComboboxEmpty` — Shown in place of the list when nothing matches the typed text.
 - `ComboboxGroupLabel` — Heading for a ComboboxGroup.

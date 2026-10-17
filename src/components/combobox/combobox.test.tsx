@@ -46,6 +46,37 @@ describe('Combobox', () => {
     expect(onValueChange.mock.calls[0]?.[0]).toBe('İzmir')
   })
 
+  it('names the listbox after the field', async () => {
+    render(
+      <>
+        <label htmlFor="city">City</label>
+        <Combobox items={cities}>
+          <ComboboxInput id="city" />
+          <ComboboxContent>
+            <ComboboxList>{(city: string) => <ComboboxItem key={city} value={city}>{city}</ComboboxItem>}</ComboboxList>
+          </ComboboxContent>
+        </Combobox>
+      </>,
+    )
+    await userEvent.setup().type(screen.getByRole('combobox', { name: 'City' }), 'a')
+    expect(await screen.findByRole('listbox', { name: 'City' })).toBeTruthy()
+  })
+
+  it('keeps an aria-label given to the list', async () => {
+    render(
+      <Combobox items={cities}>
+        <ComboboxInput aria-label="City" />
+        <ComboboxContent>
+          <ComboboxList aria-label="Cities in Turkey">
+            {(city: string) => <ComboboxItem key={city} value={city}>{city}</ComboboxItem>}
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>,
+    )
+    await userEvent.setup().type(screen.getByRole('combobox', { name: 'City' }), 'a')
+    expect(await screen.findByRole('listbox', { name: 'Cities in Turkey' })).toBeTruthy()
+  })
+
   it('shows the empty message when nothing matches', async () => {
     render(<Cities />)
     await userEvent.setup().type(screen.getByRole('combobox'), 'zzz')

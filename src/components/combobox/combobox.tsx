@@ -254,11 +254,36 @@ export function ComboboxContent({
   )
 }
 
-/** The scrolling list. Pass a function child to render each of `items`; it is called for the filtered ones only. */
+/** The input's accessible name, from `aria-labelledby`, `aria-label` or a `<label>`. */
+function nameOf(input: HTMLInputElement): string | undefined {
+  const labelledBy = input.getAttribute('aria-labelledby')
+  const name = labelledBy
+    ? labelledBy
+        .split(/\s+/)
+        .map((id) => input.ownerDocument.getElementById(id)?.textContent ?? '')
+        .join(' ')
+    : (input.getAttribute('aria-label') ?? input.labels?.[0]?.textContent)
+  return name?.trim() || undefined
+}
+
+/**
+ * The scrolling list. Pass a function child to render each of `items`; it is called for the filtered ones only.
+ * The listbox is named after the field ("Manager"), since a listbox needs a name of its own; pass
+ * `aria-label` to name it otherwise.
+ */
 export function ComboboxList({ className, ...props }: ComboboxPrimitive.List.Props) {
+  const { anchor } = React.useContext(AnchorContext)
+  const [fieldName, setFieldName] = React.useState<string>()
+  // The list mounts when the popup opens, so this runs in the browser with the field's label in place.
+  React.useLayoutEffect(() => {
+    const input = anchor?.querySelector('input')
+    setFieldName(input ? nameOf(input) : undefined)
+  }, [anchor])
+  const named = props['aria-label'] != null || props['aria-labelledby'] != null
   return (
     <ComboboxPrimitive.List
       data-slot="combobox-list"
+      aria-label={named ? undefined : fieldName}
       className={cnState('scroll-py-1 overflow-y-auto p-1 data-empty:p-0', className)}
       {...props}
     />
