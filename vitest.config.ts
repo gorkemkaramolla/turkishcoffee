@@ -55,6 +55,7 @@ export default defineConfig({
         test: {
           name: 'browser',
           include: ['src/**/*.browser.test.{ts,tsx}'],
+          setupFiles: ['src/test/fonts.ts'],
           browser: browser(),
         },
       },
