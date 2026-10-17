@@ -1,22 +1,33 @@
+'use client'
+
 import type * as React from 'react'
 import { cn } from '../../lib/cn'
+import { inLanguage } from '../../lib/i18n'
+import { MESSAGES } from '../../lib/messages'
+import { useLocale } from '../locale-provider/locale-provider'
 
 export type SpinnerProps = React.ComponentProps<'svg'> & {
-  /** Announced to screen readers; pass null to keep the spinner silent. */
+  /**
+   * Announced to screen readers; pass null to keep the spinner silent.
+   * Defaults to "Loading" in the page's language (see LocaleProvider).
+   */
   label?: string | null
 }
 
 /**
  * Indeterminate loading indicator; `size-4`, inherits text colour. Drawn
  * inline rather than pulled from an icon set, so the package still pins no icon
- * library on consumers.
+ * library on consumers. A client component: its default name follows the
+ * page's language, which an `aria-label` can only read on the client.
  *
  * @example
  * <Button disabled>
  *   <Spinner label={null} /> Saving…
  * </Button>
  */
-export function Spinner({ className, label = 'Loading', ...props }: SpinnerProps) {
+export function Spinner({ className, label: labelProp, ...props }: SpinnerProps) {
+  const locale = useLocale()
+  const label = labelProp === undefined ? inLanguage(MESSAGES.loading, locale) : labelProp
   return (
     <svg
       data-slot="spinner"

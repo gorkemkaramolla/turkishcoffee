@@ -8,9 +8,6 @@
 export const activeTab =
     "data-active:bg-primary data-active:text-primary-foreground";
 
-/** Selected table row (`data-state="selected"`, as TanStack sets it). */
-export const selectedRow = "data-[state=selected]:bg-selection";
-
 /** Keyboard/pointer highlight inside menus and listboxes. */
 export const highlightedItem =
     "data-highlighted:bg-selection data-highlighted:text-foreground";

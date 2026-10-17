@@ -20,9 +20,16 @@ export const buttonVariants = cva(
             variant: {
                 primary:
                     "bg-primary text-primary-foreground hover:bg-primary/90",
-                secondary:
-                    "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-                ghost: "hover:bg-accent hover:text-accent-foreground",
+                // On hover the icon turns primary, as a breadcrumb step's does. Pressed,
+                // or holding its menu open, the fill deepens and the icon stays primary.
+                secondary: [
+                    "border border-input bg-background hover:bg-accent hover:text-accent-foreground hover:[&_svg]:text-primary-text",
+                    "active:bg-selection data-popup-open:bg-selection data-popup-open:text-accent-foreground data-popup-open:[&_svg]:text-primary-text",
+                ],
+                ghost: [
+                    "hover:bg-accent hover:text-accent-foreground hover:[&_svg]:text-primary-text",
+                    "active:bg-selection data-popup-open:bg-selection data-popup-open:text-accent-foreground data-popup-open:[&_svg]:text-primary-text",
+                ],
                 link: "text-primary-text underline-offset-4 hover:underline",
             },
             size: {
@@ -30,6 +37,7 @@ export const buttonVariants = cva(
                 md: "h-control px-3 has-[>svg]:px-2.5",
                 lg: "h-control-lg px-4 has-[>svg]:px-3",
                 icon: "size-control",
+                "icon-sm": "size-control-sm",
             },
         },
         defaultVariants: {
@@ -48,7 +56,8 @@ export type ButtonProps = useRender.ComponentProps<"button"> &
  * and icon buttons) and `link` (inline in text). There is no coloured tone:
  * for a dangerous action say the consequence in the label ("Delete
  * employee") and confirm it in an AlertDialog. Sizes: `sm` (32px) | `md` (36px, default) |
- * `lg` (40px) | `icon` — from the `--spacing-control*` tokens; there is no
+ * `lg` (40px) | `icon` (36px square) | `icon-sm` (32px square, e.g. in a
+ * `size="sm"` DataTable row) — from the `--spacing-control*` tokens; there is no
  * `size="default"`. Pass `render` to style another element, such
  * as your router's link, as a button. Client component.
  *

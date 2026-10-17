@@ -3,6 +3,10 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import type * as React from 'react'
 import { cn } from '../../lib/cn'
+import { inLanguage } from '../../lib/i18n'
+import { MESSAGES } from '../../lib/messages'
+import { useLocale } from '../locale-provider/locale-provider'
+import { SearchIcon } from '../../lib/icons'
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '../input-group/input-group'
 import { Label } from '../label/label'
 import { Spinner } from '../spinner/spinner'
@@ -16,11 +20,22 @@ export type SearchFieldProps = {
   debounceMs?: number
   /** Shows a spinner while results are loading; typing remains available. */
   loading?: boolean
-  /** Visible input label. Defaults to "Search". */
+  /** Input label. Defaults to "Search" in the page's language (see LocaleProvider). */
   label?: React.ReactNode
-  /** Clear button text. Defaults to "Clear". */
+  /**
+   * Keeps the label for screen readers but hides it, for toolbars and top bars
+   * where the search icon and placeholder already say what the field is.
+   */
+  hideLabel?: boolean
+  /**
+   * Height, to match the controls beside it: `sm` (32px) among CommandButtons
+   * and other 32px controls, `md` (36px, default) beside Buttons, as in
+   * DataTable's toolbar.
+   */
+  size?: 'sm' | 'md'
+  /** Clear button text. Defaults to "Clear" in the page's language. */
   clearLabel?: string
-  /** Accessible spinner label. Defaults to "Searching". */
+  /** Accessible spinner label. Defaults to "Searching" in the page's language. */
   loadingLabel?: string
   id?: string
   name?: string
@@ -35,25 +50,36 @@ export type SearchFieldProps = {
  * indicator. Enter bypasses the debounce. External value changes (e.g. browser
  * back) replace the draft; acknowledgements of submitted searches preserve
  * newer typing. Routing and fetching belong to the consuming application.
- * Renders a search form: place it outside other forms.
+ * Renders a search form: place it outside other forms. In a toolbar, pass
+ * `hideLabel` and match the height of the controls beside it: `size="sm"`
+ * among 32px CommandButtons, the default `md` in DataTable's toolbar, whose
+ * Columns and Export buttons are 36px.
  *
  * @example
  * <SearchField value={search} onSearch={setSearch} placeholder="Name, email…" />
+ *
+ * <SearchField value={search} onSearch={setSearch} hideLabel size="sm" label="Search people" />
  */
 export function SearchField({
   value,
   onSearch,
   debounceMs = 300,
   loading = false,
-  label = 'Search',
-  clearLabel = 'Clear',
-  loadingLabel = 'Searching',
+  label: labelProp,
+  hideLabel = false,
+  size = 'md',
+  clearLabel: clearLabelProp,
+  loadingLabel: loadingLabelProp,
   id,
   name,
   placeholder,
   disabled = false,
   className,
 }: SearchFieldProps) {
+  const locale = useLocale()
+  const label = labelProp ?? inLanguage(MESSAGES.search, locale)
+  const clearLabel = clearLabelProp ?? inLanguage(MESSAGES.clear, locale)
+  const loadingLabel = loadingLabelProp ?? inLanguage(MESSAGES.searching, locale)
   const generatedId = useId()
   const inputId = id ?? generatedId
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -89,14 +115,17 @@ export function SearchField({
   }
 
   return (
-    <form role="search" data-slot="search-field" className={cn('grid w-72 gap-2', className)}
+    <form role="search" data-slot="search-field" data-size={size}
+      className={cn('grid w-72', hideLabel ? 'gap-0' : 'gap-2', className)}
       onSubmit={(event) => {
         event.preventDefault()
         if (!disabled && !composing.current) search(state.draft)
       }}>
-      <Label htmlFor={inputId}>{label}</Label>
+      <Label htmlFor={inputId} className={cn(hideLabel && 'sr-only')}>{label}</Label>
       <InputGroup>
+        <InputGroupAddon><SearchIcon /></InputGroupAddon>
         <InputGroupInput ref={input} id={inputId} name={name} value={state.draft}
+          className={cn('ps-2', size === 'sm' && 'h-control-sm')}
           placeholder={placeholder} disabled={disabled} autoComplete="off"
           onChange={(event) => {
             const text = event.target.value
@@ -109,7 +138,7 @@ export function SearchField({
           <InputGroupAddon align="end">
             {loading && <Spinner label={loadingLabel} />}
             {state.draft && (
-              <InputGroupButton type="button" disabled={disabled} onClick={() => {
+              <InputGroupButton type="button" disabled={disabled} className={cn(size === 'sm' && 'h-6')} onClick={() => {
                 setState((current) => ({ ...current, draft: '' }))
                 search('')
                 input.current?.focus()

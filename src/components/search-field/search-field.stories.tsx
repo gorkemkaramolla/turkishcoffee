@@ -21,3 +21,9 @@ export const Turkish: Story = {
   ...Default,
   args: { label: 'Ara', clearLabel: 'Temizle', loadingLabel: 'Aranıyor', placeholder: 'Ad, soyad, e-posta, personel no' },
 }
+
+/** In a toolbar: the label is for screen readers only and the field is 32px tall. */
+export const Toolbar: Story = {
+  ...Default,
+  args: { hideLabel: true, size: 'sm', label: 'Search people', placeholder: 'Search people' },
+}

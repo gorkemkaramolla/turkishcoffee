@@ -4,6 +4,8 @@ import * as React from 'react'
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog'
 import { Drawer as DrawerPrimitive } from '@base-ui/react/drawer'
 import { cn, cnState } from '../../lib/cn'
+import { MESSAGES } from '../../lib/messages'
+import { LocaleText } from '../locale-provider/locale-provider'
 import { XIcon } from '../../lib/icons'
 import { backdrop, popMotion } from '../../lib/motion'
 import { useIsDesktop } from '../../lib/responsive'
@@ -134,7 +136,9 @@ export function DialogContent({
             className="absolute top-4 right-4 rounded-sm opacity-70 transition-opacity outline-none hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none"
           >
             <XIcon className="size-4" />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">
+            <LocaleText message={MESSAGES.close} />
+          </span>
           </DialogPrimitive.Close>
         ) : null}
       </DialogPrimitive.Popup>

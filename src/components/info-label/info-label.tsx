@@ -5,6 +5,9 @@ import type * as React from 'react'
 import { InfoCircleIcon, InfoIcon } from '../../lib/icons'
 import { Label } from '../label/label'
 import { Popover, PopoverContent, PopoverTrigger } from '../popover/popover'
+import { inLanguage } from '../../lib/i18n'
+import { MESSAGES } from '../../lib/messages'
+import { useLocale } from '../locale-provider/locale-provider'
 
 export type InfoLabelProps = React.ComponentProps<typeof Label> & {
   /** The explanation behind the info button: what the field is for, its format, where the value goes. */
@@ -25,7 +28,8 @@ export type InfoLabelProps = React.ComponentProps<typeof Label> & {
  * <InfoLabel htmlFor="iban" info="Salaries are paid into this account.">IBAN</InfoLabel>
  * <Input id="iban" />
  */
-export function InfoLabel({ info, infoLabel = 'More information', id, ...props }: InfoLabelProps) {
+export function InfoLabel({ info, infoLabel, id, ...props }: InfoLabelProps) {
+  const locale = useLocale()
   const generatedId = useId()
   const labelId = id ?? generatedId
   const buttonId = useId()
@@ -36,7 +40,7 @@ export function InfoLabel({ info, infoLabel = 'More information', id, ...props }
       <Popover>
         <PopoverTrigger
           id={buttonId}
-          aria-label={infoLabel}
+          aria-label={infoLabel ?? inLanguage(MESSAGES.moreInformation, locale)}
           // Reads as "More information, IBAN", so each button is distinct in a list of controls.
           aria-labelledby={`${buttonId} ${labelId}`}
           // Pressed and open, the icon fills in primary, so it shows the explanation is open.

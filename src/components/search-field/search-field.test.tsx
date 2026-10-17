@@ -102,3 +102,13 @@ describe('SearchField', () => {
     expect(onSearch).toHaveBeenCalledExactlyOnceWith('日本')
   })
 })
+
+describe('SearchField hideLabel', () => {
+  it('keeps the accessible name when the label is hidden', () => {
+    render(<SearchField value="" onSearch={() => {}} label="Search people" hideLabel size="sm" />)
+    const label = screen.getByText('Search people')
+    expect(label.className).toContain('sr-only')
+    expect(screen.getByRole('textbox', { name: 'Search people' })).toBeTruthy()
+    expect(screen.getByRole('search').dataset.size).toBe('sm')
+  })
+})

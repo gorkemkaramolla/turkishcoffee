@@ -58,10 +58,11 @@ export function BreadcrumbItem({ className, ...props }: React.ComponentProps<'li
 // text and an icon. Shared by links, buttons and the current page so they line up.
 const step = 'inline-flex h-control-sm items-center gap-1.5 rounded-md px-2 [&>svg]:size-4 [&>svg]:shrink-0'
 
-// Hover: the neutral selection fill, full-strength text and a primary icon.
+// Hover, or a menu held open: the neutral selection fill, full-strength text and a primary icon.
 const interactiveStep = cn(
   step,
   'outline-none transition-colors hover:bg-selection hover:text-foreground hover:[&>svg]:text-primary-text',
+  'data-popup-open:bg-selection data-popup-open:text-foreground data-popup-open:[&>svg]:text-primary-text',
   'focus-visible:ring-2 focus-visible:ring-ring',
 )
 

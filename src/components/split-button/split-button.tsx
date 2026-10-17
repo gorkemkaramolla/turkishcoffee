@@ -17,11 +17,12 @@ const SplitContext = createContext<{
   root: React.RefObject<HTMLDivElement | null> | null
 }>({ variant: 'primary', size: 'md', root: null })
 
-// The line between the halves, and the menu half's fill while its menu is open.
+// The line between the halves, and the primary menu half's fill while its menu is
+// open (a secondary one takes Button's own open state).
 const menuHalf: Record<Variant, string> = {
   primary: 'border-l border-primary-foreground/30 data-popup-open:bg-primary/90',
   // Both halves have a border; drop the menu half's left one so the line stays 1px.
-  secondary: 'border-l-0 data-popup-open:bg-accent',
+  secondary: 'border-l-0',
 }
 
 /**

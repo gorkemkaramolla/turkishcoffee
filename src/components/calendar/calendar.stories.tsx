@@ -57,3 +57,18 @@ export const Range: Story = {
 export const Turkish: Story = {
   render: () => <TurkishDemo />,
 }
+
+const holidays = [new Date(2026, 9, 29), new Date(2026, 9, 28)]
+
+/** No `mode`: a read-only month. Marked days come from `modifiers` + `modifiersClassNames`. */
+export const ReadOnly: Story = {
+  render: () => (
+    <Calendar
+      defaultMonth={new Date(2026, 9, 1)}
+      weekStartsOn={1}
+      modifiers={{ holiday: holidays }}
+      modifiersClassNames={{ holiday: 'font-semibold text-danger-text' }}
+      className="rounded-md border border-border"
+    />
+  ),
+}
