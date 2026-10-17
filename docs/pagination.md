@@ -36,6 +36,6 @@ Only props this library adds or changes; everything else forwards to the underly
 - `PaginationItem` — One `<li>` slot; wraps a link, Previous/Next or an ellipsis.
 - `type PaginationLinkProps`
 - `PaginationLink` — A page number link. `isActive` marks the current page (outline style + aria-current). `size` follows Button sizes and defaults to `icon`.
-- `PaginationPrevious` — Link to the previous page; the label hides below `sm`.
-- `PaginationNext` — Link to the next page; the label hides below `sm`.
+- `PaginationPrevious` — Link to the previous page; below `sm` its label is read but not shown.
+- `PaginationNext` — Link to the next page; below `sm` its label is read but not shown.
 - `PaginationEllipsis` — Stands in for skipped page numbers.

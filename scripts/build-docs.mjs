@@ -29,10 +29,18 @@ function jsDocOf(node) {
   const doc = docs.at(-1)
   if (!doc) return null
   const text = ts.getTextOfJSDocComment(doc.comment) ?? ''
-  const example = doc.tags?.find((t) => t.tagName.text === 'example')
+  // Every @example, with an optional JSDoc `<caption>…</caption>` as its title.
+  const examples = (doc.tags ?? [])
+    .filter((t) => t.tagName.text === 'example')
+    .map((t) => {
+      const raw = (ts.getTextOfJSDocComment(t.comment) ?? '').trim()
+      const caption = raw.match(/^<caption>(.*?)<\/caption>\s*/)
+      return { caption: caption?.[1] ?? null, code: caption ? raw.slice(caption[0].length) : raw }
+    })
   return {
     text: text.trim(),
-    example: example ? (ts.getTextOfJSDocComment(example.comment) ?? '').trim() : null,
+    example: examples[0]?.code ?? null,
+    examples,
   }
 }
 
@@ -78,12 +86,17 @@ function parse(file) {
       }
     }
     // Documented props, wherever they are declared (exported prop types or inline).
-    if (ts.isPropertySignature(node)) {
+    if (ts.isPropertySignature(node) || ts.isMethodSignature(node)) {
       const doc = jsDocOf(node)
       if (doc) {
+        const method = ts.isMethodSignature(node)
         props.push({
-          name: node.name.getText(sf) + (node.questionToken ? '?' : ''),
-          type: node.type?.getText(sf).replace(/\s+/g, ' ') ?? 'unknown',
+          owner: ownerOf(node, sf),
+          name: pathOf(node, sf) + (node.questionToken ? '?' : ''),
+          type: (method
+            ? `(${node.parameters.map((p) => p.getText(sf)).join(', ')}) => ${node.type?.getText(sf) ?? 'void'}`
+            : node.type?.getText(sf) ?? 'unknown'
+          ).replace(/\s+/g, ' '),
           doc: doc.text.replace(/\s+/g, ' '),
         })
       }
@@ -117,6 +130,27 @@ function parse(file) {
     }
   }
   return { client, exports, variants, props }
+}
+
+/** The declaration a prop belongs to: its type alias or interface, else the function whose parameter declares it. */
+function ownerOf(node, sf) {
+  for (let n = node.parent; n; n = n.parent) {
+    if ((ts.isTypeAliasDeclaration(n) || ts.isInterfaceDeclaration(n) || ts.isFunctionDeclaration(n)) && n.name) {
+      // `XBaseProps` is the unexported half of a union `XProps`: show the public name.
+      return n.name.getText(sf).replace(/BaseProps$/, 'Props')
+    }
+  }
+  return null
+}
+
+/** A nested prop's path, e.g. `exportable.fileName` for an inline object type. */
+function pathOf(node, sf) {
+  const names = [node.name.getText(sf)]
+  for (let n = node.parent; n; n = n.parent) {
+    if (ts.isPropertySignature(n)) names.unshift(n.name.getText(sf))
+    if (ts.isTypeAliasDeclaration(n) || ts.isInterfaceDeclaration(n) || ts.isFunctionDeclaration(n)) break
+  }
+  return names.join('.')
 }
 
 function component(dir) {
@@ -154,7 +188,7 @@ function render(c) {
 
   out.push(
     c.client
-      ? '**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.'
+      ? '**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.'
       : '**Server-renderable**: no `"use client"`; it adds no client boundary.',
   )
   if (c.entry) {
@@ -163,7 +197,12 @@ function render(c) {
   out.push('', '```tsx', `import { ${imports.join(', ')} } from '${from}'`, '```', '')
 
   if (c.main?.doc) out.push(c.main.doc.text, '')
-  if (c.main?.doc?.example) out.push('## Example', '', '```tsx', c.main.doc.example, '```', '')
+  const [first, ...more] = c.main?.doc?.examples ?? []
+  if (first) out.push('## Example', '', '```tsx', first.code, '```', '')
+  if (more.length) {
+    out.push('## More examples', '')
+    for (const e of more) out.push(...(e.caption ? [`### ${e.caption}`, ''] : []), '```tsx', e.code, '```', '')
+  }
 
   if (c.variants.length) {
     out.push('## Variants', '', '| Prop | Options | Default |', '|---|---|---|')
@@ -175,8 +214,13 @@ function render(c) {
 
   if (c.props.length) {
     out.push('## Props', '', 'Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.', '')
-    for (const p of c.props) out.push(`- \`${p.name}: ${p.type}\` — ${p.doc}`)
-    out.push('')
+    // Grouped by the type that declares them, so a helper's options never read as the component's own props.
+    const owners = [...new Set(c.props.map((p) => p.owner))]
+    for (const owner of owners) {
+      if (owners.length > 1 && owner) out.push(`### \`${owner}\``, '')
+      for (const p of c.props.filter((q) => q.owner === owner)) out.push(`- \`${p.name}: ${p.type}\` — ${p.doc}`)
+      out.push('')
+    }
   }
 
   const others = c.exports.filter((e) => e !== c.main)

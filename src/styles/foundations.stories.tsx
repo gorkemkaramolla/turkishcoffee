@@ -122,7 +122,7 @@ export const BusinessScreen: Story = {
                 <option value="q3">Q3 2026</option>
                 <option value="q2">Q2 2026</option>
               </NativeSelect>
-              <Button variant="outline">Export</Button>
+              <Button variant="secondary">Export</Button>
               <Button>New invoice</Button>
             </div>
             <Table>
@@ -146,8 +146,8 @@ export const BusinessScreen: Story = {
                     <TableCell className="text-right tabular-nums">{inv.amount}</TableCell>
                     <TableCell>
                       <Badge
-                        variant={
-                          inv.status === 'Paid' ? 'success' : inv.status === 'Overdue' ? 'destructive' : 'secondary'
+                        tone={
+                          inv.status === 'Paid' ? 'success' : inv.status === 'Overdue' ? 'danger' : 'neutral'
                         }
                       >
                         {inv.status}

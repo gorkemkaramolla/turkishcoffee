@@ -1,5 +1,19 @@
 import { clsx, type ClassValue } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+import { extendTailwindMerge } from 'tailwind-merge'
+
+/*
+ * tailwind-merge only knows Tailwind's own scales. Teach it the theme's custom
+ * tokens, or it cannot tell that `size-6` replaces `size-control` and keeps
+ * both — and the stylesheet's order, not the consumer, decides the winner.
+ */
+const twMerge = extendTailwindMerge({
+  extend: {
+    theme: {
+      spacing: ['control', 'control-sm', 'control-lg'],
+      shadow: ['float', 'edge'],
+    },
+  },
+})
 
 /**
  * Merge Tailwind classes so a consumer's `className` always wins over the

@@ -27,12 +27,13 @@ export function Checkbox({ className, ...props }: CheckboxProps) {
       nativeButton
       render={<button type="button" />}
       className={cnState(
-        'peer size-4 shrink-0 rounded-sm border border-input transition-shadow outline-none',
+        'peer size-4 shrink-0 rounded-sm border border-field hover:border-field-hover transition-[border-color,box-shadow] outline-none',
         'data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground',
-        'data-indeterminate:border-primary data-indeterminate:bg-primary data-indeterminate:text-primary-foreground',
-        'focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50',
+        // Mixed: a primary outline around a small filled square, not a check, so it never reads as checked.
+        'data-indeterminate:border-primary data-indeterminate:bg-background data-indeterminate:text-primary',
+        'focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring',
         'data-disabled:cursor-not-allowed data-disabled:opacity-50',
-        'aria-invalid:border-destructive aria-invalid:ring-destructive/20',
+        'aria-invalid:border-danger aria-invalid:ring-danger',
         className,
       )}
       {...props}
@@ -41,7 +42,8 @@ export function Checkbox({ className, ...props }: CheckboxProps) {
         data-slot="checkbox-indicator"
         className="flex items-center justify-center text-current"
       >
-        <CheckIcon className="size-3.5" strokeWidth={3} />
+        <CheckIcon className="size-3.5 in-data-indeterminate:hidden" strokeWidth={3} />
+        <span aria-hidden="true" className="hidden size-2 rounded-[1px] bg-current in-data-indeterminate:block" />
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
   )

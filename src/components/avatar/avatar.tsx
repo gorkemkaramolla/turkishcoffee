@@ -5,7 +5,7 @@ import { cnState } from '../../lib/cn'
 
 /**
  * Round user image with a fallback while it loads or when it fails.
- * Defaults to `size-8`; resize with `className`.
+ * Defaults to `size-8`; resize with `className`. For several people, use AvatarGroup.
  *
  * @example
  * <Avatar>

@@ -4,12 +4,24 @@ import * as React from 'react'
 import { format, type Locale } from 'date-fns'
 import type { DateRange } from 'react-day-picker'
 import { cn } from '../../lib/cn'
+import { dayPickerLocale } from '../../lib/day-picker-locale'
+import { inLanguage, type Message } from '../../lib/i18n'
 import { CalendarIcon } from '../../lib/icons'
 import { useIsDesktop } from '../../lib/responsive'
 import { Button } from '../button/button'
 import { Calendar, type CalendarProps } from '../calendar/calendar'
+import { useLocale } from '../locale-provider/locale-provider'
 import { Drawer, DrawerContent, DrawerTitle, DrawerTrigger } from '../drawer/drawer'
 import { Popover, PopoverContent, PopoverTrigger } from '../popover/popover'
+
+const PICK_DATE: Message = { en: 'Pick a date', tr: 'Tarih seçin' }
+const PICK_DATE_RANGE: Message = { en: 'Pick a date range', tr: 'Tarih aralığı seçin' }
+
+/** The date-fns locale to format and draw dates in: `locale` when given, else the page's (see LocaleProvider). */
+function usePickerLocale(locale: Locale | undefined): { locale: Locale; pageLocale: string } {
+  const pageLocale = useLocale()
+  return { locale: locale ?? dayPickerLocale(pageLocale), pageLocale }
+}
 
 type TriggerProps = Omit<React.ComponentProps<'button'>, 'value' | 'onChange' | 'children'>
 
@@ -57,10 +69,14 @@ function PickerButton({
   return (
     <Button
       type="button"
-      variant="outline"
+      variant="secondary"
       data-empty={!label || undefined}
       className={cn(
         'w-full justify-start text-left font-normal data-[empty]:text-muted-foreground sm:w-64',
+        // Dressed as a field, not a button, so it lines up with the inputs beside it.
+        'border-field bg-transparent hover:border-field-hover hover:bg-transparent',
+        'focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:inset-ring focus-visible:inset-ring-ring',
+        'data-popup-open:border-ring data-popup-open:inset-ring data-popup-open:inset-ring-ring',
         className,
       )}
       {...props}
@@ -77,7 +93,10 @@ export type DatePickerProps = TriggerProps & {
   placeholder?: string
   /** date-fns format string for the trigger label. */
   formatStr?: string
-  /** A date-fns locale (e.g. `tr` from `date-fns/locale`); also localizes the calendar. */
+  /**
+   * A date-fns locale (e.g. `tr` from `react-day-picker/locale`) for the label
+   * and the calendar. Defaults to LocaleProvider's language, else `<html lang>`.
+   */
   locale?: Locale
   calendarProps?: Omit<CalendarProps, 'mode' | 'selected' | 'onSelect' | 'locale'>
 }
@@ -86,13 +105,15 @@ export type DatePickerProps = TriggerProps & {
 export function DatePicker({
   value,
   onChange,
-  placeholder = 'Pick a date',
+  placeholder: placeholderProp,
   formatStr = 'PPP',
-  locale,
+  locale: localeProp,
   calendarProps,
   ...props
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false)
+  const { locale, pageLocale } = usePickerLocale(localeProp)
+  const placeholder = placeholderProp ?? inLanguage(PICK_DATE, pageLocale)
 
   return (
     <ResponsivePicker
@@ -139,14 +160,16 @@ export type DateRangePickerProps = TriggerProps & {
 export function DateRangePicker({
   value,
   onChange,
-  placeholder = 'Pick a date range',
-  formatStr = 'LLL d, y',
-  locale,
+  placeholder: placeholderProp,
+  formatStr = 'PP',
+  locale: localeProp,
   calendarProps,
   className,
   ...props
 }: DateRangePickerProps) {
   const [open, setOpen] = React.useState(false)
+  const { locale, pageLocale } = usePickerLocale(localeProp)
+  const placeholder = placeholderProp ?? inLanguage(PICK_DATE_RANGE, pageLocale)
   const isDesktop = useIsDesktop()
   // Picks since the picker opened: the first starts a fresh range, the second ends it.
   const picks = React.useRef(0)

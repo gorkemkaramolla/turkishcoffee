@@ -21,3 +21,16 @@ export function useStepField(name: string) {
     if (registry && step !== null) return registry.registerField(step, name)
   }, [registry, step, name])
 }
+
+/**
+ * How a form-wide part (FormErrorSummary) reaches a field that may sit in a
+ * hidden step: `reveal` opens that step and focuses the field, `rank` orders
+ * fields as the steps show them. Form holds the slot so a part above the
+ * FormTabs (where a summary belongs) can still reach it; FormTabs fills it.
+ */
+export type FieldNavigator = {
+  reveal: (name: string) => void
+  rank: (name: string) => number
+}
+
+export const NavigatorContext = createContext<{ current: FieldNavigator | null } | null>(null)

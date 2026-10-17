@@ -1,6 +1,42 @@
 export { cn } from './lib/cn'
-export { InfoIcon, ErrorIcon, SuccessIcon, UserIcon, UsersIcon, FolderUserIcon } from './lib/icons'
+export {
+  InfoIcon,
+  ErrorIcon,
+  SuccessIcon,
+  UserIcon,
+  UsersIcon,
+  FolderUserIcon,
+  TrashIcon,
+  SearchIcon,
+  BellIcon,
+  SettingsIcon,
+  MenuIcon,
+  SidebarIcon,
+  LogoutIcon,
+  HomeIcon,
+  BuildingIcon,
+  BriefcaseIcon,
+  WalletIcon,
+  ClockIcon,
+  MapPinIcon,
+  PhoneIcon,
+  PencilIcon,
+  UploadIcon,
+  CloudUploadIcon,
+  FileIcon,
+  FolderIcon,
+  FolderOpenIcon,
+  MailIcon,
+  CalendarIcon,
+  PlusIcon,
+  DownloadIcon,
+  EllipsisIcon,
+  EyeIcon,
+  EyeOffIcon,
+} from './lib/icons'
 export { useMediaQuery, useDisclosure, type Disclosure } from './hooks'
+export { LocaleProvider, LocaleText, useLocale, type LocaleProviderProps } from './components/locale-provider'
+export { languageOf, LANGUAGES, type Language, type Message } from './lib/i18n'
 
 // Form and DataTable are NOT exported here: they need optional peers
 // (react-hook-form / @tanstack/react-table). Import them from
@@ -25,6 +61,27 @@ export { AspectRatio, type AspectRatioProps } from './components/aspect-ratio'
 export { Avatar, AvatarImage, AvatarFallback } from './components/avatar'
 export { Badge, badgeVariants, type BadgeProps } from './components/badge'
 export { Button, buttonVariants, type ButtonProps } from './components/button'
+export { CommandButton, type CommandButtonProps } from './components/command-button'
+export {
+  Combobox,
+  ComboboxValue,
+  ComboboxGroup,
+  ComboboxCollection,
+  useComboboxFilter,
+  ComboboxInput,
+  type ComboboxInputProps,
+  ComboboxChips,
+  ComboboxChip,
+  ComboboxChipsInput,
+  ComboboxContent,
+  type ComboboxContentProps,
+  ComboboxList,
+  ComboboxItem,
+  ComboboxEmpty,
+  ComboboxGroupLabel,
+  ComboboxSeparator,
+} from './components/combobox'
+export { SplitButton, SplitButtonAction, SplitButtonMenu } from './components/split-button'
 export {
   Card,
   CardHeader,
@@ -41,6 +98,7 @@ export {
   BreadcrumbPage,
   BreadcrumbSeparator,
   BreadcrumbEllipsis,
+  BreadcrumbButton,
   type BreadcrumbLinkProps,
 } from './components/breadcrumb'
 export { Calendar, type CalendarProps, type DateRange } from './components/calendar'
@@ -92,6 +150,22 @@ export {
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 } from './components/dropdown-menu'
+export {
+  FileUpload,
+  type FileUploadProps,
+  FileUploadDropzone,
+  type FileUploadDropzoneProps,
+  FileUploadTrigger,
+  FileUploadList,
+  FileUploadItem,
+  type FileUploadItemProps,
+  defaultFileUploadLabels,
+  fileUploadLabelsForLocale,
+  type FileUploadLabels,
+  type FileRejection,
+  type FileRejectionReason,
+  formatFileSize,
+} from './components/file-upload'
 export { HoverCard, HoverCardTrigger, HoverCardContent } from './components/hover-card'
 export { Input, type InputProps } from './components/input'
 export {
@@ -103,6 +177,9 @@ export {
   inputGroupAddonVariants,
   type InputGroupAddonProps,
 } from './components/input-group'
+export { PasswordInput, type PasswordInputProps } from './components/password-input'
+export { AvatarGroup, AvatarGroupItem } from './components/avatar-group'
+export { InfoLabel, type InfoLabelProps } from './components/info-label'
 export { Label, type LabelProps } from './components/label'
 export { NativeSelect, type NativeSelectProps } from './components/native-select'
 export { Popover, PopoverTrigger, PopoverContent } from './components/popover'
@@ -141,11 +218,34 @@ export {
   SheetDescription,
   type SheetContentProps,
 } from './components/sheet'
+export {
+  Sidebar,
+  type SidebarProps,
+  useSidebar,
+  SidebarProvider,
+  type SidebarProviderProps,
+  SidebarHeader,
+  SidebarSwitcher,
+  type SidebarSwitcherProps,
+  SidebarSwitcherItem,
+  type SidebarSwitcherItemProps,
+  SidebarContent,
+  type SidebarContentProps,
+  SidebarFooter,
+  SidebarSection,
+  SidebarSeparator,
+  SidebarItem,
+  type SidebarItemProps,
+  SidebarCategory,
+  type SidebarCategoryProps,
+  SidebarTrigger,
+} from './components/sidebar'
 export { Skeleton } from './components/skeleton'
 export { Spinner, type SpinnerProps } from './components/spinner'
 export { Switch, type SwitchProps } from './components/switch'
 export {
   Table,
+  type TableProps,
   TableHeader,
   TableBody,
   TableFooter,
@@ -153,8 +253,38 @@ export {
   TableHead,
   TableCell,
   TableCaption,
+  TablePagination,
+  defaultTablePaginationLabels,
+  tablePaginationLabelsForLocale,
+  type TablePageSize,
+  type TablePaginationLabels,
+  type TablePaginationProps,
+  TableCheckbox,
+  type TableCheckboxProps,
+  TableColumnFilter,
+  TableColumnOptionsFilter,
+  defaultTableColumnFilterLabels,
+  tableColumnFilterLabelsForLocale,
+  type TableColumnFilterLabels,
+  type TableColumnFilterOption,
+  type TableColumnFilterProps,
+  type TableColumnOptionsFilterProps,
+  exportTable,
+  toCsv,
+  toXlsxBlob,
+  downloadFile,
+  type TableExportColumn,
+  type TableExportFormat,
+  type TableExportOptions,
 } from './components/table'
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './components/tabs'
+export {
+  SegmentedControl,
+  SegmentedControlItem,
+  SegmentedControlCount,
+  type SegmentedControlProps,
+  type SegmentedControlItemProps,
+} from './components/segmented-control'
 export { Textarea, type TextareaProps } from './components/textarea'
 export {
   Toaster,
@@ -164,3 +294,18 @@ export {
   type ToasterProps,
 } from './components/toast'
 export { Tooltip, TooltipTrigger, TooltipContent } from './components/tooltip'
+export { SearchField, type SearchFieldProps } from './components/search-field'
+export {
+  Tree,
+  type TreeProps,
+  TreeItem,
+  type TreeItemProps,
+  TreeGroup,
+  TreeItemRow,
+  type TreeItemRowProps,
+  useTreeItem,
+  TreeItemLayout,
+  type TreeItemLayoutProps,
+  TreeItemPersonaLayout,
+  type TreeItemPersonaLayoutProps,
+} from './components/tree'

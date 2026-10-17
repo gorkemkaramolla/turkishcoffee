@@ -1,6 +1,6 @@
 # Dialog
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { Dialog, DialogTrigger, DialogClose, DialogPortal, DialogOverlay, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from 'turkishcoffee'
@@ -24,7 +24,7 @@ sliding from an edge use Sheet. DialogTitle is required for accessibility.
     </DialogHeader>
     …
     <DialogFooter>
-      <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>
+      <DialogClose render={<Button variant="secondary" />}>Cancel</DialogClose>
       <Button type="submit">Save</Button>
     </DialogFooter>
   </DialogContent>

@@ -23,7 +23,7 @@ type Story = StoryObj<typeof meta>
 export const Default: Story = {
   render: () => (
     <AlertDialog>
-      <AlertDialogTrigger render={<Button variant="destructive" />}>Delete account</AlertDialogTrigger>
+      <AlertDialogTrigger render={<Button variant="secondary" />}>Delete account</AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete this account?</AlertDialogTitle>
@@ -33,7 +33,7 @@ export const Default: Story = {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction>Delete</AlertDialogAction>
+          <AlertDialogAction>Delete account</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

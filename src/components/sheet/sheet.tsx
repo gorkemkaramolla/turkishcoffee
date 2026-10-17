@@ -4,6 +4,8 @@ import type * as React from 'react'
 import { Dialog as SheetPrimitive } from '@base-ui/react/dialog'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn, cnState } from '../../lib/cn'
+import { MESSAGES } from '../../lib/messages'
+import { LocaleText } from '../locale-provider/locale-provider'
 import { XIcon } from '../../lib/icons'
 import { backdrop, slideFrom, slideMotion } from '../../lib/motion'
 
@@ -14,7 +16,7 @@ import { backdrop, slideFrom, slideMotion } from '../../lib/motion'
  *
  * @example
  * <Sheet>
- *   <SheetTrigger render={<Button variant="outline" />}>Filters</SheetTrigger>
+ *   <SheetTrigger render={<Button variant="secondary" />}>Filters</SheetTrigger>
  *   <SheetContent side="left">
  *     <SheetHeader>
  *       <SheetTitle>Filters</SheetTitle>
@@ -68,9 +70,11 @@ export function SheetContent({ className, children, side, ...props }: SheetConte
         {...props}
       >
         {children}
-        <SheetPrimitive.Close className="absolute top-4 right-4 rounded-sm opacity-70 transition-opacity outline-none hover:opacity-100 focus-visible:ring-[3px] focus-visible:ring-ring/50">
+        <SheetPrimitive.Close className="absolute top-4 right-4 rounded-sm opacity-70 transition-opacity outline-none hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring">
           <XIcon className="size-4" />
-          <span className="sr-only">Close</span>
+          <span className="sr-only">
+            <LocaleText message={MESSAGES.close} />
+          </span>
         </SheetPrimitive.Close>
       </SheetPrimitive.Popup>
     </SheetPrimitive.Portal>

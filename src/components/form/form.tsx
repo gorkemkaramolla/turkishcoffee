@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useId } from 'react'
+import { createContext, useContext, useId, useRef } from 'react'
 import type * as React from 'react'
 import {
   Controller,
@@ -8,12 +8,16 @@ import {
   useFormContext,
   useFormState,
   type ControllerProps,
+  type FieldErrors,
   type FieldPath,
   type FieldValues,
+  type FormProviderProps,
 } from 'react-hook-form'
 import { cn } from '../../lib/cn'
+import { Alert, AlertDescription, AlertTitle } from '../alert/alert'
+import { InfoLabel, type InfoLabelProps } from '../info-label/info-label'
 import { Label } from '../label/label'
-import { useStepField } from '../../lib/form-steps'
+import { NavigatorContext, useStepField, type FieldNavigator } from '../../lib/form-steps'
 
 /**
  * react-hook-form's FormProvider. Imported from `turkishcoffee/form`, not the
@@ -42,7 +46,20 @@ import { useStepField } from '../../lib/form-steps'
  *   </form>
  * </Form>
  */
-export const Form = FormProvider
+export function Form<
+  TFieldValues extends FieldValues,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- matches FormProvider's own default
+  TContext = any,
+  TTransformedValues = TFieldValues,
+>(props: FormProviderProps<TFieldValues, TContext, TTransformedValues>) {
+  // A slot FormTabs fills, so FormErrorSummary can open a tab from outside it.
+  const navigator = useRef<FieldNavigator | null>(null)
+  return (
+    <NavigatorContext.Provider value={navigator}>
+      <FormProvider {...props} />
+    </NavigatorContext.Provider>
+  )
+}
 
 type FieldContextValue = { name: string }
 const FieldContext = createContext<FieldContextValue | null>(null)
@@ -104,18 +121,26 @@ export function FormItem({ className, ...props }: React.ComponentProps<'div'>) {
   )
 }
 
-/** Label wired to the field's control; turns destructive on error. */
-export function FormLabel({ className, ...props }: React.ComponentProps<typeof Label>) {
+/**
+ * Label wired to the field's control; turns red on error. Pass `info`
+ * to put an InfoLabel's info button beside it.
+ */
+export function FormLabel({
+  className,
+  info,
+  infoLabel,
+  ...props
+}: React.ComponentProps<typeof Label> & Partial<Pick<InfoLabelProps, 'info' | 'infoLabel'>>) {
   const { error, formItemId } = useFormField()
-  return (
-    <Label
-      data-slot="form-label"
-      data-error={!!error}
-      className={cn('data-[error=true]:text-destructive', className)}
-      htmlFor={formItemId}
-      {...props}
-    />
-  )
+  const labelProps = {
+    'data-slot': 'form-label',
+    'data-error': !!error,
+    className: cn('data-[error=true]:text-danger-text', className),
+    htmlFor: formItemId,
+    ...props,
+  }
+  if (info === undefined) return <Label {...labelProps} />
+  return <InfoLabel info={info} infoLabel={infoLabel} {...labelProps} />
 }
 
 /**
@@ -163,10 +188,91 @@ export function FormMessage({ className, children, ...props }: React.ComponentPr
     <p
       data-slot="form-message"
       id={formMessageId}
-      className={cn('text-destructive text-sm', className)}
+      className={cn('text-danger-text text-sm', className)}
       {...props}
     >
       {body}
     </p>
+  )
+}
+
+type ErrorEntry = { name: string; message: string }
+
+// react-hook-form nests errors like its values (`address.city`, `items.0.name`);
+// a node with a `type` is one field's error.
+function collectErrors(errors: FieldErrors, prefix = ''): ErrorEntry[] {
+  return Object.entries(errors).flatMap(([key, value]) => {
+    if (!value || typeof value !== 'object') return []
+    const name = prefix ? `${prefix}.${key}` : key
+    if (typeof (value as { type?: unknown }).type === 'string') {
+      return [{ name, message: String((value as { message?: unknown }).message ?? '') }]
+    }
+    return collectErrors(value as FieldErrors, name)
+  })
+}
+
+const defaultSummaryTitle = (count: number) =>
+  count === 1 ? '1 field needs attention' : `${count} fields need attention`
+
+/**
+ * A danger Alert that lists every validation error after a failed submit,
+ * each a link that focuses its field — opening the FormTabs tab it sits in
+ * first. Hidden until the first submit and once every error is fixed. Put it
+ * above the fields (or the tabs), where it is seen first; worth it on long or
+ * tabbed forms, noise on a short one. Errors set on `root` are listed as text.
+ *
+ * @example
+ * <form onSubmit={form.handleSubmit(onSubmit)}>
+ *   <FormErrorSummary />
+ *   <FormTabs>…</FormTabs>
+ * </form>
+ */
+export function FormErrorSummary({
+  title = defaultSummaryTitle,
+  className,
+  ...props
+}: Omit<React.ComponentProps<typeof Alert>, 'tone' | 'title'> & {
+  /** The heading, from the number of errors. */
+  title?: (count: number) => React.ReactNode
+}) {
+  const { setFocus } = useFormContext()
+  const { errors, submitCount } = useFormState()
+  const slot = useContext(NavigatorContext)
+
+  if (!submitCount) return null
+  const entries = collectErrors(errors)
+  if (!entries.length) return null
+  const order = slot?.current
+  if (order) entries.sort((a, b) => order.rank(a.name) - order.rank(b.name))
+  // Read the slot on click, not render: FormTabs refills it with its latest steps.
+  const reveal = (name: string) => (slot?.current ? slot.current.reveal(name) : setFocus(name))
+
+  return (
+    <Alert data-slot="form-error-summary" tone="danger" className={className} {...props}>
+      <AlertTitle>{title(entries.length)}</AlertTitle>
+      <AlertDescription>
+        <ul className="mt-1 flex flex-col gap-1">
+          {entries.map(({ name, message }) => {
+            const text = message || name
+            const isRoot = name === 'root' || name.startsWith('root.') || name.endsWith('.root')
+            return (
+              <li key={name}>
+                {isRoot ? (
+                  text
+                ) : (
+                  <button
+                    type="button"
+                    className="cursor-pointer rounded-sm text-left underline underline-offset-2 outline-none hover:no-underline focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={() => reveal(name)}
+                  >
+                    {text}
+                  </button>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      </AlertDescription>
+    </Alert>
   )
 }

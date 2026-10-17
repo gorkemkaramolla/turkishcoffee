@@ -1,6 +1,6 @@
 # turkishcoffee
 
-Personal React component library. Tailwind v4, Radix primitives, RSC-aware, ESM-only.
+Personal React component library. Tailwind v4, Base UI primitives, RSC-aware, ESM-only.
 
 ## Install
 
@@ -33,14 +33,15 @@ components render unstyled because Tailwind ignores `node_modules` by default.
 ```tsx
 import { Button, Card, CardHeader, CardTitle } from 'turkishcoffee'
 
-<Button variant="destructive" size="lg">Delete</Button>
+<Button variant="secondary" size="lg">Export</Button>
 ```
 
-`asChild` renders as the child element instead — useful for links:
+`render` renders the component as another element — useful for links. The
+children stay on the outer component:
 
 ```tsx
-<Button asChild variant="outline">
-  <Link href="/settings">Settings</Link>
+<Button render={<Link href="/settings" />} variant="secondary">
+  Settings
 </Button>
 ```
 
@@ -75,21 +76,16 @@ Redeclare any token *after* the import; every component follows:
 
 Dark mode is class-based (`<html class="dark">`).
 
-Overlay animations ship as `--animate-ui-*` tokens in `theme.css` (no
-`tw-animate-css` dependency). Retime them the same way:
-
-```css
-:root { --animate-ui-pop-in: ui-pop-in 80ms ease-out; }
-```
-
-Accordion and Collapsible animate their measured height, so they use their own
-`--animate-ui-accordion-*` / `--animate-ui-collapsible-*` pairs.
+Overlays animate with CSS transitions on Base UI's `data-starting-style` /
+`data-ending-style` attributes — there are no animation tokens and no
+`tw-animate-css` dependency. Retime one with `className`, e.g. `duration-150`.
+Accordion and Collapsible transition their measured height.
 
 ## Components
 
 | Server-renderable | Client (`"use client"`) |
 |---|---|
-| Alert, AspectRatio, Badge, Breadcrumb, Button, Card, EmptyState, Input, InputGroup, NativeSelect, Pagination, Separator, Skeleton, Spinner, Table, Textarea | Accordion, AlertDialog, Avatar, Checkbox, Collapsible, Dialog, DropdownMenu, HoverCard, Label, Popover, Progress, RadioGroup, Select, Sheet, Switch, Tabs, Toast, Tooltip |
+| Alert, AspectRatio, Badge, Card, EmptyState, Input, InputGroup, Label, NativeSelect, Pagination, Separator, Skeleton, Spinner, Table, Textarea | Accordion, AlertDialog, Avatar, AvatarGroup, Breadcrumb, Button, Calendar, Checkbox, Collapsible, CommandButton, DatePicker, Dialog, Drawer, DropdownMenu, HoverCard, InfoLabel, Popover, Progress, RadioGroup, Select, Sheet, SplitButton, Switch, Tabs, Toast, Tooltip |
 
 Hooks: `useMediaQuery`, `useDisclosure`.
 
@@ -100,7 +96,8 @@ behind their own entry points and are **not** in the root barrel — importing
 `Button` never pulls them in:
 
 ```tsx
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage }
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage,
+  FormTabs, FormTabsList, FormTabsTrigger, FormTabsContent }
   from 'turkishcoffee/form'        // needs react-hook-form
 import { DataTable, type DataTableColumn }
   from 'turkishcoffee/data-table'  // needs @tanstack/react-table
@@ -118,22 +115,22 @@ barrel — reach for `DataTable` only when you want sorting and pagination.
 import { Toaster, toast } from 'turkishcoffee'
 
 // mount <Toaster /> once near your app root, then anywhere in a client component:
-toast.success({ title: 'Saved' })
-toast.error({ title: 'Failed', description: 'Could not reach the server.' })
+toast.success('Saved')
+toast.error('Failed', { description: 'Could not reach the server.' })
 ```
 
-Built on Radix Toast, which is already inside the `radix-ui` dependency — no
-`sonner` or other notification library is added.
+`toast` is sonner's, re-exported and styled with the theme tokens. sonner is a
+dependency of this package; don't install it or import from it yourself.
 
-The client ones wrap Radix primitives that hold state; the rest render on the
-server with no boundary.
+The client components wrap Base UI primitives that hold state; the rest render
+on the server with no boundary.
 
 Icons are inline SVGs inside the package — no icon library is pinned on your
 projects. Pass a `ReactNode` where you want something richer.
 
 ## Server vs client components
 
-Only components that genuinely need it carry `"use client"`. `Button`, `Card`, `Badge` and `Input` are server-renderable, so importing
+Only components that genuinely need it carry `"use client"`. `Card`, `Badge` and `Input` are server-renderable, so importing
 them does not drag a client boundary into a server component.
 
 The build uses `tsdown` in unbundle mode (one output file per source file) to keep
@@ -161,13 +158,44 @@ npm test
 npm run build
 npm run check-exports  # publint + are-the-types-wrong
 npm run docs           # regenerate docs/ and llms*.txt from JSDoc
+npm run test:browser   # layout, drag and story tests in headless Chromium
+npm run bench          # DataTable benchmark (production build, headless Chromium)
 ```
+
+`npm run bench -- --ab <dir>` compares against another copy of `src/` (for
+example the code before a change), alternating the two builds run by run so
+both see the same machine load. See `bench/run.mjs` for the options.
 
 ## Adding a component
 
+The library has two layers:
+
+- **Primitives** — a Base UI primitive (or a plain element) styled with the
+  theme: Button, Tabs, Popover. Base UI owns the behaviour, the library owns
+  the look.
+- **Patterns** — compose primitives and add behaviour Base UI doesn't have:
+  DatePicker, DataTable, FormTabs.
+
+A pattern belongs here only when all of these hold:
+
+- It has appeared in at least two real screens or projects; one-off screens
+  stay in the app.
+- It is domain-free: `FormTabs` belongs here, an `EmployeeForm` does not.
+- It adds behaviour, not just layout. A fixed arrangement of divs is better as
+  an example in a doc than as an export.
+- It is built from the library's own primitives, so restyling a primitive
+  restyles the pattern.
+- Its API is compound parts (`FormTabsTrigger`, `FormTabsContent`) plus a hook
+  for custom controls, not one component configured through props.
+- If it needs a peer the root barrel doesn't, it goes behind its own entry
+  point, like `turkishcoffee/form`.
+
+Every export is public API under semver, so ask whether you can keep it stable
+before adding it.
+
 1. `src/components/<name>/<name>.tsx` — `cva` for variants, `cn()` last so a
    consumer's `className` wins, spread rest props.
-2. `"use client"` only if it has state, effects, or client-only Radix primitives.
+2. `"use client"` only if it has state, effects, or client-only Base UI primitives.
 3. JSDoc on every export. The one named after the folder says what it is, when
    to use an alternative instead, and has an `@example`; sub-parts get one line;
    custom props get an inline `/** */`. Write it for the consumer — maintainer

@@ -45,11 +45,11 @@ export function RadioGroupItem({
       nativeButton
       render={<button type="button" />}
       className={cnState(
-        'aspect-square size-4 shrink-0 rounded-full border border-input text-primary transition-[color,box-shadow] outline-none',
+        'aspect-square size-4 shrink-0 rounded-full border border-field hover:border-field-hover text-primary-text transition-[color,border-color,box-shadow] outline-none',
         'data-checked:border-primary',
-        'focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50',
+        'focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring',
         'data-disabled:cursor-not-allowed data-disabled:opacity-50',
-        'aria-invalid:border-destructive aria-invalid:ring-destructive/20',
+        'aria-invalid:border-danger aria-invalid:ring-danger',
         className,
       )}
       {...props}

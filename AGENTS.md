@@ -38,8 +38,8 @@ stylesheet (e.g. `app/globals.css`) must contain all three lines:
 | What | Import from |
 |---|---|
 | All components, `cn`, `useDisclosure`, `useMediaQuery`, `toast` | `turkishcoffee` |
-| `Form`, `FormField`, `FormItem`, `FormLabel`, `FormControl`, `FormDescription`, `FormMessage`, `useFormField` | `turkishcoffee/form` (needs `react-hook-form`) |
-| `DataTable`, `DataTableColumn`, `dataTableFeatures` | `turkishcoffee/data-table` (needs `@tanstack/react-table` v9) |
+| `Form`, `FormField`, `FormItem`, `FormLabel`, `FormControl`, `FormDescription`, `FormMessage`, `FormErrorSummary`, `useFormField`, `FormTabs`, `FormTabsList`, `FormTabsTrigger`, `FormTabsContent`, `FormTabsNext`, `FormTabsPrevious`, `useFormTabs` | `turkishcoffee/form` (needs `react-hook-form`) |
+| `DataTable`, `DataTableColumn`, `dataTableFeatures`, `actionsColumn` | `turkishcoffee/data-table` (needs `@tanstack/react-table` v9) |
 | Theme tokens | `turkishcoffee/theme.css` (CSS only) |
 
 There are no per-component paths like `turkishcoffee/button` and no
@@ -49,20 +49,21 @@ There are no per-component paths like `turkishcoffee/button` and no
 
 | shadcn habit | turkishcoffee |
 |---|---|
-| `<Button size="default">` | `size="md"` (sizes: `sm` · `md` · `lg` · `icon`; 28/32/36px). Button also has `variant="success"`. |
+| `<Button size="default">` | `size="md"` (sizes: `sm` · `md` · `lg` · `icon`; 32/36/40px). Variants: `primary` (default) · `secondary` (bordered) · `ghost` · `link` — no `default`, `outline`, `destructive` or `success`. |
 | `toast("Saved")` / `toast.success("Saved")` (sonner) | Same sonner API, re-exported: `toast('Saved')`, `toast.success('Saved', { description })`, `toast.error`, `toast.info`, `toast.warning`. Import `toast` from `turkishcoffee`, not from `sonner`. |
 | `<Toaster />` from `sonner`, or a `useToast()` hook | `import { Toaster, toast } from 'turkishcoffee'`; mount `<Toaster />` once at the app root. No `useToast`. |
 | `<TooltipProvider>` around the app | Not needed and not exported: each `Tooltip` provides itself. |
 | `import { Form } from '@/components/ui/form'` | `import { Form, … } from 'turkishcoffee/form'` — not from the root. |
-| DataTable built by hand with `ColumnDef` / `createColumnHelper` (TanStack v8) | `import { DataTable, type DataTableColumn } from 'turkishcoffee/data-table'`; columns are `DataTableColumn<Row>[]` (TanStack v9). Sorting and `pageSize` pagination are built in. |
+| DataTable built by hand with `ColumnDef` / `createColumnHelper` (TanStack v8) | `import { DataTable, type DataTableColumn } from 'turkishcoffee/data-table'`; columns are `DataTableColumn<Row>[]` (TanStack v9). Interactions are opt-in props: `sortable`, `resizable` (double-click an edge to fit), `reorderable`, `hideable`, `selectable`, `selectableColumns`, `filterable`, `exportable`; `pageSize` paginates; `height` and `columnVirtualization` virtualize. A feature's options and state go in its own prop as an object in place of `true` (`selectable={{ value, onChange, scope, isRowSelectable, scopeKey }}`, `exportable={{ fetchRows | onServerExport, onError }}`, `layout={{ storageKey | saved, onChange, defaults }}`). Sorting, filters and page are one value: `query` + `onQueryChange(query, change)`, or `defaultQuery` — a sort on page 3 is one change, already on page 1, so never chain separate sort and page handlers. `ref` gives resets and `getExportData`. Column filters go in `meta.filter` (`variant`, `options`, `control`). A row's actions menu goes in `actionsColumn({ label, cell })`, not a hand-made column. Server data: `server={{ rowCount }}` — sorting, filtering and paging then happen on the server; `getRowId` is required with `selectable`. Name the grid with `aria-label` or `aria-labelledby`. `locale` follows `LocaleProvider` (below), so a Turkish app passes nothing. |
 | `lucide-react` icons inside components | Components draw their own icons. Pass any icon element where a `ReactNode` is accepted (`EmptyState icon`, inside `Button`). |
 | `tailwindcss-animate` classes (`animate-in`, `fade-in-0`) | Overlays animate with CSS transitions on Base UI's `data-starting-style` / `data-ending-style`. There are no animation tokens; retime one with `className`, e.g. `duration-150`. |
 | `asChild` (Radix) | `render`: `<Button render={<Link href="/x" />}>Go</Button>`, `<DialogTrigger render={<Button />}>Open</DialogTrigger>`. |
 | `<Accordion type="single" collapsible>` | `<Accordion>` (one open at a time, closable) or `<Accordion multiple>`. `value` / `defaultValue` are arrays. |
 | `<DropdownMenuItem onSelect={…}>` | `onClick={…}`. The menu closes afterwards. |
 | `<SelectValue>` shows the item text | Pass `items` to `Select` (`{ value: label }` or `{ value, label }[]`); without it `SelectValue` shows the raw value. |
-| `<Alert variant="warning">` missing | `Alert` and `Badge` have `success` and `warning` variants; `Button` and `Toast` have `success`. |
-| `<AlertDialogAction>` is plain | `AlertDialogAction` is styled as a default Button and `AlertDialogCancel` as outline. For a destructive confirm: `className={buttonVariants({ variant: 'destructive' })}`. |
+| `variant="destructive"` on Alert, Badge, DropdownMenuItem | Meaning is the `tone` prop: `neutral` · `info` · `success` · `warning` · `danger`. `<Alert tone="danger">`, `<Badge tone="success">`, `<DropdownMenuItem tone="danger">`. `Button` has no tone. |
+| Translating each component's strings by hand (`labels`, `placeholder`, `aria-label` copies) | Wrap the root in `<LocaleProvider locale="tr-TR">` (same locale as `<html lang>`): every word components render themselves — DataTable, pagination, filters, pickers, search, close buttons, spinners — comes out in that language, with its numerals and dates. English and Turkish ship complete; English is the fallback. Without a provider they follow `<html lang>` after hydration. Use `labels` only to change a single word, not to translate. |
+| `<AlertDialogAction>` is plain | `AlertDialogAction` is styled as a primary Button and `AlertDialogCancel` as secondary. There is no destructive Button: keep the action primary and name the consequence in its label ("Delete project", not "OK"). |
 
 ## Upgrading from v2 (Radix) to v3 (Base UI)
 
@@ -89,17 +90,21 @@ Every rule below is a token in `theme.css`; retune the token, not the components
   badges and list items; `rounded-md` (4px) for controls and popups;
   `rounded-lg` (6px) for cards, dialogs, sheets and toasts; `rounded-full` only
   for pills (switch, radio, avatar, progress). Never `rounded-[…]`.
-- **Compact and aligned.** Controls use `h-control-sm` 28px · `h-control` 32px ·
-  `h-control-lg` 36px (`--spacing-control*`). Button, Input, Select, NativeSelect,
+- **Compact and aligned.** Controls use `h-control-sm` 32px · `h-control` 36px ·
+  `h-control-lg` 40px (`--spacing-control*`). Button, Input, Select, NativeSelect,
   InputGroup and TabsList share them, so a form row lines up. Match them in your
   own controls instead of `h-9`.
 - **Flat, with hairline borders.** Resting surfaces (buttons, inputs, cards)
   have no shadow; a 1px `border-border` separates them. `shadow-float` is the
   only elevation, reserved for layers that float: popovers, menus, dialogs,
-  sheets, toasts.
+  sheets, toasts. The app's frame draws no lines: the Sidebar has no edge,
+  only its own faint grey (`bg-sidebar`), and a top bar beside it needs no
+  bottom border.
 - **No tint.** Highlighted and selected states use `bg-selection`, a neutral
   grey, never a primary tint or a coloured edge. An open accordion header looks
-  like a closed one.
+  like a closed one. One exception: the current page in a Sidebar takes a soft
+  brand fill (`bg-primary-soft text-primary-text`) — it is where you are, not
+  something you picked.
 - **Fast.** Overlays enter and leave in 50ms. Don't slow them down per use.
 - **Quiet colour.** Solid primary is for values, the main action and the
   active tab (checked checkbox, primary button, selected TabsTrigger); `--inverse` grey is for transient surfaces
@@ -116,13 +121,33 @@ Every rule below is a token in `theme.css`; retune the token, not the components
   `*Close` parts: `<Button render={<Link href="/x" />}>Go</Button>`. The children
   stay on the outer component. `PaginationLink` takes `href` directly and does
   not support `render`.
+- **Two props, two questions.** `tone` says what something means and is the
+  same closed list everywhere: `neutral` · `info` · `success` · `warning` ·
+  `danger` (Alert, Badge, DropdownMenuItem `neutral`/`danger`). `variant` says
+  how loud it is: Button `primary` · `secondary` · `ghost` · `link`, Badge
+  `soft` · `solid`. Never invent a new tone or variant name; compose the two.
 - **Colours come from tokens**, never hex or the default palette:
-  `bg-primary`, `text-muted-foreground`, `border-border`, `bg-destructive`,
-  `text-success`, `bg-warning`. Full list: `background`, `foreground`, `card`,
-  `popover`, `primary`, `secondary`, `muted`, `accent`, `destructive`, `success`,
-  `warning`, `inverse` (each with `-foreground`), plus `border`, `input`, `ring`,
-  `selection`.
-  `inverse` is the grey behind toasts and tooltips.
+  `bg-primary`, `text-muted-foreground`, `border-border`, `bg-danger`,
+  `text-success-text`, `bg-warning-soft`. Full list: `background`, `foreground`,
+  `card`, `popover`, `primary`, `secondary`, `muted`, `accent`, `danger`,
+  `success`, `warning`, `inverse` (each with `-foreground`), the soft tints
+  `primary-soft`, `danger-soft`, `success-soft`, `warning-soft`, the readable
+  text colours `primary-text`, `danger-text`, `success-text`, `warning-text`,
+  plus `border`, `input`, `field`, `field-hover`, `ring`, `selection` and
+  `sidebar`. `inverse` is the grey behind toasts and tooltips.
+- **Coloured text and icons use the `-text` token, not the fill.**
+  `primary`, `danger`, `success` and `warning` are fills (buttons, checked
+  controls, solid badges); in dark mode a fill dark enough for white text is
+  too dark to read as text, and the orange warning fill is under 3:1 on white.
+  `text-primary-text`, `text-danger-text`, `text-success-text` and
+  `text-warning-text` are at least 4.5:1 on the page and on their soft tint.
+- **Fields** (Input, Textarea, Select, NativeSelect, InputGroup, DatePicker,
+  Checkbox, RadioGroup) share one edge: `border-field`, `hover:border-field-hover`.
+  A text field's focus stays inside its box: `focus-visible:border-ring
+  focus-visible:inset-ring focus-visible:inset-ring-ring` (a 2px brand edge).
+  Match it in your own fields. Bordered buttons keep the fainter `border-input`.
+- **Focus** elsewhere is a solid 2px `ring-ring` (the readable brand blue);
+  filled controls add `ring-offset-2 ring-offset-background` so it stays visible.
 - **Server vs client:** components marked "Client component" in their doc ship
   `"use client"`. They can be imported from a server component as-is; your event
   handlers still need to live in a client component.
@@ -131,13 +156,19 @@ Every rule below is a token in `theme.css`; retune the token, not the components
   second `eventDetails` argument: `onOpenChange(open, eventDetails)`,
   `onCheckedChange`, `onValueChange`; menu items use `onClick`.
 - **Choosing between look-alikes:**
+  - Button (a form's or dialog's action) · CommandButton (borderless command in a toolbar; as a DropdownMenuTrigger it adds a chevron) · SplitButton (a main action plus a menu of related ones)
   - Dialog (centered task) · AlertDialog (confirm a consequential action) · Sheet (panel from an edge)
   - Popover (click, interactive) · Tooltip (hover, short text) · HoverCard (hover, rich preview)
-  - Select (custom, client) · NativeSelect (platform picker, server-renderable, better on mobile)
-  - Table (static markup) · DataTable (sorting + pagination)
+  - Label · InfoLabel (label with an info button explaining the field; in a form, `<FormLabel info="…">`) — not a Tooltip on an icon, which touch users never see
+  - Select (custom, client) · NativeSelect (platform picker, server-renderable, better on mobile) · Combobox (type to filter a long list — people, cities; `multiple` for chips)
+  - Table (static markup, plus `TablePagination`, `TableCheckbox`, `TableColumnFilter`, `exportTable`) · DataTable (data grid: sort, filter, select rows/columns, resize, reorder, hide, export, virtualization, keyboard; client or server data)
+  - Tabs (separate views) · FormTabs (one react-hook-form form split across tabs; `linear` for a stepper; use `FormTabsList`, not `TabsList`, inside it)
+  - SegmentedControl (one of a few options that changes what a view shows, e.g. a list's status filter; one always pressed; counts with `SegmentedControlCount`) · Tabs (separate views with their own panels) · RadioGroup (a choice submitted with a form)
   - Checkbox (submitted with a form) · Switch (applies immediately)
   - Alert (inline, persistent) · `toast()` (transient)
-  - Accordion (several sections) · Collapsible (one region)
+  - Accordion (several sections) · Collapsible (one region) · Tree (a hierarchy people navigate: folders, an org chart; one tab stop, arrow keys)
+  - Sidebar (the app's navigation; built on Tree) · Tabs (views inside one page) · Breadcrumb (where the page sits)
+  - SearchField (search a list, debounced; `hideLabel` in toolbars, with `size="sm"` among 32px CommandButtons and the default `md` in DataTable's toolbar) · FileUpload (pick or drop files; the app uploads them)
   - Spinner (unknown duration) · Progress (known percentage) · Skeleton (content placeholder)
 - **Hooks:** `useDisclosure()` returns `{ open, setOpen, onOpen, onClose, onToggle }`
   for controlled dialogs and sheets; `useMediaQuery('(min-width: 768px)')` is
@@ -151,6 +182,7 @@ Every rule below is a token in `theme.css`; retune the token, not the components
 - [AlertDialog](docs/alert-dialog.md) · client — Modal that interrupts the user to confirm a consequential action.
 - [AspectRatio](docs/aspect-ratio.md) · server — Constrains its child (usually an image or video) to `ratio` (width / height) with the CSS `aspect-ratio` property.
 - [Avatar](docs/avatar.md) · client — Round user image with a fallback while it loads or when it fails.
+- [AvatarGroup](docs/avatar-group.md) · client — A stack of overlapping avatars for the people on a record.
 - [Badge](docs/badge.md) · server — Small inline label for a status or count.
 - [Breadcrumb](docs/breadcrumb.md) · client — Trail of links to the current page.
 - [Button](docs/button.md) · client — A button.
@@ -158,31 +190,42 @@ Every rule below is a token in `theme.css`; retune the token, not the components
 - [Card](docs/card.md) · server — Bordered surface that groups related content.
 - [Checkbox](docs/checkbox.md) · client — A checkbox.
 - [Collapsible](docs/collapsible.md) · client — A single region the user can show and hide.
-- [DataTable](docs/data-table.md) · client · `turkishcoffee/data-table` — Table with click-to-sort headers and optional client-side pagination, over TanStack Table v9.
+- [Combobox](docs/combobox.md) · client — A text field that filters a list as you type, for picking one value (or several, with `multiple`) out of more than a Select comfortably holds: a manager out of 300 people, a city, a cost centre.
+- [CommandButton](docs/command-button.md) · client — A borderless command for toolbars and command bars: text and icon neutral at rest; on hover a grey fill and the icon in the brand colour, as on a Button.
+- [DataTable](docs/data-table.md) · client · `turkishcoffee/data-table` — A data grid over TanStack Table v9.
 - [DatePicker](docs/date-picker.md) · client — Controlled single-date picker.
 - [Dialog](docs/dialog.md) · client — Modal for a focused task (a form, details): centered on `sm` screens and up, a Base UI bottom drawer below.
 - [Drawer](docs/drawer.md) · client — Bottom sheet built on Base UI's Drawer: slides up from the bottom edge and closes on a swipe down, outside tap or Escape.
 - [DropdownMenu](docs/dropdown-menu.md) · client — Menu of actions opened from a trigger.
 - [EmptyState](docs/empty-state.md) · server — Placeholder for a list or page that has no content yet: icon, title, description and a call to action.
+- [FileUpload](docs/file-upload.md) · client — Picks files by drag-and-drop, click or keyboard and checks them against `accept`, `maxSize` and `maxFiles`.
 - [Form](docs/form.md) · client · `turkishcoffee/form` — react-hook-form's FormProvider.
 - [HoverCard](docs/hover-card.md) · client — Rich preview shown when a pointer hovers a link (e.g.
+- [InfoLabel](docs/info-label.md) · client — A Label with an info button beside it that opens a short explanation.
 - [Input](docs/input.md) · server — Single-line text field; a styled `<input>` that forwards every prop.
 - [InputGroup](docs/input-group.md) · server — A field that combines a control with icons, text or buttons.
 - [Label](docs/label.md) · server — Accessible label for a form control; link it with `htmlFor`.
+- [LocaleProvider](docs/locale-provider.md) · client — The language and locale of every component below it: the words they render themselves (labels, screen-reader names, placeholders), and the formatting, sorting and dates that follow the locale.
 - [NativeSelect](docs/native-select.md) · server — The platform <select>, styled to match Input.
 - [Pagination](docs/pagination.md) · server — Page navigation built from plain anchors, so it works with any router: pass `href` to each link.
+- [PasswordInput](docs/password-input.md) · client — A password field with a button that shows what was typed.
 - [Popover](docs/popover.md) · client — Floating panel opened by clicking a trigger; for small forms, pickers and extra details.
 - [Progress](docs/progress.md) · client — Horizontal bar for a known completion percentage (`value`, 0–100).
 - [RadioGroup](docs/radio-group.md) · client — One choice out of a few visible options.
+- [SearchField](docs/search-field.md) · client — A reusable search field with a label, debounce, clear button and loading indicator.
+- [SegmentedControl](docs/segmented-control.md) · client — A row of mutually exclusive options that change what the page shows, such as a list's status filter: All · Active · Inactive.
 - [Select](docs/select.md) · client — Custom-styled dropdown for picking one value.
 - [Separator](docs/separator.md) · server — Thin horizontal or vertical (`orientation="vertical"`) rule.
 - [Sheet](docs/sheet.md) · client — Modal panel that slides in from an edge — navigation drawers, filters, detail views.
-- [Skeleton](docs/skeleton.md) · server — Pulsing placeholder in the shape of content that is still loading.
-- [Spinner](docs/spinner.md) · server — Indeterminate loading indicator; `size-4`, inherits text colour.
+- [Sidebar](docs/sidebar.md) · client — The app's side navigation: a header, the navigation itself (SidebarContent) and a footer.
+- [Skeleton](docs/skeleton.md) · server — Placeholder in the shape of content that is still loading.
+- [Spinner](docs/spinner.md) · client — Indeterminate loading indicator; `size-4`, inherits text colour.
+- [SplitButton](docs/split-button.md) · client — A button with a main action and a menu of related ones: the left half runs the action, the chevron on the right opens the menu, which opens under the whole button from its left edge.
 - [Switch](docs/switch.md) · client — On/off toggle for a setting that takes effect immediately.
 - [Table](docs/table.md) · server — Plain styled table primitives — no data library, server-renderable; wraps the table in a horizontally scrolling container.
 - [Tabs](docs/tabs.md) · client — Switches between views in the same place.
 - [Textarea](docs/textarea.md) · server — Multi-line text field; grows with its content (`field-sizing-content`) from a minimum of `min-h-16`.
 - [Toast](docs/toast.md) · client — Mount once, near the root of the app.
 - [Tooltip](docs/tooltip.md) · client — Short text hint shown on hover and keyboard focus.
+- [Tree](docs/tree.md) · client — A hierarchy people expand and collapse: folders and files, an org chart, nested categories, an app's navigation (Sidebar is built on it).
 <!-- components:end -->

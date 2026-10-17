@@ -1,13 +1,13 @@
 # Avatar
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { Avatar, AvatarImage, AvatarFallback } from 'turkishcoffee'
 ```
 
 Round user image with a fallback while it loads or when it fails.
-Defaults to `size-8`; resize with `className`.
+Defaults to `size-8`; resize with `className`. For several people, use AvatarGroup.
 
 ## Example
 

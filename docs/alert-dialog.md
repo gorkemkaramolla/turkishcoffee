@@ -1,6 +1,6 @@
 # AlertDialog
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { AlertDialog, AlertDialogTrigger, AlertDialogPortal, AlertDialogOverlay, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from 'turkishcoffee'
@@ -14,7 +14,7 @@ AlertDialogTitle is required for accessibility.
 
 ```tsx
 <AlertDialog>
-  <AlertDialogTrigger render={<Button variant="destructive" />}>Delete project</AlertDialogTrigger>
+  <AlertDialogTrigger render={<Button variant="secondary" />}>Delete project</AlertDialogTrigger>
   <AlertDialogContent>
     <AlertDialogHeader>
       <AlertDialogTitle>Delete this project?</AlertDialogTitle>
@@ -22,9 +22,7 @@ AlertDialogTitle is required for accessibility.
     </AlertDialogHeader>
     <AlertDialogFooter>
       <AlertDialogCancel>Cancel</AlertDialogCancel>
-      <AlertDialogAction className={buttonVariants({ variant: 'destructive' })} onClick={remove}>
-        Delete
-      </AlertDialogAction>
+      <AlertDialogAction onClick={remove}>Delete project</AlertDialogAction>
     </AlertDialogFooter>
   </AlertDialogContent>
 </AlertDialog>
@@ -40,5 +38,5 @@ AlertDialogTitle is required for accessibility.
 - `AlertDialogFooter` — Holds AlertDialogCancel and AlertDialogAction; stacks on mobile, right-aligns from `sm`.
 - `AlertDialogTitle` — Required: names the dialog for screen readers.
 - `AlertDialogDescription` — Explains the consequence of the action.
-- `AlertDialogAction` — The confirming button; closes the dialog after its `onClick`. Styled as a default Button. Action and Cancel are pre-styled with buttonVariants: an alert dialog is a decision, so the two choices should never drift apart visually. For a destructive action pass `className={buttonVariants({ variant: 'destructive' })}`.
-- `AlertDialogCancel` — The dismissing button; closes the dialog. Styled as an outline Button.
+- `AlertDialogAction` — The confirming button; closes the dialog after its `onClick`. Styled as a primary Button. Action and Cancel are pre-styled with buttonVariants: an alert dialog is a decision, so the two choices should never drift apart visually. A destructive action stays primary; its label names the consequence ("Delete project", not "OK").
+- `AlertDialogCancel` — The dismissing button; closes the dialog. Styled as a secondary Button.

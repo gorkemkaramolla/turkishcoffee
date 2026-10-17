@@ -13,7 +13,7 @@ import { buttonVariants } from '../button'
  *
  * @example
  * <AlertDialog>
- *   <AlertDialogTrigger render={<Button variant="destructive" />}>Delete project</AlertDialogTrigger>
+ *   <AlertDialogTrigger render={<Button variant="secondary" />}>Delete project</AlertDialogTrigger>
  *   <AlertDialogContent>
  *     <AlertDialogHeader>
  *       <AlertDialogTitle>Delete this project?</AlertDialogTitle>
@@ -21,9 +21,7 @@ import { buttonVariants } from '../button'
  *     </AlertDialogHeader>
  *     <AlertDialogFooter>
  *       <AlertDialogCancel>Cancel</AlertDialogCancel>
- *       <AlertDialogAction className={buttonVariants({ variant: 'destructive' })} onClick={remove}>
- *         Delete
- *       </AlertDialogAction>
+ *       <AlertDialogAction onClick={remove}>Delete project</AlertDialogAction>
  *     </AlertDialogFooter>
  *   </AlertDialogContent>
  * </AlertDialog>
@@ -124,10 +122,11 @@ export function AlertDialogDescription({
 }
 
 /**
- * The confirming button; closes the dialog after its `onClick`. Styled as a default Button.
+ * The confirming button; closes the dialog after its `onClick`. Styled as a primary Button.
  * Action and Cancel are pre-styled with buttonVariants: an alert dialog is a
- * decision, so the two choices should never drift apart visually. For a
- * destructive action pass `className={buttonVariants({ variant: 'destructive' })}`.
+ * decision, so the two choices should never drift apart visually. A
+ * destructive action stays primary; its label names the consequence
+ * ("Delete project", not "OK").
  */
 export function AlertDialogAction({
   className,
@@ -143,7 +142,7 @@ export function AlertDialogAction({
   )
 }
 
-/** The dismissing button; closes the dialog. Styled as an outline Button. */
+/** The dismissing button; closes the dialog. Styled as a secondary Button. */
 export function AlertDialogCancel({
   className,
   ...props
@@ -151,7 +150,7 @@ export function AlertDialogCancel({
   return (
     <AlertDialogPrimitive.Close
       data-slot="alert-dialog-cancel"
-      className={cnState(buttonVariants({ variant: 'outline' }), className)}
+      className={cnState(buttonVariants({ variant: 'secondary' }), className)}
       {...props}
     />
   )

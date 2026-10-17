@@ -61,9 +61,9 @@ export function Toaster({
                     "--success-bg": "var(--success)",
                     "--success-text": "var(--success-foreground)",
                     "--success-border": "var(--success)",
-                    "--error-bg": "var(--destructive)",
-                    "--error-text": "var(--destructive-foreground)",
-                    "--error-border": "var(--destructive)",
+                    "--error-bg": "var(--danger)",
+                    "--error-text": "var(--danger-foreground)",
+                    "--error-border": "var(--danger)",
                     "--warning-bg": "var(--warning)",
                     "--warning-text": "var(--warning-foreground)",
                     "--warning-border": "var(--warning)",
@@ -77,8 +77,8 @@ export function Toaster({
             richColors={richColors}
             icons={{
                 success: <SuccessIcon className={tone("text-success")} />,
-                error: <ErrorIcon className={tone("text-destructive")} />,
-                info: <InfoIcon className={tone("text-primary")} />,
+                error: <ErrorIcon className={tone("text-danger")} />,
+                info: <InfoIcon className={tone("text-primary-text")} />,
                 warning: <ErrorIcon className={tone("text-warning")} />,
                 close: <XIcon className="size-3" />,
                 ...icons,

@@ -1,6 +1,26 @@
 import type * as React from 'react'
 import { cn } from '../../lib/cn'
-import { selectedRow } from '../../lib/states'
+import {
+  tableCellPaddingClass,
+  tableHeadTextClass,
+  tableRowAppearanceClass,
+  tableRowClass,
+  tableRowStripeClass,
+  type TableRowAppearance,
+} from './internal/styles'
+
+export type TableProps = React.ComponentProps<'table'> & {
+  /** Props and ref for the scrolling wrapper; className and ref on Table still target the native table. */
+  containerProps?: React.ComponentProps<'div'>
+  /**
+   * The background of rows with `data-state="selected"`: `'neutral'` (default)
+   * is grey, `'primary'` the brand's soft tint.
+   */
+  selectionColor?: TableRowAppearance['selectionColor']
+  /** Alternate the body rows' background. Off by default. */
+  striped?: boolean
+}
+
 
 /**
  * Plain styled table primitives — no data library, server-renderable; wraps the
@@ -25,12 +45,13 @@ import { selectedRow } from '../../lib/states'
  *   </TableBody>
  * </Table>
  */
-export function Table({ className, ...props }: React.ComponentProps<'table'>) {
+
+export function Table({ className, containerProps, selectionColor = 'neutral', striped = false, ...props }: TableProps) {
   return (
-    <div data-slot="table-container" className="relative w-full overflow-x-auto">
+    <div {...containerProps} data-slot="table-container" className={cn('relative min-w-0 w-full overflow-x-auto', containerProps?.className)}>
       <table
         data-slot="table"
-        className={cn('w-full caption-bottom text-sm', className)}
+        className={cn('w-full caption-bottom text-sm', tableRowAppearanceClass({ striped, selectionColor }), className)}
         {...props}
       />
     </div>
@@ -39,7 +60,7 @@ export function Table({ className, ...props }: React.ComponentProps<'table'>) {
 
 /** The `<thead>`. */
 export function TableHeader({ className, ...props }: React.ComponentProps<'thead'>) {
-  return <thead data-slot="table-header" className={cn('[&_tr]:border-b', className)} {...props} />
+  return <thead data-slot="table-header" className={cn('bg-[var(--table-header)] [&_tr]:border-b [&_tr]:border-border', className)} {...props} />
 }
 
 /** The `<tbody>`. */
@@ -64,16 +85,16 @@ export function TableFooter({ className, ...props }: React.ComponentProps<'tfoot
   )
 }
 
-/** A `<tr>`; highlights on hover and when `data-state="selected"`. */
+/**
+ * A `<tr>`; in a `striped` Table body rows alternate between `--table-row-odd`
+ * and `--table-row-even`. Headers and footers keep their own background.
+ * Highlights on hover and when `data-state="selected"`.
+ */
 export function TableRow({ className, ...props }: React.ComponentProps<'tr'>) {
   return (
     <tr
       data-slot="table-row"
-      className={cn(
-        'border-b border-border transition-colors hover:bg-muted/50',
-        selectedRow,
-        className,
-      )}
+      className={cn(tableRowClass, tableRowStripeClass, className)}
       {...props}
     />
   )
@@ -85,7 +106,9 @@ export function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
     <th
       data-slot="table-head"
       className={cn(
-        'h-control-lg px-2 text-left align-middle font-medium text-muted-foreground whitespace-nowrap',
+        'h-control-lg text-start align-middle whitespace-nowrap',
+        tableHeadTextClass,
+        tableCellPaddingClass,
         '[&:has([role=checkbox])]:pr-0',
         className,
       )}
@@ -99,7 +122,7 @@ export function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
   return (
     <td
       data-slot="table-cell"
-      className={cn('px-2 py-1.5 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0', className)}
+      className={cn(tableCellPaddingClass, 'py-1.5 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0', className)}
       {...props}
     />
   )

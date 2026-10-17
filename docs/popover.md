@@ -1,6 +1,6 @@
 # Popover
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { Popover, PopoverTrigger, PopoverContent, type PopoverContentProps } from 'turkishcoffee'
@@ -14,7 +14,7 @@ use DropdownMenu.
 
 ```tsx
 <Popover>
-  <PopoverTrigger render={<Button variant="outline" />}>Filters</PopoverTrigger>
+  <PopoverTrigger render={<Button variant="secondary" />}>Filters</PopoverTrigger>
   <PopoverContent align="start">…</PopoverContent>
 </Popover>
 ```

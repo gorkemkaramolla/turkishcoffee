@@ -9,12 +9,12 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-export const Variants: Story = {
+export const Tones: Story = {
   render: () => (
     <div className="flex w-96 flex-col gap-3">
-      {(['default', 'info', 'destructive', 'success', 'warning'] as const).map((variant) => (
-        <Alert key={variant} variant={variant}>
-          <AlertTitle>Payment {variant}</AlertTitle>
+      {(['neutral', 'info', 'success', 'warning', 'danger'] as const).map((tone) => (
+        <Alert key={tone} tone={tone}>
+          <AlertTitle>Payment {tone}</AlertTitle>
           <AlertDescription>The card issuer returned a message about this charge.</AlertDescription>
         </Alert>
       ))}
@@ -24,7 +24,7 @@ export const Variants: Story = {
 
 export const Info: Story = {
   render: () => (
-    <Alert variant="info" className="w-96">
+    <Alert tone="info" className="w-96">
       <AlertTitle>Leave requests close on Friday</AlertTitle>
       <AlertDescription>Anything submitted after that waits for next month.</AlertDescription>
     </Alert>

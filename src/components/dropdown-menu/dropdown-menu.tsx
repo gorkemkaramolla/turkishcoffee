@@ -13,12 +13,12 @@ import { highlightedItem } from '../../lib/states'
  *
  * @example
  * <DropdownMenu>
- *   <DropdownMenuTrigger render={<Button variant="outline" />}>Options</DropdownMenuTrigger>
+ *   <DropdownMenuTrigger render={<Button variant="secondary" />}>Options</DropdownMenuTrigger>
  *   <DropdownMenuContent align="end">
  *     <DropdownMenuLabel>Project</DropdownMenuLabel>
  *     <DropdownMenuItem onClick={rename}>Rename</DropdownMenuItem>
  *     <DropdownMenuSeparator />
- *     <DropdownMenuItem variant="destructive" onClick={remove}>Delete</DropdownMenuItem>
+ *     <DropdownMenuItem tone="danger" onClick={remove}>Delete</DropdownMenuItem>
  *   </DropdownMenuContent>
  * </DropdownMenu>
  */
@@ -43,15 +43,19 @@ const item = [
 ]
 
 export type DropdownMenuContentProps = MenuPrimitive.Popup.Props &
-  Pick<MenuPrimitive.Positioner.Props, 'side' | 'sideOffset' | 'align' | 'alignOffset'>
+  Pick<MenuPrimitive.Positioner.Props, 'side' | 'sideOffset' | 'align' | 'alignOffset' | 'anchor'>
 
-/** The menu panel; renders its own portal. */
+/**
+ * The menu panel; renders its own portal. Pass `anchor` (an element or ref) to
+ * position it against something other than the trigger.
+ */
 export function DropdownMenuContent({
   className,
   side,
   sideOffset = 4,
   align,
   alignOffset,
+  anchor,
   ...props
 }: DropdownMenuContentProps) {
   return (
@@ -62,6 +66,7 @@ export function DropdownMenuContent({
         sideOffset={sideOffset}
         align={align}
         alignOffset={alignOffset}
+        anchor={anchor}
       >
         <MenuPrimitive.Popup
           data-slot="dropdown-menu-content"
@@ -75,23 +80,23 @@ export function DropdownMenuContent({
 
 /**
  * One action. Run it with `onClick`; the menu closes afterwards.
- * `variant="destructive"` colours it for dangerous actions.
+ * `tone="danger"` colours it for dangerous actions.
  */
 export function DropdownMenuItem({
   className,
-  variant = 'default',
+  tone = 'neutral',
   ...props
 }: MenuPrimitive.Item.Props & {
-  /** `destructive` colours the item for dangerous actions like Delete. */
-  variant?: 'default' | 'destructive'
+  /** `danger` colours the item for dangerous actions like Delete. */
+  tone?: 'neutral' | 'danger'
 }) {
   return (
     <MenuPrimitive.Item
       data-slot="dropdown-menu-item"
-      data-variant={variant}
+      data-tone={tone}
       className={cnState(
         item,
-        'data-[variant=destructive]:text-destructive data-[variant=destructive]:data-highlighted:bg-destructive/10 data-[variant=destructive]:data-highlighted:text-destructive',
+        'data-[tone=danger]:text-danger-text data-[tone=danger]:data-highlighted:bg-danger-soft data-[tone=danger]:data-highlighted:text-danger-text',
         className,
       )}
       {...props}

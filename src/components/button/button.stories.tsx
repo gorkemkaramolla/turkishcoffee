@@ -7,7 +7,7 @@ const meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['default', 'secondary', 'destructive', 'success', 'outline', 'ghost', 'link'],
+      options: ['primary', 'secondary', 'ghost', 'link'],
     },
     size: { control: 'select', options: ['sm', 'md', 'lg', 'icon'] },
     disabled: { control: 'boolean' },
@@ -23,11 +23,8 @@ export const Default: Story = {}
 export const AllVariants: Story = {
   render: () => (
     <div className="flex flex-wrap items-center gap-3">
-      <Button>Default</Button>
+      <Button>Primary</Button>
       <Button variant="secondary">Secondary</Button>
-      <Button variant="destructive">Destructive</Button>
-      <Button variant="success">Success</Button>
-      <Button variant="outline">Outline</Button>
       <Button variant="ghost">Ghost</Button>
       <Button variant="link">Link</Button>
     </div>
@@ -47,7 +44,7 @@ export const Sizes: Story = {
 export const RenderAsLink: Story = {
   name: 'render (renders an anchor)',
   render: () => (
-    <Button render={<a href="https://example.com" />} variant="outline">
+    <Button render={<a href="https://example.com" />} variant="secondary">
       I am an anchor
     </Button>
   ),

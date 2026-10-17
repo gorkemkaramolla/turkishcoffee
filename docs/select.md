@@ -1,6 +1,6 @@
 # Select
 
-**Client component** (`"use client"`): safe to import from a server component, but it renders on the client.
+**Client component** (`"use client"`): import it from server components too. It renders to HTML on the server, then hydrates in the browser for its interactivity.
 
 ```tsx
 import { Select, SelectGroup, SelectValue, SelectTrigger, SelectContent, SelectItem, SelectLabel, SelectSeparator, type SelectContentProps } from 'turkishcoffee'
@@ -32,7 +32,7 @@ const plans = { free: 'Free', pro: 'Pro' }
 
 Only props this library adds or changes; everything else forwards to the underlying element or Base UI part.
 
-- `size?: 'sm' | 'md'` — Height: `sm` (28px) or `md` (32px, default) — matches Button, Input and NativeSelect.
+- `size?: 'sm' | 'md'` — Height: `sm` (32px) or `md` (36px, default) — matches Button, Input and NativeSelect.
 
 ## Parts
 

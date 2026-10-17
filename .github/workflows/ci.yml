@@ -23,5 +23,30 @@ jobs:
       - run: pnpm run docs && git diff --exit-code -- docs AGENTS.md llms.txt llms-full.txt
       - run: pnpm test
       - run: pnpm run build
+      # turkishcoffee is its own design system: the word "Fluent" never ships
+      # (package files, the build, and changesets, which become the changelog).
+      - run: "! grep -rIil fluent src docs dist AGENTS.md README.md llms.txt llms-full.txt .changeset"
       # Catches a broken exports map before it reaches a project.
       - run: pnpm run check-exports
+
+  browser:
+    # Real layout: drag, resize, virtualization, focus, RTL. Chromium gates the
+    # build; Firefox and WebKit report without failing it until they are proven.
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    continue-on-error: ${{ matrix.browser != 'chromium' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
+      - run: pnpm run test:browser
+        env:
+          TEST_BROWSER: ${{ matrix.browser }}

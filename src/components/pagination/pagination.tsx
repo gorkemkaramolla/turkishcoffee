@@ -1,5 +1,7 @@
 import type * as React from 'react'
 import { cn } from '../../lib/cn'
+import { MESSAGES } from '../../lib/messages'
+import { LocaleText } from '../locale-provider/locale-provider'
 import { buttonVariants } from '../button/button'
 import { ChevronLeftIcon, ChevronRightIcon, EllipsisIcon } from '../../lib/icons'
 
@@ -69,7 +71,7 @@ export function PaginationLink({
       data-slot="pagination-link"
       data-active={isActive}
       className={cn(
-        buttonVariants({ variant: isActive ? 'outline' : 'ghost', size }),
+        buttonVariants({ variant: isActive ? 'secondary' : 'ghost', size }),
         className,
       )}
       {...props}
@@ -77,31 +79,25 @@ export function PaginationLink({
   )
 }
 
-/** Link to the previous page; the label hides below `sm`. */
+/** Link to the previous page; below `sm` its label is read but not shown. */
 export function PaginationPrevious({ className, ...props }: PaginationLinkProps) {
   return (
-    <PaginationLink
-      aria-label="Go to previous page"
-      size="md"
-      className={cn('gap-1 px-2.5', className)}
-      {...props}
-    >
+    <PaginationLink size="md" className={cn('gap-1 px-2.5', className)} {...props}>
       <ChevronLeftIcon className="size-4" />
-      <span className="hidden sm:block">Previous</span>
+      <span className="max-sm:sr-only">
+        <LocaleText message={MESSAGES.previous} />
+      </span>
     </PaginationLink>
   )
 }
 
-/** Link to the next page; the label hides below `sm`. */
+/** Link to the next page; below `sm` its label is read but not shown. */
 export function PaginationNext({ className, ...props }: PaginationLinkProps) {
   return (
-    <PaginationLink
-      aria-label="Go to next page"
-      size="md"
-      className={cn('gap-1 px-2.5', className)}
-      {...props}
-    >
-      <span className="hidden sm:block">Next</span>
+    <PaginationLink size="md" className={cn('gap-1 px-2.5', className)} {...props}>
+      <span className="max-sm:sr-only">
+        <LocaleText message={MESSAGES.next} />
+      </span>
       <ChevronRightIcon className="size-4" />
     </PaginationLink>
   )

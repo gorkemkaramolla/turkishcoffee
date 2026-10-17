@@ -8,7 +8,9 @@ import {
   type DayButtonProps,
 } from 'react-day-picker'
 import { cn } from '../../lib/cn'
+import { dayPickerLocale } from '../../lib/day-picker-locale'
 import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from '../../lib/icons'
+import { useLocale } from '../locale-provider/locale-provider'
 import { buttonVariants } from '../button/button'
 
 export type { DateRange } from 'react-day-picker'
@@ -61,21 +63,34 @@ function DayButton({ day, modifiers, className, ...props }: DayButtonProps) {
 
 /**
  * react-day-picker styled with the theme tokens instead of its stylesheet, so it
- * follows `.dark`. Pass a locale from `react-day-picker/locale` (e.g. `tr`).
+ * follows `.dark`. Month and day names, the week's first day and the
+ * screen-reader labels follow LocaleProvider (else `<html lang>`); pass a
+ * `locale` from `react-day-picker/locale` to choose another. Without `mode` it is a read-only month: mark days with `modifiers` and
+ * style them with `modifiersClassNames`.
+ *
+ * @example
+ * <Calendar mode="single" selected={day} onSelect={setDay} />
+ *
+ * <Calendar modifiers={{ holiday: holidays }} modifiersClassNames={{ holiday: 'text-danger-text' }} />
  */
 export function Calendar({
   className,
   classNames,
   showOutsideDays = true,
+  captionLayout = 'label',
   components,
+  locale,
   ...props
 }: CalendarProps) {
   const defaults = getDefaultClassNames()
+  const pageLocale = useLocale()
 
   return (
     <DayPicker
       data-slot="calendar"
+      locale={locale ?? dayPickerLocale(pageLocale)}
       showOutsideDays={showOutsideDays}
+      captionLayout={captionLayout}
       className={cn('bg-background p-3 [--cell-size:--spacing(9)]', className)}
       classNames={{
         root: cn('w-fit', defaults.root),
@@ -99,7 +114,19 @@ export function Calendar({
           'flex h-(--cell-size) w-full items-center justify-center px-(--cell-size)',
           defaults.month_caption,
         ),
-        caption_label: cn('text-sm font-medium select-none', defaults.caption_label),
+        // With `captionLayout="dropdown"` the label shows the chosen month or
+        // year over an invisible native select, which takes the clicks.
+        dropdowns: cn('flex h-(--cell-size) w-full items-center justify-center gap-1 text-sm font-medium', defaults.dropdowns),
+        dropdown_root: cn(
+          'relative rounded-sm hover:bg-muted has-focus-visible:ring-2 has-focus-visible:ring-ring',
+          defaults.dropdown_root,
+        ),
+        dropdown: cn('absolute inset-0 cursor-pointer opacity-0', defaults.dropdown),
+        caption_label: cn(
+          'text-sm font-medium select-none',
+          captionLayout !== 'label' && 'flex h-7 items-center gap-0.5 ps-2 pe-1 [&>svg]:size-3.5 [&>svg]:text-muted-foreground',
+          defaults.caption_label,
+        ),
         month_grid: 'w-full border-collapse',
         weekdays: cn('flex', defaults.weekdays),
         weekday: cn(
@@ -107,8 +134,10 @@ export function Calendar({
           defaults.weekday,
         ),
         week: cn('mt-2 flex w-full', defaults.week),
+        // The cell carries its own size: without `mode` or `onDayClick` the day
+        // renders as plain text, with no DayButton to give the column a width.
         day: cn(
-          'relative aspect-square h-full w-full p-0 text-center select-none',
+          'relative grid aspect-square h-full w-full min-w-(--cell-size) place-items-center p-0 text-center text-sm select-none',
           defaults.day,
         ),
         day_button: defaults.day_button,

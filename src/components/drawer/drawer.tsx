@@ -20,7 +20,7 @@ import { cn, cnState } from '../../lib/cn'
  *     </DrawerHeader>
  *     …
  *     <DrawerFooter>
- *       <DrawerClose render={<Button variant="outline" />}>Close</DrawerClose>
+ *       <DrawerClose render={<Button variant="secondary" />}>Close</DrawerClose>
  *     </DrawerFooter>
  *   </DrawerContent>
  * </Drawer>

@@ -6,5 +6,6 @@ export {
   BreadcrumbPage,
   BreadcrumbSeparator,
   BreadcrumbEllipsis,
+  BreadcrumbButton,
   type BreadcrumbLinkProps,
 } from './breadcrumb'
